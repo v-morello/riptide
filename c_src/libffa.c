@@ -120,19 +120,19 @@ void recombine(const CBlock head, const CBlock tail, float* out)
     for (size_t g=0; g<gmax; ++g)
         {
         CShifts sh = get_shifts(gmax, head.m, g);
-
-		// Pointers to relevant lines of the inputs and output
+        
+        // Pointers to relevant lines of the inputs and output
         const float* lh = head.data + sh.h * b;
         const float* lt = tail.data + sh.t * b;
         float* lo = out + sh.g * b;
-
-		// number of bins by which lt has to be left-shifted
-		size_t nleft = (sh.h + sh.b) % b;
-		size_t nright = b - nleft;
+        
+        // number of bins by which lt has to be left-shifted
+        size_t nleft = (sh.h + sh.b) % b;
+        size_t nright = b - nleft;
 
         // Do the operation: lo = lh + circ_lshift(lt, nleft)
-		float_array_add(lh, lt + nleft, nright, lo);
-		float_array_add(lh + nright, lt, nleft, lo + nright);
+        float_array_add(lh, lt + nleft, nright, lo);
+        float_array_add(lh + nright, lt, nleft, lo + nright);
         } 
     }
 
