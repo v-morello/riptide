@@ -25,7 +25,7 @@ typedef struct {
 inline size_t get_nh(size_t m)
     {return pow(2.0, floor(log2(m - 1.0)));}
 
-// Get the circular shifts to apply during the recombine operation of the FFA transform
+// Get the circular shifts to apply during the merge operation of the FFA transform
 inline CShifts get_shifts(
         size_t m,  // number of profiles in the input
         size_t nh, // number of profiles in the head part of the input
@@ -51,6 +51,41 @@ inline void float_array_add(const float* restrict aa, const float* restrict bb, 
         cc[jj] = aa[jj] + bb[jj];
     }
 
+
+// Downsample a time series by any real-valued factor
+void downsample(
+    const float* in,
+    size_t size,
+    double factor,
+    float* out
+    )
+    {
+    size_t outsize = floor(size / factor);
+    
+    // ii = output sample index
+    for (size_t ii=0; ii<outsize; ++ii)
+        {
+        const double start = factor * ii;
+        const double end = start + factor;
+        const size_t js = ceil(start);
+        const size_t je = floor(end);
+        
+        float val = 0.0;
+
+        // jj = input sample index
+        for (size_t jj=js; jj<je; ++jj)
+            val += in[jj];
+
+        if (start < js)
+            val += in[js-1] * (js - start);
+        if (end > je)
+            val += in[je] * (end - je);
+
+        out[ii] = val;
+        }
+    }
+
+
 // Compute the S/N ratio of a profile for a number of boxcar width trials 
 void get_snr(
     const float* in,        // input profile, b bins
@@ -60,8 +95,8 @@ void get_snr(
     float varnoise,         // background noise variance
     float* out              // output buffer of size nw
     )
-    {
-    const size_t wmax = widths[nw - 1];
+	{
+	const size_t wmax = widths[nw - 1];
     const size_t csize = b + wmax; // size of the cumsum buffer
 
     // Compute profile cumulative sum
@@ -110,9 +145,9 @@ void get_snr_2d(
     }
 
 
-// Perform the FFA recombine operation
+// Perform the FFA merge operation
 // head and tail are FFA transforms here
-void recombine(const CBlock head, const CBlock tail, float* out)
+void merge(const CBlock head, const CBlock tail, float* out)
     {
     size_t gmax = head.m + tail.m;
 	size_t b = head.b;
@@ -163,7 +198,7 @@ void transform(
 
     CBlock trhead = {.data = buf, .m = nh, .b = b};
     CBlock trtail = {.data = buf + nh * b, .m = nt, .b = b};
-    recombine(trhead, trtail, out);
+    merge(trhead, trtail, out);
     }
 
 
@@ -180,4 +215,64 @@ void py_transform(
     float* buf = (float*)malloc(m * b * sizeof(float));
     transform(block, buf, out);
     free(buf); 
+    }
+
+
+// Periodogram function called from python
+void py_periodogram(
+    const float* tseries,      // input time series, normalized to zero mean and unit variance
+    size_t nsamp,              // number of samples in input time series
+    const double* dsfactor,    // sequence of downsampling factor, size = number of plan steps
+    const long int* bmin,      // sequence of min. number of bins, size = number of plan steps
+    const long int* bmax,      // sequence of max. number of bins, size = number of plan steps
+    size_t nsteps,             // number of plan steps
+    const long int* widths,    // sequence of pulse width trials, in number of bins
+    size_t nw,                 // number of width trials
+    size_t threads,            // number of threads for S/N calculation
+    float* periods,            // period trials (output)
+    float* snr                 // S/N (output)
+    )
+    {
+    // Allocate buffer for downsampled time series
+    float* in = (float*)malloc(nsamp * sizeof(float)); 
+
+    // Allocate FFA buffers
+    float* out = (float*)malloc(nsamp * sizeof(float));
+    float* buf = (float*)malloc(nsamp * sizeof(float));
+
+    // MAIN LOOP
+    for (size_t istep=0; istep<nsteps; ++istep)
+        {
+        // Downsample
+        double ds = dsfactor[istep];         // current downsampling factor
+        size_t ns = floor(nsamp / ds);       // number of samples after downsampling
+        downsample(tseries, nsamp, ds, in);
+
+        // Search the range of period numbers specified by current plan step
+        for (size_t b=bmin[istep]; b<bmax[istep]; ++b)
+            {
+            // FFA transform
+            size_t m = ns / b; 
+            CBlock block = {.data = in, .m = m, .b = b};
+            transform(block, buf, out);
+
+            // S/N evaluation
+            float varnoise = m * ds;
+            get_snr_2d(out, m, b, widths, nw, varnoise, threads, snr);
+
+            // Fill period trials
+            for (size_t sh=0; sh<m; ++sh)
+                periods[sh] = ds * b + ds * sh * b / (m * b - sh);
+
+            // move output pointers forward
+            snr = snr + m * nw;
+            periods = periods + m;
+            } // end current plan step
+        
+        } // END MAIN LOOP
+
+    // Free all temporary arrays
+    free(in);
+    free(out);
+    free(buf);
     }

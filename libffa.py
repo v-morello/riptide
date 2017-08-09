@@ -2,11 +2,12 @@
 import os
 import ctypes
 
-### numpy imports
+### Non-standard imports
 import numpy as np
 import numpy.ctypeslib as npct
 from numpy import log, sin, cos, exp, pi
 
+### Local imports
 from .ffautils import generate_width_trials
 
 ###############################################################################
@@ -40,6 +41,29 @@ def load_libffa():
         ctypes.c_size_t,
         npct.ndpointer(dtype=np.float32, ndim=2, flags=('C_CONTIGUOUS', 'ALIGNED', 'WRITEABLE')),
         ]
+
+    lib.downsample.restype = None
+    lib.downsample.argtypes = [
+        npct.ndpointer(dtype=np.float32, ndim=1, flags=('C_CONTIGUOUS', 'ALIGNED')), # input
+        ctypes.c_size_t, # input size
+        ctypes.c_double, # downsampling factor
+        npct.ndpointer(dtype=np.float32, ndim=1, flags=('C_CONTIGUOUS', 'ALIGNED', 'WRITEABLE')) # output
+        ]
+
+    lib.py_periodogram.restype = None
+    lib.py_periodogram.argtypes = [
+        npct.ndpointer(dtype=np.float32, ndim=1, flags=('C_CONTIGUOUS', 'ALIGNED')), # input
+        ctypes.c_size_t, # input size
+        npct.ndpointer(dtype=float, ndim=1, flags=('C_CONTIGUOUS', 'ALIGNED')), # sequence: dsfactor
+        npct.ndpointer(dtype=int, ndim=1, flags=('C_CONTIGUOUS', 'ALIGNED')), # sequence: bins_min
+        npct.ndpointer(dtype=int, ndim=1, flags=('C_CONTIGUOUS', 'ALIGNED')), # sequence: bins_max
+        ctypes.c_size_t, # number of ProcessingPlan steps
+        npct.ndpointer(dtype=int, ndim=1, flags=('C_CONTIGUOUS', 'ALIGNED')), # sequence: widths
+        ctypes.c_size_t, # number of width trials
+        ctypes.c_size_t, # number of threads for S/N evaluation
+        npct.ndpointer(dtype=np.float32, ndim=1, flags=('C_CONTIGUOUS', 'ALIGNED', 'WRITEABLE')), # period trials (output)
+        npct.ndpointer(dtype=np.float32, ndim=1, flags=('C_CONTIGUOUS', 'ALIGNED', 'WRITEABLE')), # output S/N
+        ]
     return lib
 
 
@@ -48,7 +72,8 @@ class LibFFA(object):
     _lib = load_libffa()
     py_transform = _lib.py_transform
     get_snr_2d = _lib.get_snr_2d
-
+    downsample = _lib.downsample
+    py_periodogram = _lib.py_periodogram
 
 ###############################################################################
 
@@ -184,3 +209,26 @@ def get_snr(data, stdnoise=1.0, threads=1):
     shape = list(data.shape[:-1]) + [nw]
     out = out.reshape(shape)
     return out, widths
+
+
+def downsample(data, factor):
+    """ Downsample an array by a real-valued factor
+
+    Parameters:
+    -----------
+        data: array_like
+            Time series data to downsample.
+        factor: float
+            Downsampling factor.
+
+    Returns:
+    --------
+        out: ndarray, float32
+            Downsampled data.
+    """
+    if not factor > 1:
+        raise ValueError('factor must be > 1')
+    outsize = int(len(data) / float(factor))
+    out = np.zeros(outsize, dtype=np.float32)
+    LibFFA.downsample(np.asarray(data, dtype=np.float32), len(data), factor, out)
+    return out
