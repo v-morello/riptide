@@ -22,3 +22,10 @@ class Periodogram(object):
         plt.figure(figsize=figsize, dpi=dpi)
         self.plot(iwidth=iwidth)
         plt.show()
+
+    def save_hdf5(self, fname):
+        pass
+
+    @classmethod
+    def load_hdf5(cls, fname):
+        pass

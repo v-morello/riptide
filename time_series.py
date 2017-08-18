@@ -3,6 +3,9 @@ import numpy as np
 ### Local imports
 from .running_median import fast_running_median
 from .libffa import downsample
+from .reading import PrestoInf
+
+
 
 class TimeSeries(object):
     """ Container for time series data to be searched with the FFA. """
@@ -64,7 +67,8 @@ class TimeSeries(object):
     
     @classmethod
     def from_presto_inf(cls, fname):
-        raise NotImplementedError
+        inf = PrestoInf(fname)
+        return cls(inf.load_data(), tsamp=inf.tsamp)
 
     @property
     def nsamp(self):
