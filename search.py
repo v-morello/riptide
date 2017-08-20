@@ -19,6 +19,32 @@ def num_period_trials(plan):
     return num
 
 
+def prune_periodogram(periods, snrs):
+    """ Remove redundant period trials in periodogram output arrays. """
+    mask = np.ones(periods.size, dtype=bool)
+    # When transforming an m x b input array with the FFA, shifts close to m may correspond
+    # to periods slightly larger than b+1. Those period trials are therefore redundant, as they
+    # will be re-performed when FFA transforming with b' = b + 1.
+    
+    # Reverse period trials array, makes the problem simpler:
+    # we want to mask values in 'rp' to make it strictly decreasing.  
+    rp = periods[::-1]
+    diff = np.diff(rp)
+    
+    # Indices such that the next element in 'rp' has a strictly larger period trial
+    indices = np.where(diff > 0)[0]
+    
+    for ix in indices:
+        for jj in range(ix+1, rp.size):
+            mask[jj] = False
+            if rp[jj] < rp[ix]:
+                break
+    
+    mask = mask[::-1]
+    return periods[mask], snrs[mask]
+
+
+
 def ffa_search(tseries, rmed_width=4.0, rmed_minpts=101, period_min=1.0, period_max=30.0, fpmin=8, bins_min=240, bins_max=260, ducy_max=0.20, wtsp=1.5, threads=1):
     """ Run a FFA search of a TimeSeries. 
     
@@ -65,6 +91,14 @@ def ffa_search(tseries, rmed_width=4.0, rmed_minpts=101, period_min=1.0, period_
     # periods is in expressed in number of samples up to this point
     # NOTE: 'periods' does not come out perfectly sorted
     periods *= ts.tsamp
+
+    # Reshape S/N trials to 2D
+    snrs = snrs.reshape(periods.size, plan.widths.size)
+
+    # Remove redundant period trials, i.e. those coresponding to excessively high shifts
+    # in some FFA transforms
+    snrs = snrs.reshape(periods.size, plan.widths.size)
+    periods, snrs = prune_periodogram(periods, snrs)
     
     pgram = Periodogram(periods, plan.widths, snrs)
     return ts, plan, pgram
