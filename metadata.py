@@ -1,6 +1,11 @@
+##### Non-standard imports #####
 import h5py
 from astropy.coordinates import SkyCoord
 import astropy.units as uu
+
+##### Local module imports #####
+from .reading import PrestoInf
+
 
 class Metadata(object):
     """ Carries information about an observation across all data products
@@ -12,9 +17,9 @@ class Metadata(object):
     __NONE_VAL = '__None'
 
     def __init__(self, source=None, mjd=None, dm=None, skycoord=None):
-        """ Create a new Metadata object, that carries information across all
-        data products. All arguments are optional and set to 'None' by
-        default.
+        """ Create a new Metadata object, that carries information about a
+        data source across all data products. All arguments are optional and
+        set to 'None' by default.
 
         Parameters:
         -----------
@@ -52,7 +57,7 @@ class Metadata(object):
                 self.skycoord = skycoord
             else:
                 raise ValueError(
-                    'skycoord must be an astropy.SkyCoord object, instead of %s' % type(skycoord)
+                    '\'skycoord\' must be an astropy.SkyCoord object, instead of \'%s\'' % type(skycoord).__name__
                 )
         else:
             self.skycoord = None
@@ -98,8 +103,15 @@ class Metadata(object):
             'decjd' : decjd
             }
 
+    def __str__(self):
+        return 'Metadata %s' % self.to_dict()
+
+    def __repr__(self):
+        return str(self)
+
     @classmethod
-    def from_dict(cls, attrs):
+    def _from_dict(cls, attrs):
+        """ Private method used to load from HDF5. """
         rajd = attrs['rajd']
         decjd = attrs['decjd']
         if (rajd is None) or (decjd is None):
@@ -114,7 +126,8 @@ class Metadata(object):
             )
 
     def save_hdf5(self, fname):
-        """ Save Metadata as a standalone HDF5 file. """
+        """ Save Metadata as a standalone HDF5 file. Mostly for test
+        purposes. """
         with h5py.File(fname, 'w') as fobj:
             metadata_group = fobj.create_group('metadata')
             # Convert to dict then replace 'None' values by
@@ -125,10 +138,9 @@ class Metadata(object):
                     attrs[key] = self.__NONE_VAL
             metadata_group.attrs.update(attrs)
 
-
     @classmethod
     def load_hdf5(cls, fname):
-        """ Load Metadata from an HDF5 file. """
+        """ Load Metadata from an HDF5 file. Mostly for test purposes. """
         with h5py.File(fname, 'r') as fobj:
             metadata_group = fobj['metadata']
             # The line below must be put within the 'with' statement, otherwise

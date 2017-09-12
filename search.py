@@ -25,29 +25,29 @@ def prune_periodogram(periods, snrs):
     # When transforming an m x b input array with the FFA, shifts close to m may correspond
     # to periods slightly larger than b+1. Those period trials are therefore redundant, as they
     # will be re-performed when FFA transforming with b' = b + 1.
-    
+
     # Reverse period trials array, makes the problem simpler:
-    # we want to mask values in 'rp' to make it strictly decreasing.  
+    # we want to mask values in 'rp' to make it strictly decreasing.
     rp = periods[::-1]
     diff = np.diff(rp)
-    
+
     # Indices such that the next element in 'rp' has a strictly larger period trial
     indices = np.where(diff > 0)[0]
-    
+
     for ix in indices:
         for jj in range(ix+1, rp.size):
             mask[jj] = False
             if rp[jj] < rp[ix]:
                 break
-    
+
     mask = mask[::-1]
     return periods[mask], snrs[mask]
 
 
 
 def ffa_search(tseries, rmed_width=4.0, rmed_minpts=101, period_min=1.0, period_max=30.0, fpmin=8, bins_min=240, bins_max=260, ducy_max=0.20, wtsp=1.5, threads=1):
-    """ Run a FFA search of a TimeSeries. 
-    
+    """ Run a FFA search of a TimeSeries.
+
     Parameters:
     -----------
 
@@ -55,21 +55,21 @@ def ffa_search(tseries, rmed_width=4.0, rmed_minpts=101, period_min=1.0, period_
     --------
     """
     plan = ProcessingPlan(
-        tseries.nsamp, tseries.tsamp, 
-        period_min=period_min, period_max=period_max, fpmin=fpmin, 
+        tseries.nsamp, tseries.tsamp,
+        period_min=period_min, period_max=period_max, fpmin=fpmin,
         bins_min=bins_min, bins_max=bins_max, ducy_max=ducy_max, wtsp=wtsp
         )
-    
+
     ### Prepare data: downsample, deredden, normalise IN THAT ORDER
     ### 'ts' is the post-processed TimeSeries that will be searched
     ts = tseries.downsample(plan.ds_ini, inplace=False)
     ts.deredden(rmed_width, minpts=rmed_minpts, inplace=True)
     ts.normalise(inplace=True)
-    
+
     ### Prepare the call to the main C function
     npt = num_period_trials(plan)
-    
-    # Input arrays 
+
+    # Input arrays
     dsfactors = plan.steps.dsfactor.as_matrix()
     bins_min = plan.steps.bins_min.as_matrix()
     bins_max = plan.steps.bins_max.as_matrix()
@@ -80,14 +80,14 @@ def ffa_search(tseries, rmed_width=4.0, rmed_minpts=101, period_min=1.0, period_
 
     #### The main C function that does all the work #####
     LibFFA.py_periodogram(
-        ts.data, ts.nsamp, 
-        dsfactors, bins_min, bins_max, dsfactors.size, 
+        ts.data, ts.nsamp,
+        dsfactors, bins_min, bins_max, dsfactors.size,
         plan.widths, plan.widths.size,
         threads,
         periods,
         snrs
         )
-    
+
     # periods is in expressed in number of samples up to this point
     # NOTE: 'periods' does not come out perfectly sorted
     periods *= ts.tsamp
@@ -99,6 +99,6 @@ def ffa_search(tseries, rmed_width=4.0, rmed_minpts=101, period_min=1.0, period_
     # in some FFA transforms
     snrs = snrs.reshape(periods.size, plan.widths.size)
     periods, snrs = prune_periodogram(periods, snrs)
-    
-    pgram = Periodogram(periods, plan.widths, snrs)
+
+    pgram = Periodogram(periods, plan.widths, snrs, metadata=tseries.metadata)
     return ts, plan, pgram
