@@ -1,3 +1,5 @@
+import h5py
+import numpy as np
 import matplotlib.pyplot as plt
 
 class Periodogram(object):
@@ -35,8 +37,19 @@ class Periodogram(object):
         plt.show()
 
     def save_hdf5(self, fname):
-        pass
+        """ Save Periodogram object to HDF5 format. """
+        with h5py.File(fname, 'w') as fobj:
+            data_group = fobj.create_group('data')
+            data_group.create_dataset('widths', data=self.widths, dtype=int)
+            data_group.create_dataset('periods', data=self.periods, dtype=np.float32)
+            data_group.create_dataset('snrs', data=self.snrs, dtype=np.float32)
 
     @classmethod
     def load_hdf5(cls, fname):
-        pass
+        """ Load Periodogram object from an HDF5 file. """
+        with h5py.File(fname, 'r') as fobj:
+            data_group = fobj['data']
+            periods = data_group['periods'].value
+            widths = data_group['widths'].value
+            snrs = data_group['snrs'].value
+        return cls(periods, widths, snrs)
