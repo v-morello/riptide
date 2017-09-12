@@ -13,10 +13,18 @@ import astropy.units as uu
 
 #####################################################
 
+# NOTE: all of these 'incorporate' function mus have the same
+# signature (PrestoInf, key, value, value_type) even if some
+# of the arguments end up being useless.
+
 def _incorporate(inf, key, val, vtype):
     setattr(inf, key, vtype(val))
     inf.parsed_keys.add(key)
-    
+
+def _incorporate_bool(inf, key, val, vtype):
+    setattr(inf, key, bool(int(val)))
+    inf.parsed_keys.add(key)
+
 def _incorporate_onoff(inf, key, val, vtype):
     # Create empty list attribute to hold on/off bin pairs
     # if it does not exist already
@@ -41,22 +49,22 @@ class PrestoInf(object):
         'data file name': ('basename', _incorporate, str),
         'telescope': ('telescope', _incorporate, str),
         'instrument': ('instrument', _incorporate, str),
-        'object being observed': ('source_name', _incorporate, str),
+        'object being observed': ('source', _incorporate, str),
         'j2000 right ascension': ('raj', _incorporate, str),
         'j2000 declination': ('decj', _incorporate, str),
         'observed by': ('observer', _incorporate, str),
         'epoch of observation': ('mjd', _incorporate, float),
-        'barycentered': ('barycentered', _incorporate, bool),
+        'barycentered': ('barycentered', _incorporate_bool, bool),
         'number of bins': ('nsamp', _incorporate, int),
         'width of each': ('tsamp', _incorporate, float),
-        'any breaks': ('breaks', _incorporate, bool),
+        'any breaks': ('breaks', _incorporate_bool, bool),
         'type of observation': ('obstype', _incorporate, str),
         'beam diameter': ('bdiam', _incorporate, float),
         'dispersion measure': ('dm', _incorporate, float),
         'central freq of low channel': ('fbot', _incorporate, float),
         'total bandwidth': ('bandwidth', _incorporate, float),
         'number of channels': ('nchan', _incorporate, int),
-        'channel bandwidth': ('fbw', _incorporate, float),
+        'channel bandwidth': ('cbw', _incorporate, float),
         'data analyzed by': ('analyst', _incorporate, str),
         
         # Special treatment for on/off bin pair entries
@@ -92,9 +100,15 @@ class PrestoInf(object):
         with open(fname, 'r') as fobj:
             for line in fobj.readlines():
                 try:
-                    descr, value = map(str.strip, line.split(delimiter))
+                    #descr, value = map(str.strip, line.split(delimiter))
+                    chunks = list(map(str.strip, line.split(delimiter)))
+                    descr = chunks[0]
+                    value = chunks[-1]
                     dvdict[descr] = value
                 except Exception as err:
+                    print(line)
+                    print(err)
+                    print()
                     pass
         return dvdict
     
@@ -118,7 +132,7 @@ class PrestoInf(object):
     
     def _finalize(self):
         self.fchn = self.fbot
-        self.foff = -abs(self.fbw)
+        self.foff = -abs(self.cbw)
         self.fch1 = self.fchn + self.nchan * self.foff
         self.tobs = self.nsamp * self.tsamp
         self.coord = SkyCoord(self.raj, self.decj, unit=(uu.hour, uu.degree))

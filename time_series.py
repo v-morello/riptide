@@ -6,7 +6,6 @@ from .libffa import downsample
 from .reading import PrestoInf
 
 
-
 class TimeSeries(object):
     """ Container for time series data to be searched with the FFA. """
     def __init__(self, data, tsamp, copy=False):
@@ -69,6 +68,10 @@ class TimeSeries(object):
     def from_presto_inf(cls, fname):
         inf = PrestoInf(fname)
         return cls(inf.load_data(), tsamp=inf.tsamp)
+
+    @classmethod
+    def from_sigproc(cls, fname):
+        raise NotImplementedError
 
     @property
     def nsamp(self):

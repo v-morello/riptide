@@ -15,10 +15,21 @@ class Periodogram(object):
         
         plt.plot(self.periods, snr, marker='o', markersize=2, alpha=0.5)
         plt.xlim(self.periods.min(), self.periods.max())
-        plt.grid()
+        plt.xlabel('Trial Period (s)', fontsize=16)
+        plt.ylabel('S/N', fontsize=16)
+
+        if iwidth is None:
+            plt.title('Best S/N at any trial width', fontsize=18)
+        else:
+            width_bins = self.widths[iwidth]
+            plt.title('S/N at trial width = %d' % width_bins, fontsize=18)
+
+        plt.xticks(fontsize=14)
+        plt.yticks(fontsize=14)
+        plt.grid(linestyle=':')
         plt.tight_layout()
     
-    def display(self, iwidth=None, figsize=(18,5), dpi=100):
+    def display(self, iwidth=None, figsize=(20,5), dpi=100):
         plt.figure(figsize=figsize, dpi=dpi)
         self.plot(iwidth=iwidth)
         plt.show()
