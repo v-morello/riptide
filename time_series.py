@@ -1,5 +1,6 @@
 ##### Non-standard imports #####
 import numpy as np
+import h5py
 
 ##### Local imports #####
 from .running_median import fast_running_median
@@ -31,11 +32,7 @@ class TimeSeries(object):
         else:
             self.data = np.asarray(data, dtype=np.float32)
         self.tsamp = float(tsamp)
-
-        if metadata is None:
-            self.metadata = Metadata()
-        else:
-            self.metadata = metadata
+        self.metadata = metadata if metadata is not None else Metadata({})
 
     def normalise(self, inplace=False):
         """ Normalize to zero mean and unit variance. if 'inplace' is False,
@@ -86,10 +83,17 @@ class TimeSeries(object):
             stdnoise: float
                 Standard deviation of the background noise.
         """
-        nsamp = int(length / tsamp + 0.5)
+        nsamp = int(round(length / tsamp))
         period_samples = period / tsamp
         data = generate_signal(nsamp, period_samples, phi0=phi0, ducy=ducy, amplitude=amplitude, stdnoise=stdnoise)
-        return cls(data, tsamp, copy=False, metadata=None)
+        metadata = Metadata({
+            'source_name': 'fake',
+            'signal_shape': 'Von Mises',
+            'signal_period': period,
+            'signal_initial_phase': phi0,
+            'signal_duty_cycle': ducy,
+            })
+        return cls(data, tsamp, copy=False, metadata=metadata)
 
     @classmethod
     def from_numpy_array(cls, array, tsamp, copy=False):
@@ -136,10 +140,22 @@ class TimeSeries(object):
         return str(self)
 
     def save_hdf5(self, fname):
-        # TODO: implement this
-        raise NotImplementedError
+        with h5py.File(fname, 'w') as fobj:
+            # Create a group to store metadata, as attribute of said group
+            self.metadata._save_to_hdf5_file(fobj)
+
+            # Create a data group for the time series data itself
+            data_group = fobj.create_group('data')
+            data_group.attrs.update({
+                'tsamp': self.tsamp
+                })
+            data_group.create_dataset('time_series', data=self.data, dtype=np.float32)
 
     @classmethod
     def load_hdf5(cls, fname):
-        # TODO: implement this
-        raise NotImplementedError
+        with h5py.File(fname, 'r') as fobj:
+            metadata = Metadata._from_hdf5_file(fobj)
+            data_group = fobj['data']
+            data = data_group['time_series'].value
+            tsamp = data_group.attrs['tsamp']
+        return cls(data, tsamp, metadata=metadata, copy=False)

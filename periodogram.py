@@ -1,6 +1,10 @@
+##### Non-standard imports #####
 import h5py
 import numpy as np
 import matplotlib.pyplot as plt
+
+##### Local imports #####
+from .metadata import Metadata
 
 class Periodogram(object):
     """ Stores the raw output of the FFA search of a time series. """
@@ -8,7 +12,7 @@ class Periodogram(object):
         self.periods = periods
         self.widths = widths
         self.snrs = snrs.reshape(periods.size, widths.size)
-        self.metadata = metadata
+        self.metadata = metadata if metadata is not None else Metadata({})
 
     def plot(self, iwidth=None):
         if iwidth is None:
@@ -39,8 +43,10 @@ class Periodogram(object):
 
     def save_hdf5(self, fname):
         """ Save Periodogram object to HDF5 format. """
-        # TODO: handle metadata
         with h5py.File(fname, 'w') as fobj:
+            # Create a group to store metadata, as attribute of said group
+            self.metadata._save_to_hdf5_file(fobj)
+
             data_group = fobj.create_group('data')
             data_group.create_dataset('widths', data=self.widths, dtype=int)
             data_group.create_dataset('periods', data=self.periods, dtype=np.float32)
@@ -49,10 +55,10 @@ class Periodogram(object):
     @classmethod
     def load_hdf5(cls, fname):
         """ Load Periodogram object from an HDF5 file. """
-        # TODO: handle metadata
         with h5py.File(fname, 'r') as fobj:
+            metadata = Metadata._from_hdf5_file(fobj)
             data_group = fobj['data']
             periods = data_group['periods'].value
             widths = data_group['widths'].value
             snrs = data_group['snrs'].value
-        return cls(periods, widths, snrs)
+        return cls(periods, widths, snrs, metadata=metadata)
