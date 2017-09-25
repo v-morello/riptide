@@ -138,6 +138,7 @@ class PrestoInf(object):
         self.coord = SkyCoord(self.raj, self.decj, unit=(uu.hour, uu.degree))
     
     def load_data(self):
+        """ Returns the associated time series data as a numpy float32 array. """
         return numpy.fromfile(self.data_fname, dtype=numpy.float32)
     
     @property
