@@ -1,7 +1,6 @@
 ### Major classes
 from .time_series import TimeSeries
 from .periodogram import Periodogram
-from .metadata import Metadata
 
 ### Major functions
 from .search import ffa_search

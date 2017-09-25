@@ -4,11 +4,10 @@ import matplotlib.pyplot as plt
 
 class Periodogram(object):
     """ Stores the raw output of the FFA search of a time series. """
-    def __init__(self, periods, widths, snrs, metadata=None):
+    def __init__(self, periods, widths, snrs):
         self.periods = periods
         self.widths = widths
         self.snrs = snrs.reshape(periods.size, widths.size)
-        self.metadata = metadata
 
     def plot(self, iwidth=None):
         if iwidth is None:
@@ -39,7 +38,6 @@ class Periodogram(object):
 
     def save_hdf5(self, fname):
         """ Save Periodogram object to HDF5 format. """
-        # TODO: handle metadata
         with h5py.File(fname, 'w') as fobj:
             data_group = fobj.create_group('data')
             data_group.create_dataset('widths', data=self.widths, dtype=int)
@@ -49,7 +47,6 @@ class Periodogram(object):
     @classmethod
     def load_hdf5(cls, fname):
         """ Load Periodogram object from an HDF5 file. """
-        # TODO: handle metadata
         with h5py.File(fname, 'r') as fobj:
             data_group = fobj['data']
             periods = data_group['periods'].value
