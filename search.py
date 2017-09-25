@@ -13,7 +13,7 @@ def num_period_trials(plan):
     num = 0
     for istep, step in plan.steps.iterrows():
         ds = step.dsfactor
-        ns = int(plan.nsamp_ds / ds)
+        ns = int(plan.nsamp / ds)
         b = np.arange(int(step.bins_min), int(step.bins_max))
         num += (ns // b).sum()
     return num
@@ -50,9 +50,19 @@ def ffa_search(tseries, rmed_width=4.0, rmed_minpts=101, period_min=1.0, period_
 
     Parameters:
     -----------
+        tseries: TimeSeries
+            The time series object to search
+        [... and lots of kwargs]
 
     Returns:
     --------
+        ts: TimeSeries
+            The de-reddened and normalised time series that was actually searched
+        plan: ProcessingPlan
+            The processing plan followed
+        pgram: Periodogram
+            The output of the search, containing a 2D array representing S/N
+            as a function of trial period and trial width.
     """
     plan = ProcessingPlan(
         tseries.nsamp, tseries.tsamp,
@@ -62,8 +72,7 @@ def ffa_search(tseries, rmed_width=4.0, rmed_minpts=101, period_min=1.0, period_
 
     ### Prepare data: downsample, deredden, normalise IN THAT ORDER
     ### 'ts' is the post-processed TimeSeries that will be searched
-    ts = tseries.downsample(plan.ds_ini, inplace=False)
-    ts.deredden(rmed_width, minpts=rmed_minpts, inplace=True)
+    ts = tseries.deredden(rmed_width, minpts=rmed_minpts)
     ts.normalise(inplace=True)
 
     ### Prepare the call to the main C function

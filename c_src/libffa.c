@@ -147,7 +147,7 @@ void get_snr_2d(
 
 // Perform the FFA merge operation
 // head and tail are FFA transforms here
-void merge(const CBlock head, const CBlock tail, float* out)
+void merge(const CBlock head, const CBlock tail, float* restrict out)
     {
     size_t gmax = head.m + tail.m;
 	size_t b = head.b;
@@ -246,6 +246,7 @@ void py_periodogram(
         // Downsample
         double ds = dsfactor[istep];         // current downsampling factor
         size_t ns = floor(nsamp / ds);       // number of samples after downsampling
+        
         downsample(tseries, nsamp, ds, in);
 
         // Search the range of period numbers specified by current plan step

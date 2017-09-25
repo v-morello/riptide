@@ -39,40 +39,38 @@ class ProcessingPlan(object):
 
         # average number of bins
         bins_avg = int(round(bins_min + bins_max - 1) / 2.0)
-        
+
         # Width trials in number of bins
         self.widths = generate_width_trials(bins_avg, ducy_max=ducy_max, wtsp=wtsp)
-        
-        ### Initial downsampling factor
-        ds_ini = period_min / bins_min / tsamp
-        self.ds_ini = ds_ini
-        self.nsamp_ds = int(self.nsamp / self.ds_ini)
-        self.tsamp_ds = self.tsamp * self.ds_ini
-        
+
+        ### Downsampling factor for first plan step
+        ds = period_min / bins_min / tsamp
+        #self.nsamp_ds = int(self.nsamp / ds)
+        #self.tsamp_ds = self.tsamp * ds
+
         ds_growth = bins_max / float(bins_min)
-        
+
         ### Compute plan steps
         steps = []
-        ds = 1.0 # downsampling to apply after initial downsampling
         while True:
-            current_period_min = bins_min * ds * ds_ini * tsamp
-            current_period_max = bins_max * ds * ds_ini * tsamp
-            current_step = (ds, ds * ds_ini * tsamp, bins_min, bins_max, current_period_min, current_period_max)
+            current_period_min = bins_min * ds * tsamp
+            current_period_max = bins_max * ds * tsamp
+            current_step = (ds, ds * tsamp, bins_min, bins_max, current_period_min, current_period_max)
             steps.append(current_step)
-            
+
             if current_period_max >= period_max:
                 break
 
             ds *= ds_growth
-                
+
         columns = ['dsfactor', 'tsamp', 'bins_min', 'bins_max', 'period_min', 'period_max']
         self.steps = pandas.DataFrame(steps, columns=columns)
-        
+
         # Edit last step to stop the search as close as possible to period_max
         last_step = self.steps.iloc[-1]
         last_bins_max = int(ceil(period_max / last_step.tsamp))
         last_period_max = last_bins_max * last_step.tsamp
-        
+
         ix = len(self.steps) - 1
         self.steps.loc[ix, 'bins_max'] = last_bins_max
         self.steps.loc[ix, 'period_max'] = last_period_max
@@ -82,10 +80,10 @@ class ProcessingPlan(object):
             'Number of samples  : %d' % self.nsamp,
             'Sampling time      : %.6e' % self.tsamp,
             '',
-            'Initial downsampling factor: %.6f' % self.ds_ini,
-            'Num. samples after initial downsampling : %d' % self.nsamp_ds,
-            'Sampling time after initial downsampling: %.6e' % self.tsamp_ds,
-            '',
+            # 'Initial downsampling factor: %.6f' % self.ds_ini,
+            # 'Num. samples after initial downsampling : %d' % self.nsamp_ds,
+            # 'Sampling time after initial downsampling: %.6e' % self.tsamp_ds,
+            # '',
             'Width trials (bins): %s' % (', '.join(map(str, self.widths))),
             '',
             repr(self.steps)

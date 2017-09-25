@@ -212,7 +212,7 @@ def get_snr(data, stdnoise=1.0, threads=1):
 
 
 def downsample(data, factor):
-    """ Downsample an array by a real-valued factor
+    """ Downsample an array by a real-valued factor.
 
     Parameters:
     -----------
