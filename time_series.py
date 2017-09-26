@@ -5,7 +5,7 @@ import h5py
 ##### Local imports #####
 from .running_median import fast_running_median
 from .libffa import downsample, generate_signal
-from .reading import PrestoInf
+from .reading import PrestoInf, SigprocTimeSeries
 from .metadata import Metadata
 
 
@@ -116,8 +116,10 @@ class TimeSeries(object):
         return cls(inf.load_data(), tsamp=inf.tsamp, metadata=metadata)
 
     @classmethod
-    def from_sigproc(cls, fname):
-        raise NotImplementedError
+    def from_sigproc(cls, fname, extra_attributes={}):
+        sts = SigprocTimeSeries(fname, extra_attributes=extra_attributes)
+        metadata = Metadata.from_sigproc(sts, extra_attributes=extra_attributes)
+        return cls(sts.load_data(), tsamp=sts.header['tsamp'], metadata=metadata)
 
     @property
     def nsamp(self):

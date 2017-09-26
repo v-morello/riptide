@@ -31,7 +31,7 @@ class Metadata(dict):
         keys with a specific type, at the moment these are:
         source_name, skycoord, dm, mjd
 
-        If any of the above keys are not present in 'attrs', they will be set to
+        If any of the above keys are NOT present in 'attrs', they will be set to
         None in the Metadata object. If they are present, they must have the
         correct type or a ValueError will be raised.
 
@@ -79,8 +79,20 @@ class Metadata(dict):
         return cls(attrs)
 
     @classmethod
-    def from_sigproc(cls):
-        raise NotImplementedError
+    def from_sigproc(cls, sts, extra_attributes={}):
+        """ Create Metadata object from SIGPROC dedispersed time series file,
+        or SigprocTimeSeries object.
+        """
+        # Interpret 'sts' as a file path if it is a string
+        if type(sts) == str:
+            sts = SigprocTimeSeries(sts, extra_attributes=extra_attributes)
+
+        attrs = sts.header.copy()
+        attrs['dm'] = attrs.get('refdm', None)
+        attrs['skycoord'] = sts.skycoord
+        attrs['source_name'] = attrs.get('source_name', None)
+        attrs['mjd'] = attrs.get('tstart', None)
+        return cls(attrs)
 
     def __str__(self):
         return 'Metadata\n%s' % pprint.pformat(dict(self))
