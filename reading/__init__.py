@@ -1,2 +1,2 @@
 from .presto import PrestoInf
-from .sigproc import SigprocTimeSeries
+from .sigproc import SigprocHeader

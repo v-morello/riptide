@@ -5,7 +5,7 @@ import h5py
 ##### Local imports #####
 from .running_median import fast_running_median
 from .libffa import downsample, generate_signal
-from .reading import PrestoInf, SigprocTimeSeries
+from .reading import PrestoInf, SigprocHeader
 from .metadata import Metadata
 
 
@@ -116,10 +116,18 @@ class TimeSeries(object):
         return cls(inf.load_data(), tsamp=inf.tsamp, metadata=metadata)
 
     @classmethod
-    def from_sigproc(cls, fname, extra_attributes={}):
-        sts = SigprocTimeSeries(fname, extra_attributes=extra_attributes)
-        metadata = Metadata.from_sigproc(sts, extra_attributes=extra_attributes)
-        return cls(sts.load_data(), tsamp=sts.header['tsamp'], metadata=metadata)
+    def from_sigproc(cls, fname, extra_keys={}):
+        sig = SigprocHeader(fname, extra_keys=extra_keys)
+
+        # This call checks if the file contains a dedispersed time series
+        # in 32-bit format
+        metadata = Metadata.from_sigproc(sig, extra_keys=extra_keys)
+
+        # Load time series data
+        with open(fname, 'rb') as fobj:
+            fobj.seek(sig.bytesize)
+            data = np.fromfile(fobj, dtype=np.float32)
+        return cls(data, tsamp=sig['tsamp'], metadata=metadata)
 
     @property
     def nsamp(self):
