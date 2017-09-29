@@ -50,7 +50,6 @@ sigproc_keydb = {
     "ftop": float,
     "obs_date": str,
     "obs_time": str,
-    "signed": bool,
     "accel": float
     }
 
