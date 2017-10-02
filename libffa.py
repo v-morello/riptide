@@ -78,7 +78,7 @@ class LibFFA(object):
 ###############################################################################
 
 def generate_signal(nsamp, period, phi0=0.0, ducy=0.01, amplitude=1.0, stdnoise=1.0):
-    """ Generate a time series containing a periodic signal with a von Mises 
+    """ Generate a time series containing a periodic signal with a von Mises
     pulse profile. This function is mostly for test purposes.
 
     Parameters:
@@ -99,11 +99,11 @@ def generate_signal(nsamp, period, phi0=0.0, ducy=0.01, amplitude=1.0, stdnoise=
     Returns:
     --------
         tseries: ndarray (1D, float)
-           Output time series. 
+           Output time series.
     """
     # von mises parameter
     kappa = log(2.0) / (2.0 * sin(pi*ducy/2.0)**2)
-    
+
     # Generate pulse train
     phase_radians = (np.arange(nsamp, dtype=float) / period - phi0) * (2 * pi)
     signal = amplitude * exp(kappa*(cos(phase_radians) - 1.0))
@@ -130,7 +130,7 @@ def ffa_transform_2d(data):
     Returns:
     --------
         transform: ndarray (2D)
-            The FFA transform of 'data', as a 2D array of shape (m, b). 
+            The FFA transform of 'data', as a 2D array of shape (m, b).
             Line number k corresponds to a summation path with a top-to-bottom
             right shift of k bins.
     """
@@ -142,7 +142,7 @@ def ffa_transform_2d(data):
 
 def ffa_transform_1d(data, pnum):
     """ Compute the FFA transform of a time series at a given integer
-    period number. The algorithm only considers a number of time 
+    period number. The algorithm only considers a number of time
     samples that is a multiple of 'pnum', and therefore ignores the
     last nsamp % pnum samples.
 
@@ -151,16 +151,16 @@ def ffa_transform_1d(data, pnum):
         data: ndarray (1D)
             Input time series data. Trailing samples with indices larger
             than the largest multiple of pnum are ignored.
-        pnum: int 
+        pnum: int
             Signal period in samples.
 
     Returns:
     --------
         transform: ndarray (2D)
-            The FFA transform of 'data', as a 2D array of shape 
+            The FFA transform of 'data', as a 2D array of shape
             (m, pnum), where m is the number of complete periods of the signal.
             Line number k corresponds to a summation path with a top-to-bottom
-            right shift of k bins. 
+            right shift of k bins.
     """
     m = data.size // pnum
     return ffa_transform_2d(data[:m*pnum].reshape(m, pnum))

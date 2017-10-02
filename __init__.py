@@ -2,6 +2,7 @@
 from .time_series import TimeSeries
 from .periodogram import Periodogram
 from .metadata import Metadata
+from .folding import SubIntegrations
 
 ### Major functions
 from .search import ffa_search
@@ -10,16 +11,19 @@ from .libffa import (
     ffa_transform_1d,
     ffa_transform_2d,
     generate_signal,
-    downsample
+    downsample,
+    get_snr
     )
 
 __all__ = [
     'TimeSeries',
     'Periodogram',
     'Metadata',
+    'SubIntegrations',
     'ffa_search',
     'ffa_transform_1d',
     'ffa_transform_2d',
     'generate_signal',
-    'downsample'
+    'downsample',
+    'get_snr',
     ]

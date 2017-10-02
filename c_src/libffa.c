@@ -156,6 +156,10 @@ void get_snr(
 
         // Normalisation factors: convolution with a boxcar that has zero mean
         // and unit power.
+        // NOTE: profsum should be zero in theory, because time series are shifted to
+        // zero mean before processing. However, before FFA transforming, we always
+        // exclude the last incomplete pulse, which could make the profile mean
+        // significantly non zero.
         const float profsum = csum[b-1];
         const float invsqrtN = pow(b * varnoise, -0.5);
         const float x = pow((b - w) / (float)w, 0.5);
