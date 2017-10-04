@@ -1,4 +1,5 @@
 import warnings
+import operator
 
 ##### Non-standard imports #####
 import numpy as np
@@ -74,79 +75,128 @@ def threshold_function_static(snr_min, polydeg=2):
     return func, polyco
 
 
+# class Peak(object):
+#     """ """
+#     def __init__(self, periods, snrs, width, dm):
+#         self._periods = periods
+#         self._snrs = snrs
+#         imax = snrs.argmax()
+#         self._best_period = periods[imax]
+#         self._best_snr = snrs[imax]
+#         self._width = width
+#         self._dm = dm
+#
+#     @property
+#     def periods(self):
+#         return self._periods
+#
+#     @property
+#     def snrs(self):
+#         return self._snrs
+#
+#     @property
+#     def width(self):
+#         return self._width
+#
+#     @property
+#     def dm(self):
+#         return self._dm
+#
+#     @property
+#     def best_period(self):
+#         return self._best_period
+#
+#     @property
+#     def best_snr(self):
+#         return self._best_snr
+#
+#     def plot(self):
+#         delta_period_us = 1.0e6 * (self.periods - self.best_period)
+#         best_period_ms = 1.0e3 * self.best_period
+#         plt.plot(delta_period_us, self.snrs, marker='.', markersize=4)
+#         plt.title('P0 = {0:.6f} ms, Width = {1:d} bins, DM = {2:.3f}'.format(best_period_ms, self.width, self.dm))
+#         plt.xlabel('Delta P0 (us)')
+#         plt.ylabel('S/N')
+#         plt.grid(linestyle=':')
+#         plt.tight_layout()
+#
+#     def display(self, figsize=(6, 4), dpi=100):
+#         plt.figure(figsize=figsize, dpi=dpi)
+#         self.plot()
+#         plt.show()
+#
+#     def __str__(self):
+#         dm_str = 'None' if self.dm is None else '{0:.3f}'.format(self.dm)
+#         return 'Peak [P0 = {p.best_period:.9e}, W = {p.width:3d}, DM = {dm_str:s}, S/N = {p.best_snr:6.2f}]'.format(p=self, dm_str=dm_str)
+#
+#     def __repr__(self):
+#         return str(self)
+
+
 class Peak(object):
     """ """
-    def __init__(self, periods, snrs, width, dm):
-        self._periods = periods
-        self._snrs = snrs
-        imax = snrs.argmax()
-        self._best_period = periods[imax]
-        self._best_snr = snrs[imax]
+    def __init__(self, period, snr, width):
+        self._period = period
+        self._snr = snr
         self._width = width
-        self._dm = dm
 
     @property
-    def periods(self):
-        return self._periods
+    def period(self):
+        return self._period
 
     @property
-    def snrs(self):
-        return self._snrs
+    def snr(self):
+        return self._snr
 
     @property
     def width(self):
         return self._width
 
-    @property
-    def dm(self):
-        return self._dm
-
-    @property
-    def best_period(self):
-        return self._best_period
-
-    @property
-    def best_snr(self):
-        return self._best_snr
-
-    def plot(self):
-        delta_period_us = 1.0e6 * (self.periods - self.best_period)
-        best_period_ms = 1.0e3 * self.best_period
-        plt.plot(delta_period_us, self.snrs, marker='.', markersize=4)
-        plt.title('P0 = {0:.6f} ms, Width = {1:d} bins, DM = {2:.3f}'.format(best_period_ms, self.width, self.dm))
-        plt.xlabel('Delta P0 (us)')
-        plt.ylabel('S/N')
-        plt.grid(linestyle=':')
-        plt.tight_layout()
-
-    def display(self, figsize=(6, 4), dpi=100):
-        plt.figure(figsize=figsize, dpi=dpi)
-        self.plot()
-        plt.show()
-
     def __str__(self):
-        dm_str = 'None' if self.dm is None else '{0:.3f}'.format(self.dm)
-        return 'Peak [P0 = {p.best_period:.9e}, W = {p.width:3d}, DM = {dm_str:s}, S/N = {p.best_snr:6.2f}]'.format(p=self, dm_str=dm_str)
+        return 'Peak [P0 = {p.period:.9e}, W = {p.width:3d}, S/N = {p.snr:6.2f}]'.format(p=self)
 
     def __repr__(self):
         return str(self)
 
 
-
-# TODO: docstring for this
 def iterslices(indices):
-    # Special case where there is only one peak
+    # Special case where there is only one cluster
     if not len(indices):
         yield slice(None, None)
         raise StopIteration
 
-    # Multiple peak case
+    # Multiple clusters case
     else:
         yield slice(None, indices[0])
         for ii, jj in zip(indices[:-1], indices[1:]):
             yield slice(ii, jj)
         yield slice(indices[-1], None)
         raise StopIteration
+
+def cluster_1d(x, radius):
+    """ Perform clustering on 1D data. Elements of 'x' whose
+    absolute difference is less than 'radius' are considered
+    part of the same cluster. """
+    if not len(x):
+        return []
+
+    # Sort input data, compute differences between
+    # consecutive elements, spot those differences
+    # that exceeed the clustering radius
+    x = np.asarray(x)
+    order = x.argsort()
+    y = x[order]
+    dy = np.diff(y)
+    diffmask = dy > radius
+
+    # Indices that mark the end of a cluster
+    ibreaks = np.where(diffmask)[0] + 1
+
+    clusters = [
+        order[sl]
+        for sl in iterslices(ibreaks)
+        ]
+    return clusters
 
 
 def find_peaks_single(pgram, iwidth, boundaries, min_segments=8, snr_min=6.5, nsigma=6.5, peak_clustering_radius=0.20, polydeg=2):
@@ -177,28 +227,21 @@ def find_peaks_single(pgram, iwidth, boundaries, min_segments=8, snr_min=6.5, ns
 
     significant_mask = snrs > threshold
     significant_indices = np.where(significant_mask)[0]
+
     if len(significant_indices):
         # DFT bin indexes corresponding to the significant periodogram points
         dbi = tobs / periods[significant_mask]
 
-        # Whenever the difference between two consecutive elements of 'dbi'
-        # exceeds 'peak_clustering_radius', this marks the end of a peak and the
-        # start of a new one
-        dbi_diff = np.diff(dbi)
-        diffmask = np.abs(dbi_diff) > peak_clustering_radius
-        ibreaks = np.where(diffmask)[0] + 1
-
-        for sl in iterslices(ibreaks):
-            peak_indices = significant_indices[sl]
-            current_peak = Peak(
-                periods[peak_indices],
-                snrs[peak_indices],
-                width,
-                dm
-                )
+        for cli in cluster_1d(dbi, peak_clustering_radius):
+            peak_indices = significant_indices[cli]
+            periods_slice = periods[peak_indices]
+            snrs_slice = snrs[peak_indices]
+            imax = snrs_slice.argmax()
+            current_peak = Peak(periods_slice[imax], snrs_slice[imax], width)
             peaks.append(current_peak)
 
     return stats, polyco, threshold, peaks
+
 
 
 def find_peaks(pgram, segment_dftbins_length=10.0, min_segments=8, snr_min=6.5, nsigma=6.5, peak_clustering_radius=0.20, polydeg=2):
@@ -223,4 +266,20 @@ def find_peaks(pgram, segment_dftbins_length=10.0, min_segments=8, snr_min=6.5, 
         all_peaks = all_peaks + peaks
         polyco_tracker[width] = polyco
         stats_tracker[width] = stats
-    return all_peaks, stats_tracker, polyco_tracker
+
+    # Second stage of clustering: group peaks with close periods but different
+    # widths. Keep only the one with highest S/N
+    # TODO: rewrite this properly with a Detection class
+    detections = []
+    dbi = np.asarray([pgram.tobs / peak.period for peak in all_peaks])
+    for cluster_indices in cluster_1d(dbi, peak_clustering_radius):
+        peak_group = [all_peaks[ix] for ix in cluster_indices]
+        det = max(peak_group, key=operator.attrgetter('snr'))
+
+        period_slice_mask = abs(pgram.tobs/pgram.periods - pgram.tobs/det.period) < peak_clustering_radius
+        period_slice_indices = np.where(period_slice_mask)[0]
+        det.period_trials = pgram.periods[period_slice_indices]
+        det.snr_trials = pgram.snrs[period_slice_indices, :]
+        detections.append(det)
+
+    return detections, stats_tracker, polyco_tracker
