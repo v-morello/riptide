@@ -19,6 +19,7 @@ class Metadata(dict):
         'skycoord' : SkyCoord,
         'dm': float,
         'mjd': float,
+        'tobs': float
         }
 
     _HDF5_group_name = 'metadata'

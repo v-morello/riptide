@@ -9,10 +9,26 @@ from .metadata import Metadata
 class Periodogram(object):
     """ Stores the raw output of the FFA search of a time series. """
     def __init__(self, periods, widths, snrs, metadata=None):
-        self.periods = periods
-        self.widths = widths
-        self.snrs = snrs.reshape(periods.size, widths.size)
+        self._periods = periods
+        self._widths = widths
+        self._snrs = snrs.reshape(periods.size, widths.size)
         self.metadata = metadata if metadata is not None else Metadata({})
+
+    @property
+    def periods(self):
+        return self._periods
+
+    @property
+    def widths(self):
+        return self._widths
+
+    @property
+    def snrs(self):
+        return self._snrs
+
+    @property
+    def tobs(self):
+        return self.metadata['tobs']
 
     def plot(self, iwidth=None):
         if iwidth is None:

@@ -1,5 +1,6 @@
 ##### Non-standard imports #####
 import numpy as np
+import matplotlib.pyplot as plt
 
 ##### Local module imports #####
 from .libffa import downsample, ffa_transform_2d
@@ -171,6 +172,26 @@ class SubIntegrations(object):
 
     def get_ffa_transform(self):
         return ffa_transform_2d(self.data)
+
+    def plot(self):
+        grid_shape = (3, 1)
+        plt.subplot2grid(shape=grid_shape, loc=(0, 0), rowspan=2)
+        plt.imshow(self.data, interpolation='nearest', cmap=plt.cm.Greys, aspect='auto')
+
+        plt.subplot2grid(shape=grid_shape, loc=(2, 0), rowspan=1)
+        plt.bar(
+            np.arange(0, self.nbins, 1),
+            self.normalised_profile,
+            width=1,
+            color='#303030'
+            )
+        plt.xlim(-0.5, self.nbins-0.5)
+        plt.tight_layout()
+
+    def display(self, figsize=(12, 6), dpi=100):
+        plt.figure(figsize=figsize, dpi=dpi)
+        self.plot()
+        plt.show()
 
     @classmethod
     def from_numpy_array(cls, data, tsamp, period, nbins=128, nsubs=None):

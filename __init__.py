@@ -15,6 +15,8 @@ from .libffa import (
     get_snr
     )
 
+from .peak_detection import find_peaks
+
 __all__ = [
     'TimeSeries',
     'Periodogram',
@@ -26,4 +28,5 @@ __all__ = [
     'generate_signal',
     'downsample',
     'get_snr',
+    'find_peaks'
     ]

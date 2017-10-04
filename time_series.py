@@ -28,11 +28,23 @@ class TimeSeries(object):
                 otherwise it only holds a reference to it. (default: False)
         """
         if copy:
-            self.data = np.asarray(data, dtype=np.float32).copy()
+            self._data = np.asarray(data, dtype=np.float32).copy()
         else:
-            self.data = np.asarray(data, dtype=np.float32)
-        self.tsamp = float(tsamp)
+            self._data = np.asarray(data, dtype=np.float32)
+        self._tsamp = float(tsamp)
         self.metadata = metadata if metadata is not None else Metadata({})
+
+        # Carrying a tobs attribute is quite practical in later stages of
+        # the pipeline (peak detection in periodograms)
+        self.metadata['tobs'] = self.length
+
+    @property
+    def data(self):
+        return self._data
+
+    @property
+    def tsamp(self):
+        return self._tsamp
 
     def normalise(self, inplace=False):
         """ Normalize to zero mean and unit variance. if 'inplace' is False,
@@ -40,7 +52,7 @@ class TimeSeries(object):
         m = self.data.mean()
         s = self.data.std()
         if inplace:
-            self.data = (self.data - m) / s
+            self._data = (self.data - m) / s
         else:
             return TimeSeries((self.data - m) / s, self.tsamp, metadata=self.metadata)
 
@@ -49,15 +61,15 @@ class TimeSeries(object):
         width_samples = int(round(width / self.tsamp))
         rmed = fast_running_median(self.data, width_samples, minpts)
         if inplace:
-            self.data -= rmed
+            self._data -= rmed
         else:
             return TimeSeries(self.data - rmed, self.tsamp, metadata=self.metadata)
 
     def downsample(self, factor, inplace=False):
         """ Downsample by a real-valued factor. """
         if inplace:
-            self.data = downsample(self.data, factor)
-            self.tsamp *= factor
+            self._data = downsample(self.data, factor)
+            self._tsamp *= factor
         else:
             return TimeSeries(downsample(self.data, factor), factor * self.tsamp, metadata=self.metadata)
 
