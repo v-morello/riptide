@@ -20,7 +20,9 @@ def segment(periods, tobs, segment_dftbins_length=10.0):
     """
     # Number of DFT bin indexes spanned by the period trials
     dbi_range = tobs / periods[0] - tobs / periods[-1]
-    nseg = int(dbi_range / segment_dftbins_length)
+
+    # Number of segments, enforce it to be at least 1
+    nseg = max(1, int(dbi_range / segment_dftbins_length))
     slen = len(periods) // nseg
 
     boundaries = [
@@ -74,64 +76,6 @@ def threshold_function_static(snr_min, polydeg=2):
         return thr
     polyco = np.zeros(polydeg + 1)
     return func, polyco
-
-
-# class Peak(object):
-#     """ """
-#     def __init__(self, periods, snrs, width, dm):
-#         self._periods = periods
-#         self._snrs = snrs
-#         imax = snrs.argmax()
-#         self._best_period = periods[imax]
-#         self._best_snr = snrs[imax]
-#         self._width = width
-#         self._dm = dm
-#
-#     @property
-#     def periods(self):
-#         return self._periods
-#
-#     @property
-#     def snrs(self):
-#         return self._snrs
-#
-#     @property
-#     def width(self):
-#         return self._width
-#
-#     @property
-#     def dm(self):
-#         return self._dm
-#
-#     @property
-#     def best_period(self):
-#         return self._best_period
-#
-#     @property
-#     def best_snr(self):
-#         return self._best_snr
-#
-#     def plot(self):
-#         delta_period_us = 1.0e6 * (self.periods - self.best_period)
-#         best_period_ms = 1.0e3 * self.best_period
-#         plt.plot(delta_period_us, self.snrs, marker='.', markersize=4)
-#         plt.title('P0 = {0:.6f} ms, Width = {1:d} bins, DM = {2:.3f}'.format(best_period_ms, self.width, self.dm))
-#         plt.xlabel('Delta P0 (us)')
-#         plt.ylabel('S/N')
-#         plt.grid(linestyle=':')
-#         plt.tight_layout()
-#
-#     def display(self, figsize=(6, 4), dpi=100):
-#         plt.figure(figsize=figsize, dpi=dpi)
-#         self.plot()
-#         plt.show()
-#
-#     def __str__(self):
-#         dm_str = 'None' if self.dm is None else '{0:.3f}'.format(self.dm)
-#         return 'Peak [P0 = {p.best_period:.9e}, W = {p.width:3d}, DM = {dm_str:s}, S/N = {p.best_snr:6.2f}]'.format(p=self, dm_str=dm_str)
-#
-#     def __repr__(self):
-#         return str(self)
 
 
 class Peak(object):
