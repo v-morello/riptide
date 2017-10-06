@@ -4,6 +4,7 @@ import operator
 ##### Non-standard imports #####
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.gridspec import GridSpec
 import pandas
 
 # NOTE: the spacing of FFA period trials in frequency space is nearly constant
@@ -135,14 +136,19 @@ def threshold_function_static(snr_min, polydeg=2):
 
 class Peak(object):
     """ """
-    def __init__(self, period, snr, width):
+    def __init__(self, period, snr, iw, width):
         self._period = period
         self._snr = snr
         self._width = width
+        self._iw = iw
 
     @property
     def period(self):
         return self._period
+
+    @property
+    def freq(self):
+        return 1.0 / self.period
 
     @property
     def snr(self):
@@ -152,11 +158,87 @@ class Peak(object):
     def width(self):
         return self._width
 
+    @property
+    def iw(self):
+        """ Best trial width index. """
+        return self._iw
+
     def __str__(self):
         return 'Peak [P0 = {p.period:.9e}, W = {p.width:3d}, S/N = {p.snr:6.2f}]'.format(p=self)
 
     def __repr__(self):
         return str(self)
+
+
+
+class Detection(Peak):
+    """ A Detection represents a group of Peaks found at (nearly) the same
+    period but at different width trials. Detections are the final product
+    of the post-processing of a single DM trial. """
+    def __init__(self, peaks, pgram):
+        """ """
+        self.peaks = peaks
+        top = max(peaks, key=operator.attrgetter('snr'))
+        super(Detection, self).__init__(top.period, top.snr, top.iw, top.width)
+
+        # Extract a slice of the Periodogram that is 1 DFT bin wide and centered
+        # on the peak
+        dbis = pgram.tobs/pgram.periods
+        period_slice_mask = abs(dbis - pgram.tobs/self.period) < 0.5
+        period_slice_indices = np.where(period_slice_mask)[0]
+        self.period_trials = pgram.periods[period_slice_indices]
+        self.snr_trials = pgram.snrs[period_slice_indices, :]
+        self.width_trials = pgram.widths[:]
+
+    def __str__(self):
+        return 'Detection [P0 = {p.period:.9e} s, W = {p.width:3d}, S/N = {p.snr:6.2f}]'.format(p=self)
+
+    def plot(self):
+        st = self.snr_trials
+        wt = self.width_trials
+        pt = self.period_trials
+
+        # Delta period in microseconds
+        dp = 1.0e6 * (pt - self.period)
+
+        # Delta period step
+        dp_step = np.diff(dp).mean()
+
+        # X-axis limits
+        xmin = dp[0]  - 0.5*dp_step
+        xmax = dp[-1] + 0.5*dp_step
+
+        gs = GridSpec(2, 2, width_ratios=(25, 1))
+
+        plt.subplot(gs[0, 0])
+        image = plt.imshow(
+            st.T,
+            extent=[dp[0]-0.5*dp_step, dp[-1]+0.5*dp_step, 0.0, wt.size],
+            aspect='auto',
+            origin='lower'
+            )
+        plt.yticks(np.arange(wt.size) + 0.5, wt)
+        plt.ylabel('Boxcar Width (bins)', fontsize=12)
+        plt.title(str(self))
+
+        plt.subplot(gs[:, 1])
+        cb = plt.colorbar(image, cax=plt.gca())
+        cb.set_label(label='S/N', size=12)
+
+        plt.subplot(gs[1, 0])
+        plt.plot(dp, st[:, self.iw], label='S/N at W = {0:d}'.format(self.width))
+        plt.xlabel('Delta Period (us)', fontsize=12)
+        plt.xlim(xmin, xmax)
+        plt.grid(linestyle=':')
+        plt.legend(loc='upper left')
+        plt.tight_layout()
+
+
+    def display(self, figsize=(10, 6), dpi=100):
+        plt.figure(figsize=figsize, dpi=dpi)
+        self.plot()
+        plt.show()
+
 
 
 def iterslices(indices):
@@ -237,7 +319,7 @@ def find_peaks_single(pgram, iwidth, boundaries, min_segments=8, snr_min=6.5, ns
             periods_slice = periods[peak_indices]
             snrs_slice = snrs[peak_indices]
             imax = snrs_slice.argmax()
-            current_peak = Peak(periods_slice[imax], snrs_slice[imax], width)
+            current_peak = Peak(periods_slice[imax], snrs_slice[imax], iwidth, width)
             peaks.append(current_peak)
 
     return stats, polyco, threshold, peaks
@@ -274,12 +356,7 @@ def find_peaks(pgram, segment_dftbins_length=10.0, min_segments=8, snr_min=6.5, 
     dbi = np.asarray([pgram.tobs / peak.period for peak in all_peaks])
     for cluster_indices in cluster_1d(dbi, peak_clustering_radius):
         peak_group = [all_peaks[ix] for ix in cluster_indices]
-        det = max(peak_group, key=operator.attrgetter('snr'))
-
-        period_slice_mask = abs(pgram.tobs/pgram.periods - pgram.tobs/det.period) < peak_clustering_radius
-        period_slice_indices = np.where(period_slice_mask)[0]
-        det.period_trials = pgram.periods[period_slice_indices]
-        det.snr_trials = pgram.snrs[period_slice_indices, :]
+        det = Detection(peak_group, pgram)
         detections.append(det)
 
     return detections, stats_tracker, polyco_tracker
