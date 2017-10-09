@@ -7,6 +7,9 @@ import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
 import pandas
 
+##### Local imports #####
+from .clustering import cluster_1d
+
 # NOTE: the spacing of FFA period trials in frequency space is nearly constant
 # Variations in spacing are mostly caused by the discrete downsampling steps
 
@@ -80,11 +83,12 @@ def threshold_function_static(snr_min, polydeg=2):
 
 class Peak(object):
     """ """
-    def __init__(self, period, snr, iw, width):
+    def __init__(self, period, snr, iw, width, dm):
         self._period = period
         self._snr = snr
         self._width = width
         self._iw = iw
+        self._dm = dm
 
     @property
     def period(self):
@@ -107,8 +111,14 @@ class Peak(object):
         """ Best trial width index. """
         return self._iw
 
+    @property
+    def dm(self):
+        return self._dm
+
     def __str__(self):
-        return 'Peak [P0 = {p.period:.9e}, W = {p.width:3d}, S/N = {p.snr:6.2f}]'.format(p=self)
+        name = type(self).__name__
+        dm_str = "{0:8.3f}".format(self.dm) if self.dm else 'None'
+        return '{name:s} [P0 = {p.period:.9e}, W = {p.width:3d}, DM = {dm_str:s}, S/N = {p.snr:6.2f}]'.format(p=self, dm_str=dm_str, name=name)
 
     def __repr__(self):
         return str(self)
@@ -123,7 +133,7 @@ class Detection(Peak):
         """ """
         self.peaks = peaks
         top = max(peaks, key=operator.attrgetter('snr'))
-        super(Detection, self).__init__(top.period, top.snr, top.iw, top.width)
+        super(Detection, self).__init__(top.period, top.snr, top.iw, top.width, top.dm)
 
         # Extract a slice of the Periodogram that is 1 DFT bin wide and centered
         # on the peak
@@ -133,9 +143,6 @@ class Detection(Peak):
         self.period_trials = pgram.periods[period_slice_indices]
         self.snr_trials = pgram.snrs[period_slice_indices, :]
         self.width_trials = pgram.widths[:]
-
-    def __str__(self):
-        return 'Detection [P0 = {p.period:.9e} s, W = {p.width:3d}, S/N = {p.snr:6.2f}]'.format(p=self)
 
     def plot(self):
         st = self.snr_trials
@@ -185,46 +192,6 @@ class Detection(Peak):
 
 
 
-def iterslices(indices):
-    # Special case where there is only one cluster
-    if not len(indices):
-        yield slice(None, None)
-        raise StopIteration
-
-    # Multiple clusters case
-    else:
-        yield slice(None, indices[0])
-        for ii, jj in zip(indices[:-1], indices[1:]):
-            yield slice(ii, jj)
-        yield slice(indices[-1], None)
-        raise StopIteration
-
-def cluster_1d(x, radius):
-    """ Perform clustering on 1D data. Elements of 'x' whose
-    absolute difference is less than 'radius' are considered
-    part of the same cluster. """
-    if not len(x):
-        return []
-
-    # Sort input data, compute differences between
-    # consecutive elements, spot those differences
-    # that exceeed the clustering radius
-    x = np.asarray(x)
-    order = x.argsort()
-    y = x[order]
-    dy = np.diff(y)
-    diffmask = dy > radius
-
-    # Indices that mark the end of a cluster
-    ibreaks = np.where(diffmask)[0] + 1
-
-    clusters = [
-        order[sl]
-        for sl in iterslices(ibreaks)
-        ]
-    return clusters
-
-
 def find_peaks_single(pgram, iwidth, boundaries, min_segments=8, snr_min=6.5, nsigma=6.5, peak_clustering_radius=0.20, polydeg=2):
     periods = pgram.periods
     snrs = pgram.snrs[:, iwidth]
@@ -263,7 +230,7 @@ def find_peaks_single(pgram, iwidth, boundaries, min_segments=8, snr_min=6.5, ns
             periods_slice = periods[peak_indices]
             snrs_slice = snrs[peak_indices]
             imax = snrs_slice.argmax()
-            current_peak = Peak(periods_slice[imax], snrs_slice[imax], iwidth, width)
+            current_peak = Peak(periods_slice[imax], snrs_slice[imax], iwidth, width, dm)
             peaks.append(current_peak)
 
     return stats, polyco, threshold, peaks
@@ -295,7 +262,6 @@ def find_peaks(pgram, segment_dftbins_length=10.0, min_segments=8, snr_min=6.5, 
 
     # Second stage of clustering: group peaks with close periods but different
     # widths. Keep only the one with highest S/N
-    # TODO: rewrite this properly with a Detection class
     detections = []
     dbi = np.asarray([pgram.tobs / peak.period for peak in all_peaks])
     for cluster_indices in cluster_1d(dbi, peak_clustering_radius):
@@ -303,4 +269,6 @@ def find_peaks(pgram, segment_dftbins_length=10.0, min_segments=8, snr_min=6.5, 
         det = Detection(peak_group, pgram)
         detections.append(det)
 
-    return detections, stats_tracker, polyco_tracker
+    # TODO: find a way to return extra information about stats and the
+    # threshold fit in a neat way. For now, just return the detections.
+    return detections #, stats_tracker, polyco_tracker
