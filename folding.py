@@ -87,6 +87,8 @@ def downsample_lines(data, nlines):
 
 class SubIntegrations(object):
     """ Container for folded data. """
+    _HDF5_group_name = 'subints'
+
     def __init__(self, subints, period, orig_nsamp, orig_tsamp):
         """ This should not be called directly. Use classmethods instead. """
         # This is enough information to compute all the properties of a
@@ -254,3 +256,26 @@ class SubIntegrations(object):
                 a SubIntegrations object.
         """
         return cls.from_numpy_array(tseries.data, tseries.tsamp, period, nbins=nbins, nsubs=nsubs)
+
+
+    def _save_to_hdf5_file(self, h5file):
+        """ Create a subints dataset in an open HDF5.File object, and save the
+        SubIntegrations object in it. """
+        group = h5file.create_group(self._HDF5_group_name)
+        attributes = {
+            'period': self.period,
+            'orig_nsamp': self.orig_nsamp,
+            'orig_tsamp': self.orig_tsamp
+            }
+        group.attrs.update(attributes)
+        group.create_dataset('data', data=self.data, dtype=np.float32)
+
+
+    @classmethod
+    def _from_hdf5_file(cls, h5file):
+        """ Create a SubIntegrations object from the attributes/data stored in
+        the 'subints' group of given HDF5.File. """
+        group = h5file[cls._HDF5_group_name]
+        subints = group['data'].value
+        attrs = group.attrs
+        return cls(subints, attrs['period'], attrs['orig_nsamp'], attrs['orig_tsamp'])

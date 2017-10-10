@@ -143,6 +143,7 @@ class Detection(Peak):
         self.period_trials = pgram.periods[period_slice_indices]
         self.snr_trials = pgram.snrs[period_slice_indices, :]
         self.width_trials = pgram.widths[:]
+        self.metadata = pgram.metadata
 
     def plot(self):
         st = self.snr_trials

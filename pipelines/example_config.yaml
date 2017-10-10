@@ -1,0 +1,31 @@
+### Keyword arguments to the ffa_search() function ###
+search:
+    period_min: 0.8
+    period_max: 4.0
+    bins_min: 240
+    bins_max: 260
+    fpmin: 10
+    rmed_width: 4.0
+    rmed_minpts: 101
+    wtsp: 1.5
+    threads: 2
+
+### Keyword arguments to the find_peaks() function ###
+peak_detection:
+    segment_dftbins_length: 20.0
+    min_segments: 6
+    snr_min: 6.5
+    nsigma: 7.0
+    peak_clustering_radius: 0.20
+    polydeg: 2
+
+### Candidate parameters ###
+candidates:
+    # Number of phase bins. Make sure that period_min / sampling_time is
+    # larger than this number.
+    nbins: 512
+
+    # NOTE: this specifies only a maximum number of sub-integrations. Some
+    # of the longer period candidates may end up with less sub-integrations:
+    # exactly one per period.
+    nsubs: 128
