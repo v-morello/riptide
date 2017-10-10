@@ -135,7 +135,8 @@ class PrestoInf(object):
 
     @property
     def data_fname(self):
-        return self.fname.rsplit('.', maxsplit=1)[0] + '.dat'
+	# NOTE: second argument of rsplit() is 'maxsplit'
+        return self.fname.rsplit('.', 1)[0] + '.dat'
 
     def __str__(self):
         cls = type(self).__name__

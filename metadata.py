@@ -40,7 +40,7 @@ class Metadata(dict):
         otherwise errors may be raised down the line when saving to / loading
         from HDF5.
         """
-        super().__init__(attrs)
+        super(Metadata, self).__init__(attrs)
         self._finalise()
 
     def _finalise(self):
