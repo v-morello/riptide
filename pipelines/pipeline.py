@@ -39,30 +39,6 @@ def time_series_iterator(directory, pattern='*.inf'):
 
 
 
-# class DetectionCluster(list):
-#     """ Cluster of Detection objects that can be built incrementally. It also
-#     keeps in memory the TimeSeries associated with the brightest detection. """
-#     def __init__(self, time_series):
-#         super(DetectionCluster, self).__init__([])
-#         self.time_series = time_series
-#
-#     @classmethod
-#     def create(cls, time_series, single_detection):
-#         cluster = cls(time_series)
-#         cluster.add_detection(single_detection)
-#         return cluster
-#
-#     @property
-#     def top_detection(self):
-#         return max(self, key=operator.attrgetter('snr'))
-#
-#     def add_detection(self, time_series, detection):
-#         self.append(detection)
-#         if not len(self) or detection.snr > self.snr:
-#             self.time_series = time_series
-#             self.period = detection.period
-#             self.snr = detection.snr
-
 
 class DetectionCluster(list):
     """ Cluster of Detection objects. It also keeps in memory the TimeSeries
@@ -129,12 +105,13 @@ class Pipeline(object):
             dm = tseries.metadata['dm']
 
             # Compute periodogram
-            self.logger.debug("Searching TimeSeries @ DM = {0:.3f}".format(dm))
+            self.logger.debug("Computing Periodogram @ DM = {0:.3f}".format(dm))
             ts, plan, pgram = ffa_search(tseries, **self.config['search'])
 
             # Identify detections. Give them a temporary attribute time_series
             # Only detections that are the brightest of their cluster will
             # be allowed to keep it in memory
+            self.logger.debug("Finding Peaks @ DM = {0:.3f}".format(dm))
             dets = find_peaks(pgram, **self.config['peak_detection'])
             for det in dets:
                 # NOTE: we keep the de-redenned and normalised copy
@@ -145,6 +122,8 @@ class Pipeline(object):
             self.logger.debug("New Detections: {0:d}".format(len(dets)))
             self.logger.debug("Total Detections: {0:d}".format(len(self.detections)))
             self._cluster_detections(tobs=np.median(tobs))
+            nts = self.num_memorised_time_series()
+            self.logger.debug("TimeSeries in RAM: {0:d}".format(nts))
 
     def _cluster_detections(self, tobs):
         self.logger.debug("Clustering Detections ...")
@@ -169,6 +148,9 @@ class Pipeline(object):
             Candidate.from_pipeline_output(cluster, nbins=nbins, nsubs=nsubs)
             for cluster in self.clusters
             ]
+
+    def num_memorised_time_series(self):
+        return len(set(id(det.time_series) for det in self.detections if hasattr(det, 'time_series')))
 
     def _remove_harmonics(self):
         pass

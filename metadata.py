@@ -7,7 +7,7 @@ from astropy.coordinates import SkyCoord
 import astropy.units as uu
 
 ##### Local module imports #####
-from .reading import PrestoInf
+from .reading import PrestoInf, SigprocHeader
 
 
 class Metadata(dict):
@@ -147,6 +147,12 @@ class Metadata(dict):
         attrs['skycoord'] = skycoord
         attrs.pop('rajd', None)
         attrs.pop('decjd', None)
+
+        # This ensures that we can load Metadata saved by python2.
+        # In python2 h5py saves strings as 'bytes' objects
+        for key, val in attrs.items():
+            if type(val) == bytes:
+                attrs[key] = val.decode()
         return cls(attrs)
 
     def _save_to_hdf5_file(self, h5file):
