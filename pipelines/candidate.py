@@ -36,7 +36,7 @@ def create_dpw_cube(detections):
 
     period_trials = np.linspace(pmin, pmax, ncpt)
     width_trials = detections[0].width_trials
-    dm_trials = np.asarray([det.dm for det in detections])
+    dm_trials = np.asarray(sorted(detections, key=operator.attrgetter('dm')))
 
     ndm = len(detections)
     nw = len(width_trials)
