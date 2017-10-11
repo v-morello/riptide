@@ -168,9 +168,7 @@ class TimeSeries(object):
 
             # Create a data group for the time series data itself
             data_group = fobj.create_group('data')
-            data_group.attrs.update({
-                'tsamp': self.tsamp
-                })
+            data_group.attrs.modify('tsamp', self.tsamp)
             data_group.create_dataset('time_series', data=self.data, dtype=np.float32)
 
     @classmethod

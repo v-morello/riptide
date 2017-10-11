@@ -152,14 +152,16 @@ class Metadata(dict):
         # In python2 h5py saves strings as 'bytes' objects
         for key, val in attrs.items():
             if type(val) == bytes:
-                attrs[key] = val.decode()
+                attrs[key] = str(val.decode())
         return cls(attrs)
 
     def _save_to_hdf5_file(self, h5file):
         """ Create a metadata group in given HDF5.File object, and write
         all metadata as attributes of that group. """
         mgroup = h5file.create_group(self._HDF5_group_name)
-        mgroup.attrs.update(self._to_hdf5_attributes())
+        #mgroup.attrs.update(self._to_hdf5_attributes())
+        for key, val in self._to_hdf5_attributes().items():
+            mgroup.attrs.modify(key, val)
 
     @classmethod
     def _from_hdf5_file(cls, h5file):

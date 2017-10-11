@@ -267,7 +267,8 @@ class SubIntegrations(object):
             'orig_nsamp': self.orig_nsamp,
             'orig_tsamp': self.orig_tsamp
             }
-        group.attrs.update(attributes)
+        for key, val in attributes.items():
+            group.attrs.modify(key ,val)
         group.create_dataset('data', data=self.data, dtype=np.float32)
 
 
