@@ -65,36 +65,48 @@ class Candidate(object):
         self.metadata = metadata if metadata is not None else Metadata({})
 
     @classmethod
-    def from_pipeline_output(cls, cluster, nbins=128, nsubs=None):
+    def from_pipeline_output(cls, cluster, tseries, nbins=128, nsubs=64, logger=None):
         """
         Parameters:
         -----------
-            tseries: TimeSeries
-                TimeSeries from which originated the most signficant detection.
             cluster: list of Detection objects
                 Cluster of all associated detections.
+            tseries: TimeSeries
+                TimeSeries from which originated the most signficant detection.
         """
-        logger = logging.getLogger('Pipeline')
-        logger.debug("Creating Candidate from group of {:d} detections".format(len(cluster)))
+        if not logger:
+            logger = logging.getLogger('Candidate')
+
+        # Detection with the highest S/N
+        topdet = cluster.top_detection
+
+        logmsg = "Creating Candidate from group of {:4d} detections. P0 = {:.9e}, DM = {:7.2f}, S/N = {:6.2f}".format(
+            len(cluster),
+            topdet.period,
+            topdet.dm,
+            topdet.snr
+            )
+        logger.info(logmsg)
 
         # Each detection contains a S/N versus Period and Width array
         # We need to resample those to a common set of period trials
         dm_trials, period_trials, width_trials, dpw_cube = create_dpw_cube(cluster)
 
-        # Detection with the highest S/N
-        topdet = cluster.top_detection
-
         # NOTE: Must use deepcopy(), otherwise we just pass a reference and
-        # candidates end up sharing metadata
+        # candidates end up sharing the same Metadata object
         md = copy.deepcopy(topdet.metadata)
         md['best_period'] = topdet.period
         md['best_width'] = topdet.width
         md['best_dm'] = topdet.dm
         md['best_snr'] = topdet.snr
 
-        # And now build subints
+        ### Build subints
+        # Check that nsubs and nbins do not exceed acceptable maximum
+        nsubs = min(nsubs, int(md['tobs'] / topdet.period))
+        nbins = min(nbins, int(topdet.period / md['tsamp']))
+        logger.info("Creating SubIntegrations with nbins = {:d}, nsubs = {:d}".format(nbins, nsubs))
         try:
-            subints = SubIntegrations.from_time_series(topdet.time_series, topdet.period, nbins=nbins, nsubs=nsubs)
+            subints = SubIntegrations.from_time_series(tseries, topdet.period, nbins=nbins, nsubs=nsubs)
         except Exception as ex:
             msg = "Failed to build SubIntegrations: {!s}".format(ex)
             logger.error(msg)

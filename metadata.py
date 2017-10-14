@@ -1,4 +1,5 @@
 ##### Standard imports #####
+import os
 import pprint
 
 ##### Non-standard imports #####
@@ -14,12 +15,15 @@ class Metadata(dict):
     """ Carries information about an observation across all data products
     (TimeSeries, Periodogram, etc.)"""
 
+    # Required attributes and their types. If they are not provided, they will
+    # be set to None.
     _required_attrs = {
         'source_name' : str,
         'skycoord' : SkyCoord,
         'dm': float,
         'mjd': float,
-        'tobs': float
+        'tobs': float,
+        'fname': str
         }
 
     _HDF5_group_name = 'metadata'
@@ -77,6 +81,7 @@ class Metadata(dict):
         attrs['skycoord'] = SkyCoord(inf.raj, inf.decj, unit=(uu.hour, uu.deg), frame='icrs')
         attrs['source_name'] = inf.source
         attrs['mjd'] = inf.mjd
+        attrs['fname'] = os.path.realpath(inf.fname)
         return cls(attrs)
 
     @classmethod
@@ -99,6 +104,7 @@ class Metadata(dict):
         attrs['skycoord'] = sig.skycoord
         attrs['source_name'] = attrs.get('source_name', None)
         attrs['mjd'] = attrs.get('tstart', None)
+        attrs['fname'] = os.path.realpath(sig.fname)
         return cls(attrs)
 
     def __str__(self):

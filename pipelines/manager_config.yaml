@@ -1,0 +1,27 @@
+data_format: presto
+num_processes: 4
+
+### Controls the DM trial spacing and ultimately which time series
+### are chosen for processing, and which ones are skipped to save time
+ddplan:
+    # Observing bandwidth parameters. Affects DM trial spacing.
+    fmin: 119.434
+    fmax: 151.075
+    nchans: 2592
+
+    # Max value of DM x |sin(b)|. Sets an upper limit on DM trials as a function
+    # of observed sky coordinates
+    dmsinb_max: 40.0
+
+    # Hard DM trial limit, regardless of sky coordinates
+    dm_min: 0.0
+    dm_max: 600.0
+
+    # Minimum pulse width that can be resolved by any of the searches
+    # Controls DM trial spacing.
+    wmin: 2.0e-3
+
+
+### Configuration files for the searches, to be placed in the same directory
+search_configs:
+    - search_config.yaml

@@ -1,36 +1,19 @@
-### Input data format. 'presto' or 'sigproc' only for now.
-data_format: presto
-
-### Controls the DM trial spacing and ultimately which time series
-### are chosen for processing, and which ones are skipped to save time
-ddplan:
-    # Observing bandwidth parameters
-    fmin: 119.434
-    fmax: 151.075
-    nchans: 2592
-
-    # Max value of DM x |sin(b)|. Sets an upper limit on DM trials as a function
-    # of observed sky coordinates
-    dmsinb_max: 40.0
-
-    # Hard DM trial limit, regardless of sky coordinates
-    dm_min: 0.0
-    dm_max: 600.0
+name: "short_periods"
 
 ### Keyword arguments to the ffa_search() function ###
 search:
-    period_min: 0.80
-    period_max: 60.0
-    bins_min: 250
-    bins_max: 270
+    period_min: 0.50
+    period_max: 2.00
+    bins_min: 240
+    bins_max: 260
     fpmin: 10
-    rmed_width: 4.0
+    rmed_width: 2.0
     rmed_minpts: 101
     wtsp: 1.5
     threads: 1
 
 ### Keyword arguments to the find_peaks() function ###
-peak_detection:
+detect:
     segment_dftbins_length: 30.0
     min_segments: 8
     snr_min: 7.0
