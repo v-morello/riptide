@@ -1,2 +1,2 @@
 from .candidate import Candidate
-from .pipeline import Pipeline
+from .pipeline import PipelineManager
