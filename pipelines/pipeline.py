@@ -166,7 +166,7 @@ class PulsarSearch(object):
         self.save_candidates()
 
     def cluster_detections(self):
-        self.logger.debug("Clustering Detections ...")
+        self.logger.info("Clustering Detections ...")
         periods = np.asarray([det.period for det in self.detections])
         tobs = np.median([det.metadata['tobs'] for det in self.detections])
         dbi = tobs / periods
@@ -178,14 +178,14 @@ class PulsarSearch(object):
             DetectionCluster([self.detections[ii] for ii in indices])
             for indices in cluster_indices
             ]
-        self.logger.debug("Clustering complete. Total Clusters: {0:d}".format(len(self.clusters)))
+        self.logger.info("Clustering complete. Total Clusters: {0:d}".format(len(self.clusters)))
 
 
     def remove_harmonics(self):
         pass
 
     def build_candidates(self):
-        self.logger.debug("Building Candidates ...")
+        self.logger.info("Building Candidates ...")
         self.candidates = []
         rmed_width = self.config['search']['rmed_width']
         rmed_minpts = self.config['search']['rmed_minpts']
@@ -202,10 +202,17 @@ class PulsarSearch(object):
 
             candidate = Candidate.from_pipeline_output(cluster, tseries, nbins=nbins, nsubs=nsubs, logger=self.logger)
             self.candidates.append(candidate)
-        self.logger.debug("Done building candidates.")
+
+        self.candidates = sorted(self.candidates, key=lambda cd: cd.metadata['best_snr'], reverse=True)
+        self.logger.info("Done building candidates.")
 
     def save_candidates(self):
-        pass
+        outdir = self.manager.config['outdir']
+        self.logger.info("Saving {:d} candidates to output directory: {:s}".format(len(self.candidates), outdir))
+        for index, cand in enumerate(self.candidates, start=1):
+            outpath = os.path.join(outdir, "candidate_{:04d}.h5".format(index)) 
+            self.logger.info("Saving {!s} to file {:s}".format(cand, outpath))
+            cand.save_hdf5(outpath)
 
 
 
@@ -297,6 +304,7 @@ def main():
     # in which directory it lies, because that's where we also look for the
     # config files for individual PulsarSearches.
     args.config = os.path.realpath(args.config)
+    args.outdir = os.path.realpath(args.outdir)
 
     config = parse_yaml_config(args.config)
     config.update(vars(args))

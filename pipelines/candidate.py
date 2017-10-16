@@ -32,11 +32,11 @@ def create_dpw_cube(detections):
 
     # Number of common period trials
     ncpt = max([len(det.period_trials) for det in detections])
-    logger.debug("Re-sampling PW planes with: pmin = {pmin:.9e}, pmax = {pmax:.9e}, num_periods = {ncpt:4d}".format(pmin=pmin, pmax=pmax, ncpt=ncpt))
+    logger.info("Re-sampling PW planes with: pmin = {pmin:.9e}, pmax = {pmax:.9e}, num_periods = {ncpt:4d}".format(pmin=pmin, pmax=pmax, ncpt=ncpt))
 
     period_trials = np.linspace(pmin, pmax, ncpt)
     width_trials = detections[0].width_trials
-    dm_trials = np.asarray(sorted(detections, key=operator.attrgetter('dm')))
+    dm_trials = np.sort(np.asarray([det.dm for det in detections]))
 
     ndm = len(detections)
     nw = len(width_trials)
@@ -63,6 +63,21 @@ class Candidate(object):
         self.dpw_cube = dpw_cube
         self.subints = subints
         self.metadata = metadata if metadata is not None else Metadata({})
+
+    def __str__(self):
+        name = type(self).__name__
+        md = self.metadata
+        return '{name:s} [P0 = {period:.9e}, W = {width:3d}, DM = {dm:.3f}, S/N = {snr:.2f}]'.format(
+            name=name, 
+            period=md['best_period'],
+            width=md['best_width'],
+            dm=md['best_dm'],
+            snr=md['best_snr']
+            )
+
+    def __repr__(self):
+        return str(self)
+
 
     @classmethod
     def from_pipeline_output(cls, cluster, tseries, nbins=128, nsubs=64, logger=None):
