@@ -11,7 +11,7 @@ import h5py
 from .. import Metadata, SubIntegrations
 
 
-def create_dpw_cube(detections):
+def create_dpw_cube(detections, logger=None):
     """ Create a DM-Period-Width cube from a list of clustered Detections.
 
     Returns:
@@ -21,16 +21,17 @@ def create_dpw_cube(detections):
         width_trials
         cube
     """
-    logger = logging.getLogger('Pipeline')
+    if not logger:
+        logger = logging.getLogger('Candidate')
 
     # Each detection contains a S/N versus Period and Width array
     # The width trials are guaranteed to be all the same, but the period
-    # trials will differ slightly.
+    # trials may differ.
     # We need to resample those to a common set of period trials
     pmin = max([det.period_trials[ 0] for det in detections])
     pmax = min([det.period_trials[-1] for det in detections])
 
-    # Number of common period trials
+    # Choose the number of common period trials 'ncpt'
     ncpt = max([len(det.period_trials) for det in detections])
     logger.info("Re-sampling PW planes with: pmin = {pmin:.9e}, pmax = {pmax:.9e}, num_periods = {ncpt:4d}".format(pmin=pmin, pmax=pmax, ncpt=ncpt))
 
@@ -68,7 +69,7 @@ class Candidate(object):
         name = type(self).__name__
         md = self.metadata
         return '{name:s} [P0 = {period:.9e}, W = {width:3d}, DM = {dm:.3f}, S/N = {snr:.2f}]'.format(
-            name=name, 
+            name=name,
             period=md['best_period'],
             width=md['best_width'],
             dm=md['best_dm'],
@@ -105,7 +106,7 @@ class Candidate(object):
 
         # Each detection contains a S/N versus Period and Width array
         # We need to resample those to a common set of period trials
-        dm_trials, period_trials, width_trials, dpw_cube = create_dpw_cube(cluster)
+        dm_trials, period_trials, width_trials, dpw_cube = create_dpw_cube(cluster, logger=logger)
 
         # NOTE: Must use deepcopy(), otherwise we just pass a reference and
         # candidates end up sharing the same Metadata object

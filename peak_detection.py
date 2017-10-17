@@ -129,16 +129,16 @@ class Detection(Peak):
     """ A Detection represents a group of Peaks found at (nearly) the same
     period but at different width trials. Detections are the final product
     of the post-processing of a single DM trial. """
-    def __init__(self, peaks, pgram):
+    def __init__(self, peaks, pgram, period_slice_width=1.0):
         """ """
         self.peaks = peaks
         top = max(peaks, key=operator.attrgetter('snr'))
         super(Detection, self).__init__(top.period, top.snr, top.iw, top.width, top.dm)
 
-        # Extract a slice of the Periodogram that is 1 DFT bin wide and centered
-        # on the peak
+        # Extract a slice of the Periodogram that is 'period_slice_width'
+        # DFT bins wide and centered on the peak
         dbis = pgram.tobs/pgram.periods
-        period_slice_mask = abs(dbis - pgram.tobs/self.period) < 0.5
+        period_slice_mask = abs(dbis - pgram.tobs/self.period) < (period_slice_width / 2.0)
         period_slice_indices = np.where(period_slice_mask)[0]
         self.period_trials = pgram.periods[period_slice_indices]
         self.snr_trials = pgram.snrs[period_slice_indices, :]
@@ -238,7 +238,7 @@ def find_peaks_single(pgram, iwidth, boundaries, min_segments=8, snr_min=6.5, ns
 
 
 
-def find_peaks(pgram, segment_dftbins_length=10.0, min_segments=8, snr_min=6.5, nsigma=6.5, peak_clustering_radius=0.20, polydeg=2):
+def find_peaks(pgram, segment_dftbins_length=10.0, min_segments=8, snr_min=6.5, nsigma=6.5, peak_clustering_radius=0.20, polydeg=2, period_slice_width=1.0):
     ### Cut period trials into segments
     boundaries = segment(pgram.periods, pgram.tobs, segment_dftbins_length=segment_dftbins_length)
 
@@ -267,7 +267,7 @@ def find_peaks(pgram, segment_dftbins_length=10.0, min_segments=8, snr_min=6.5, 
     dbi = np.asarray([pgram.tobs / peak.period for peak in all_peaks])
     for cluster_indices in cluster_1d(dbi, peak_clustering_radius):
         peak_group = [all_peaks[ix] for ix in cluster_indices]
-        det = Detection(peak_group, pgram)
+        det = Detection(peak_group, pgram, period_slice_width=period_slice_width)
         detections.append(det)
 
     # TODO: find a way to return extra information about stats and the
