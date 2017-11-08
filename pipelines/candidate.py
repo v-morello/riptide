@@ -54,14 +54,20 @@ def create_dpw_cube(detections, logger=None):
     return dm_trials, period_trials, width_trials, cube
 
 
+class ResponseCurve(object):
+    """ Stores a tuple of arrays representing e.g. a S/N versus DM curve,
+    or any other trial parameter. """
+    def __init__(self, trials, snr):
+        self.trials = trials
+        self.snr = snr
+
 
 class Candidate(object):
-    """ """
-    def __init__(self, dm_trials, period_trials, width_trials, dpw_cube, subints=None, metadata=None):
-        self.dm_trials = dm_trials
-        self.period_trials = period_trials
-        self.width_trials = width_trials
-        self.dpw_cube = dpw_cube
+    """ The final data product of a search. """
+    def __init__(self, dm_curve, period_curve, width_curve, subints=None, metadata=None):
+        self.dm_curve = dm_curve
+        self.period_curve = period_curve
+        self.width_curve = width_curve
         self.subints = subints
         self.metadata = metadata if metadata is not None else Metadata({})
 
@@ -78,7 +84,6 @@ class Candidate(object):
 
     def __repr__(self):
         return str(self)
-
 
     @classmethod
     def from_pipeline_output(cls, cluster, tseries, nbins=128, nsubs=64, logger=None):
@@ -106,7 +111,15 @@ class Candidate(object):
 
         # Each detection contains a S/N versus Period and Width array
         # We need to resample those to a common set of period trials
+        # After that, we obtain a 3-D array of S/N trials as a function of:
+        # DM, Period, Width that wel call DPW cube.
         dm_trials, period_trials, width_trials, dpw_cube = create_dpw_cube(cluster, logger=logger)
+
+        # Extract response curves: 1D slices of the cube across the optimal solution in (DM, Period, Width)
+        idm, iperiod, iwidth = np.unravel_index(dpw_cube.argmax(), dpw_cube.shape)
+        dm_curve = ResponseCurve(dm_trials, dpw_cube[:, iperiod, iwidth])
+        period_curve = ResponseCurve(period_trials, dpw_cube[idm, :, iwidth])
+        width_curve = ResponseCurve(width_trials, dpw_cube[idm, iperiod, :])
 
         # NOTE: Must use deepcopy(), otherwise we just pass a reference and
         # candidates end up sharing the same Metadata object
@@ -127,7 +140,7 @@ class Candidate(object):
             msg = "Failed to build SubIntegrations: {!s}".format(ex)
             logger.error(msg)
             subints = None
-        return cls(dm_trials, period_trials, width_trials, dpw_cube, subints=subints, metadata=md)
+        return cls(dm_curve, period_curve, width_curve, subints=subints, metadata=md)
 
 
     def save_hdf5(self, fname):
@@ -141,12 +154,15 @@ class Candidate(object):
             except:
                 pass
 
-            # Save DPW cube
-            cube_group = fobj.create_group('dpw_cube')
-            cube_group.create_dataset('dpw_cube', data=self.dpw_cube, dtype=np.float32)
-            cube_group.create_dataset('dm_trials', data=self.dm_trials, dtype=np.float32)
-            cube_group.create_dataset('period_trials', data=self.period_trials, dtype=np.float32)
-            cube_group.create_dataset('width_trials', data=self.width_trials, dtype=np.float32)
+            # Save response curves
+            cube_group = fobj.create_group('response_curves')
+            cube_group.create_dataset('dm_curve_trials', data=self.dm_curve.trials, dtype=np.float32)
+            cube_group.create_dataset('period_curve_trials', data=self.period_curve.trials, dtype=np.float32)
+            cube_group.create_dataset('width_curve_trials', data=self.width_curve.trials, dtype=np.float32)
+            cube_group.create_dataset('dm_curve_snr', data=self.dm_curve.snr, dtype=np.float32)
+            cube_group.create_dataset('period_curve_snr', data=self.period_curve.snr, dtype=np.float32)
+            cube_group.create_dataset('width_curve_snr', data=self.width_curve.snr, dtype=np.float32)
+
 
 
     @classmethod
@@ -159,10 +175,21 @@ class Candidate(object):
             except:
                 subints = None
 
-            cube_group = fobj['dpw_cube']
-            dm_trials = cube_group['dm_trials'].value
-            period_trials = cube_group['period_trials'].value
-            width_trials = cube_group['width_trials'].value
-            dpw_cube = cube_group['dpw_cube'].value
+            curves_group = fobj['response_curves']
 
-        return cls(dm_trials, period_trials, width_trials, dpw_cube, subints=subints, metadata=metadata)
+            dm_curve = ResponseCurve(
+                curves_group['dm_curve_trials'].value,
+                curves_group['dm_curve_snr'].value
+                )
+
+            period_curve = ResponseCurve(
+                curves_group['period_curve_trials'].value,
+                curves_group['period_curve_snr'].value
+                )
+
+            width_curve = ResponseCurve(
+                curves_group['width_curve_trials'].value,
+                curves_group['width_curve_snr'].value
+                )
+
+        return cls(dm_curve, period_curve, width_curve, subints=subints, metadata=metadata)

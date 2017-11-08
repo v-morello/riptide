@@ -78,7 +78,7 @@ class Metadata(dict):
 
         attrs = inf.parsed_attrs.copy()
         attrs['dm'] = inf.dm
-        attrs['skycoord'] = SkyCoord(inf.raj, inf.decj, unit=(uu.hour, uu.deg), frame='icrs')
+        attrs['skycoord'] = inf.skycoord
         attrs['source_name'] = inf.source
         attrs['mjd'] = inf.mjd
         attrs['fname'] = os.path.realpath(inf.fname)

@@ -134,6 +134,10 @@ class PrestoInf(object):
             }
 
     @property
+    def skycoord(self):
+        return SkyCoord(self.raj, self.decj, unit=(uu.hour, uu.deg), frame='icrs')
+
+    @property
     def data_fname(self):
 	# NOTE: second argument of rsplit() is 'maxsplit'
         return self.fname.rsplit('.', 1)[0] + '.dat'

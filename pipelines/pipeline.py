@@ -15,12 +15,14 @@ import numpy as np
 from riptide import TimeSeries, ffa_search, find_peaks
 from riptide.pipelines import Candidate
 from riptide.clustering import cluster_1d
+from riptide.reading import PrestoInf, SigprocHeader
 
 
 def parse_yaml_config(fname):
     with open(fname, 'r') as fobj:
         config = yaml.load(fobj)
     return config
+
 
 def get_logger(name, level=logging.INFO):
     logger = logging.getLogger(name)
@@ -35,6 +37,7 @@ def get_logger(name, level=logging.INFO):
         handler.setFormatter(formatter)
         logger.addHandler(handler)
     return logger
+
 
 def grouper(iterable, n):
     """ Iterate through iterable, yielding groups of n elements. The last
@@ -210,7 +213,7 @@ class PulsarSearch(object):
         outdir = self.manager.config['outdir']
         self.logger.info("Saving {:d} candidates to output directory: {:s}".format(len(self.candidates), outdir))
         for index, cand in enumerate(self.candidates, start=1):
-            outpath = os.path.join(outdir, "candidate_{:04d}.h5".format(index)) 
+            outpath = os.path.join(outdir, "candidate_{:04d}.h5".format(index))
             self.logger.info("Saving {!s} to file {:s}".format(cand, outpath))
             cand.save_hdf5(outpath)
 
@@ -222,7 +225,7 @@ class PipelineManager(object):
     def __init__(self, config):
         self.config = config
         self.configure_logger()
-        self.configure_loader()
+        self.configure_loaders()
         self.configure_searches()
 
     def configure_logger(self):
@@ -239,19 +242,58 @@ class PipelineManager(object):
             self.logger.info("Configured PulsarSearch '{:s}'".format(search.name))
         self.logger.info("Configured a total of {:d} searches.".format(len(self.searches)))
 
-    def configure_loader(self):
+    def configure_loaders(self):
         fmt = self.config['data_format'].strip().lower()
         if fmt == 'presto':
             self.loader = TimeSeries.from_presto_inf
-            self.logger.info("Specified file format: {:s}".format(fmt))
+            self.dm_getter = lambda fname: PrestoInf(fname).dm
+        elif fmt == 'sigproc':
+            self.loader = TimeSeries.from_sigproc
+            self.dm_getter = lambda fname: SigprocHeader(fname)['refdm']
         else:
             raise ValueError("Invalid data format '{s}'".format(fmt))
+        self.logger.info("Specified file format: {:s}".format(fmt))
+
+    def select_dm_trials(self):
+        """ Build a list of files to process """
+        glob_pattern = self.config['glob']
+        dm_trials = {
+            self.dm_getter(fname): fname
+            for fname in glob.glob(glob_pattern)
+            }
+        self.logger.info("Found a total of {:d} DM trials corresponding to specified pattern \"{:s}\"".format(len(dm_trials), glob_pattern))
+
+        # Helper iterator, used to select a sequence of DM trials according to
+        # config parameters
+        def iter_steps(sequence, vmin, vmax, step):
+            # Ignore steps outside of bounds
+            array = np.asarray(sorted(list(sequence)))
+            mask = (array >= vmin) & (array <= vmax)
+            array = array[mask]
+
+            # Yield values separated by at least 'step'
+            last = None
+            for value in array:
+                if not last or value - last >= step:
+                    last = value
+                    yield value
+
+        # NOTE: this is an iterator
+        dm_trial_values = iter_steps(
+            dm_trials.keys(),
+            self.config['dm_min'],
+            self.config['dm_max'],
+            self.config['dm_step'],
+            )
+        self.dm_trial_paths = [dm_trials[value] for value in dm_trial_values]
+        self.logger.info("Selected {:d} DM trials to process".format(len(self.dm_trial_paths)))
 
     def iter_batches(self):
         """ Iterate through input time series in batches. Yields a list of
         num_processes TimeSeries at each iteration. """
         num_processes = self.config['num_processes']
-        paths = sorted(glob.glob(self.config['input_pattern']))
+        paths = self.dm_trial_paths
+
         num_dm_trials = len(paths)
         self.logger.info("Preparing to iterate through DM trials. Number of input files: {:d}". format(num_dm_trials))
 
@@ -261,15 +303,20 @@ class PipelineManager(object):
 
     def run(self):
         self.logger.info("Starting pipeline ...")
+
+        self.logger.info("Selecting DM trials ...")
+        self.select_dm_trials()
+
         for tsbatch in self.iter_batches():
             dms = sorted([ts.metadata['dm'] for ts in tsbatch])
             self.logger.info("Processing DM trials: {!s}".format(dms))
             for search in self.searches:
                 search.process_time_series_batch(tsbatch)
-        self.logger.info("All DM trials have been processed. Closing searches ...")
 
+        self.logger.info("All DM trials have been processed. Closing searches ...")
         for search in self.searches:
             search.close()
+
         self.logger.info("Searches closed. Pipeline run complete.")
 
 
@@ -285,8 +332,8 @@ def parse_arguments():
         help="YAML configuration file for the PipelineManager"
         )
     parser.add_argument(
-        '--input_pattern', type=str, required=True,
-        help="UNIX shell pattern matching the input files to be processed. IMPORTANT: Must be delimited by double quotes."
+        '--glob', type=str, required=True,
+        help="glob pattern matching the input files to be processed. IMPORTANT: Must be delimited by double quotes."
         )
     parser.add_argument(
         '--outdir', type=str, required=True,

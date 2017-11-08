@@ -162,7 +162,8 @@ def parse_float_coord(f):
 
 
 class SigprocHeader(dict):
-    """ """
+    """ dict-like object wrapping the information carried by the header of a
+    SIGPROC file. """
     def __init__(self, fname, extra_keys={}):
         self._fname = os.path.abspath(fname)
         with open(self.fname, 'rb') as fobj:
