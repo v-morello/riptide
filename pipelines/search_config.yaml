@@ -3,13 +3,14 @@ name: "short_periods"
 ### Keyword arguments to the ffa_search() function ###
 search:
     period_min: 0.50
-    period_max: 2.00
+    period_max: 4.00
     bins_min: 240
     bins_max: 260
     fpmin: 10
     rmed_width: 2.0
     rmed_minpts: 101
     wtsp: 1.5
+    ducy_max: 0.33
     threads: 1
 
 ### Keyword arguments to the find_peaks() function ###
@@ -49,8 +50,8 @@ detect:
 candidates:
     # Number of phase bins used to produce the final folded sub-integrations.
     # The code will always limit nbins to int(period / sampling_time).
-    nbins: 512
+    nbins: 256
 
     # Number of sub-integrations requested. The code will always limit nsubs to
     # int(tobs / period).
-    nsubs: 128
+    nsubs: 64

@@ -1,5 +1,16 @@
+# Data format, 'presto' or 'sigproc'
 data_format: presto
+
+# Number of time series searched in parallel
 num_processes: 4
+
+# Glob pattern matching the dedispersed time series to be searched
+# Note that only a subset of these will be searched, depending on the DM
+# range and step parameters specified below.
+glob: "*.inf"
+
+# Output directory for Candidates
+outdir: "."
 
 # Max value of DM x |sin(b)|. Sets an upper limit on DM trials as a function
 # of observed sky coordinates
@@ -12,6 +23,7 @@ dm_max: 1000.0
 # Minimum difference between consecutive DM trials
 dm_step: 4.0
 
-### Configuration files for the searches, to be placed in the same directory
+##### Paths to configuration files for the searches
+# NOTE: they must be placed in the same directory as this file.
 search_configs:
     - search_config.yaml

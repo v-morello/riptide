@@ -74,7 +74,7 @@ class Candidate(object):
     def __str__(self):
         name = type(self).__name__
         md = self.metadata
-        return '{name:s} [P0 = {period:.9e}, W = {width:3d}, DM = {dm:.3f}, S/N = {snr:.2f}]'.format(
+        return '{name:s} [P0 = {period:.9e}, W = {width:3d}, DM = {dm:7.3f}, S/N = {snr:6.2f}]'.format(
             name=name,
             period=md['best_period'],
             width=md['best_width'],

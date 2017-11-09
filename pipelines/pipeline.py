@@ -222,8 +222,20 @@ class PulsarSearch(object):
 class PipelineManager(object):
     """ Responsible for the outermost DM loop and top-level pulsar search
     management. """
-    def __init__(self, config):
-        self.config = config
+    def __init__(self, config_path, override_keys={}):
+        """
+        Parameters:
+        -----------
+            config_path: str
+                Path to the YAML config file of the PipelineManager
+            override_keys: dict
+                Updated values for some keys of the YAML config file,
+                specified through the command line arguments of this script.
+        """
+        self.config_path = os.path.realpath(config_path)
+        self.config = parse_yaml_config(self.config_path)
+        self.config.update(override_keys)
+
         self.configure_logger()
         self.configure_loaders()
         self.configure_searches()
@@ -234,7 +246,7 @@ class PipelineManager(object):
 
     def configure_searches(self):
         self.searches = []
-        config_dir, config_name = os.path.split(self.config['config'])
+        config_dir, config_name = os.path.split(self.config_path)
         for search_config_fname in self.config['search_configs']:
             search_config_path = os.path.join(config_dir, search_config_fname)
             search = PulsarSearch(self, parse_yaml_config(search_config_path))
@@ -326,6 +338,9 @@ def parse_arguments():
     """ Parse command line arguments with which the script was called. Returns
     an object containing them all.
     """
+    ### IMPORTANT NOTE: The 'config' argument specifies the path to the main
+    ### YAML configuration file. All the other arguments override keys
+    ### already present in the YAML config file.
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
         '--config', type=str, required=True,
@@ -346,17 +361,10 @@ def parse_arguments():
 
 def main():
     args = parse_arguments()
-
-    # IMPORTANT: get the full path of the manager config file. We need to know
-    # in which directory it lies, because that's where we also look for the
-    # config files for individual PulsarSearches.
+    # Get absolute paths right away, just to be safe
     args.config = os.path.realpath(args.config)
     args.outdir = os.path.realpath(args.outdir)
-
-    config = parse_yaml_config(args.config)
-    config.update(vars(args))
-
-    manager = PipelineManager(config)
+    manager = PipelineManager(args.config, override_keys=vars(args))
     manager.run()
 
 

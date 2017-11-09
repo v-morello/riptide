@@ -44,7 +44,10 @@ def segment(periods, tobs, segment_dftbins_length=10.0):
     data['istart'] = boundaries[:, 0]
     data['iend'] = boundaries[:, 1]
     data['imid'] = (data['istart'] + data['iend']) // 2
-    data['pmid'] = periods[data['imid']]
+
+    # The .values is to avoid a warning where data['imid'] seems to be perceived
+    # as non-integer when using it to index the periods array.
+    data['pmid'] = periods[data['imid'].values]
     data['logpmid'] = np.log(data['pmid'])
     return data
 
