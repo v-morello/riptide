@@ -1,6 +1,6 @@
 ### Overview
 
-__riptide__ is an end-to-end pulsar searching package implementing the Fast Folding Algorithm (FFA). Its interface is entirely in python while the core algorithms are implemented in C. It is being developed with ease of use in mind, without sacrificing execution speed. The main features are:
+__riptide__ is an end-to-end pulsar searching package implementing the Fast Folding Algorithm (FFA). Its interface is entirely in python while the core algorithms are implemented in C. It is being developed with ease of use in mind, without sacrificing execution speed. The main features are / are planned to be:
 
 - Reading time series data written by major pulsar software packages such as PRESTO and SIGPROC
 - Saving / Loading data products to / from HDF5
@@ -11,10 +11,6 @@ __riptide__ is an end-to-end pulsar searching package implementing the Fast Fold
 
 riptide loosely stands for "seaRchIng for Pulsars in the TIme Domain". Mostly because there are no cool names containing the letters "FFA". Also a subtle reference to Australia where I did my Masters.
 
-### Docker image
-
-Coming soon.
-
 ### Dependencies
 
 * numpy
@@ -22,6 +18,20 @@ Coming soon.
 * pandas
 * h5py
 * astropy
+* pandas
+
+### Installation
+
+We only need to build the C library libffa.so in the c_src/ directory:
+
+```shell
+cd c_src
+make all
+```
+
+### Docker image
+
+Coming soon.
 
 ### Basic Usage
 
