@@ -109,5 +109,5 @@ def ffa_search(tseries, rmed_width=4.0, rmed_minpts=101, period_min=1.0, period_
     snrs = snrs.reshape(periods.size, plan.widths.size)
     periods, snrs = prune_periodogram(periods, snrs)
 
-    pgram = Periodogram(periods, plan.widths, snrs)
+    pgram = Periodogram(periods, plan.widths, snrs, metadata=tseries.metadata)
     return ts, plan, pgram
