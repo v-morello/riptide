@@ -22,12 +22,21 @@ riptide loosely stands for "seaRchIng for Pulsars in the TIme Domain". Mostly be
 
 ### Installation
 
-We only need to build the C library libffa.so in the c_src/ directory:
+Clone the repository, for example:
+```bash
+cd ~/software
+git clone https://vmorello@bitbucket.org/vmorello/riptide.git
+```
 
-```shell
+Build the C library libffa.so in the c_src/ subdirectory:
+
+```bash
 cd c_src
 make all
 ```
+
+And then make sure that the parent directory to the riptide repository ("~/software" in this example) is in the PYTHONPATH.
+
 
 ### Docker image
 
