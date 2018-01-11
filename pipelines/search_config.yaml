@@ -2,8 +2,8 @@ name: "short_periods"
 
 ### Keyword arguments to the ffa_search() function ###
 search:
-    period_min: 0.50
-    period_max: 4.00
+    period_min: 0.30
+    period_max: 10.00
     bins_min: 240
     bins_max: 260
     fpmin: 10

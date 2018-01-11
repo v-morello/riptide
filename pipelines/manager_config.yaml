@@ -27,3 +27,10 @@ dm_step: 4.0
 # NOTE: they must be placed in the same directory as this file.
 search_configs:
     - search_config.yaml
+
+##### Harmonic filter params
+# See the test_harmonic_relationship() function docstring for an explanation
+harmonic_filtering:
+    max_denominator: 30
+    snr_tol: 1.50
+    dft_bins_tol: 0.10
