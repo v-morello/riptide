@@ -90,7 +90,7 @@ class Candidate(object):
         """
         Parameters:
         -----------
-            cluster: list of Detection objects
+            cluster: DetectionCluster
                 Cluster of all associated detections.
             tseries: TimeSeries
                 TimeSeries from which originated the most signficant detection.

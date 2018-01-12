@@ -161,14 +161,6 @@ class PulsarSearch(object):
         self.detections = self.detections + new_detections
         self.logger.info("Total detections stored: {:d}".format(len(self.detections)))
 
-    # def close(self):
-    #     """ Close the search: turn the list of accumulated detections into
-    #     Candidates and save them to disk. """
-    #     self.cluster_detections()
-    #     self.remove_harmonics()
-    #     self.build_candidates()
-    #     self.save_candidates()
-
     def cluster_detections(self):
         self.logger.info("Clustering Detections ...")
         periods = np.asarray([det.period for det in self.detections])
@@ -183,40 +175,6 @@ class PulsarSearch(object):
             for indices in cluster_indices
             ]
         self.logger.info("Clustering complete. Total Clusters: {0:d}".format(len(self.clusters)))
-
-
-    # def remove_harmonics(self):
-    #     pass
-    #
-    # def build_candidates(self):
-    #     self.logger.info("Building Candidates ...")
-    #     self.candidates = []
-    #     rmed_width = self.config['search']['rmed_width']
-    #     rmed_minpts = self.config['search']['rmed_minpts']
-    #     nbins = self.config['candidates']['nbins']
-    #     nsubs = self.config['candidates']['nsubs']
-    #
-    #     for cluster in self.clusters:
-    #         # Re-load TimeSeries associated to the top detection, and run
-    #         # the same pre-processing again.
-    #         fname = cluster.top_detection.metadata['fname']
-    #         tseries = self.manager.loader(fname)
-    #         tseries.deredden(rmed_width, minpts=rmed_minpts, inplace=True)
-    #         tseries.normalise(inplace=True)
-    #
-    #         candidate = Candidate.from_pipeline_output(cluster, tseries, nbins=nbins, nsubs=nsubs, logger=self.logger)
-    #         self.candidates.append(candidate)
-    #
-    #     self.candidates = sorted(self.candidates, key=lambda cd: cd.metadata['best_snr'], reverse=True)
-    #     self.logger.info("Done building candidates.")
-    #
-    # def save_candidates(self):
-    #     outdir = self.manager.config['outdir']
-    #     self.logger.info("Saving {:d} candidates to output directory: {:s}".format(len(self.candidates), outdir))
-    #     for index, cand in enumerate(self.candidates, start=1):
-    #         outpath = os.path.join(outdir, "candidate_{:04d}.h5".format(index))
-    #         self.logger.info("Saving {!s} to file {:s}".format(cand, outpath))
-    #         cand.save_hdf5(outpath)
 
 
 
@@ -371,8 +329,6 @@ class PipelineManager(object):
         self.logger.info("Flagged {:d} harmonics".format(num_harmonics_flagged))
         self.clusters = [cl for cl in self.clusters if not cl.is_harmonic]
         self.logger.info("Retained {:d} final Candidates".format(len(self.clusters)))
-
-
 
     def build_candidates(self):
         self.logger.info("Building Candidates ...")
