@@ -243,7 +243,8 @@ def find_peaks_single(pgram, iwidth, boundaries, min_segments=8, snr_min=6.5, ns
             periods_slice = periods[peak_indices]
             snrs_slice = snrs[peak_indices]
             imax = snrs_slice.argmax()
-            ducy = width / bins_avg
+            # NOTE: float() cast to avoid int division in Python2
+            ducy = width / float(bins_avg)
             current_peak = Peak(periods_slice[imax], snrs_slice[imax], dm, iwidth, width, ducy)
             peaks.append(current_peak)
 
