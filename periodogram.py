@@ -8,7 +8,8 @@ from .metadata import Metadata
 
 class Periodogram(object):
     """ Stores the raw output of the FFA search of a time series. """
-    def __init__(self, periods, widths, snrs, metadata=None):
+    def __init__(self, plan, periods, widths, snrs, metadata=None):
+        self._plan = plan
         self._periods = periods
         self._widths = widths
         self._snrs = snrs.reshape(periods.size, widths.size)

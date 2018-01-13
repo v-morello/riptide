@@ -39,6 +39,9 @@ class ProcessingPlan(object):
 
         # average number of bins
         bins_avg = int(round(bins_min + bins_max - 1) / 2.0)
+        self.bins_min = bins_min
+        self.bins_max = bins_max
+        self.bins_avg = bins_avg
 
         # Width trials in number of bins
         self.widths = generate_width_trials(bins_avg, ducy_max=ducy_max, wtsp=wtsp)

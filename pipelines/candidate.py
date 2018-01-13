@@ -128,6 +128,7 @@ class Candidate(object):
         md['best_width'] = topdet.width
         md['best_dm'] = topdet.dm
         md['best_snr'] = topdet.snr
+        md['best_ducy'] = topdet.ducy
 
         ### Build subints
         # Check that nsubs and nbins do not exceed acceptable maximum

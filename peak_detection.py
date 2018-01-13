@@ -86,12 +86,13 @@ def threshold_function_static(snr_min, polydeg=2):
 
 class Peak(object):
     """ """
-    def __init__(self, period, snr, iw, width, dm):
+    def __init__(self, period, snr, dm, iw, width, ducy):
         self._period = period
         self._snr = snr
         self._width = width
         self._iw = iw
         self._dm = dm
+        self._ducy = ducy
 
     @property
     def period(self):
@@ -118,6 +119,11 @@ class Peak(object):
     def dm(self):
         return self._dm
 
+    @property
+    def ducy(self):
+        """ Best duty cycle """
+        return self._ducy
+
     def __str__(self):
         name = type(self).__name__
         dm_str = "{0:8.3f}".format(self.dm) if self.dm else 'None'
@@ -136,7 +142,7 @@ class Detection(Peak):
         """ """
         self.peaks = peaks
         top = max(peaks, key=operator.attrgetter('snr'))
-        super(Detection, self).__init__(top.period, top.snr, top.iw, top.width, top.dm)
+        super(Detection, self).__init__(top.period, top.snr, top.dm, top.iw, top.width, top.ducy)
 
         # Extract a slice of the Periodogram that is 'period_slice_width'
         # DFT bins wide and centered on the peak
@@ -203,6 +209,9 @@ def find_peaks_single(pgram, iwidth, boundaries, min_segments=8, snr_min=6.5, ns
     tobs = pgram.tobs
     dm = pgram.metadata['dm']
 
+    # Average number of bins used during the search
+    bins_avg = pgram._plan.bins_avg
+
     stats = segment_stats(snrs, boundaries)
 
     # NOTE: tfunc is a function of period only. tfunc has one parameter expected
@@ -234,7 +243,8 @@ def find_peaks_single(pgram, iwidth, boundaries, min_segments=8, snr_min=6.5, ns
             periods_slice = periods[peak_indices]
             snrs_slice = snrs[peak_indices]
             imax = snrs_slice.argmax()
-            current_peak = Peak(periods_slice[imax], snrs_slice[imax], iwidth, width, dm)
+            ducy = width / bins_avg
+            current_peak = Peak(periods_slice[imax], snrs_slice[imax], dm, iwidth, width, ducy)
             peaks.append(current_peak)
 
     return stats, polyco, threshold, peaks

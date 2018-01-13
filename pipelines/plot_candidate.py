@@ -5,6 +5,7 @@ import json
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gs
+from astropy.time import Time
 
 ##### Local imports #####
 from . import Candidate
@@ -30,60 +31,63 @@ class CandidatePlotLayout(object):
     def axProfile(self):
         raise NotImplementedError
 
+    @property
+    def axDMCurve(self):
+        raise NotImplementedError
+
+    @property
+    def axPeriodCurve(self):
+        raise NotImplementedError
+
+    @property
+    def axWidthCurve(self):
+        raise NotImplementedError
+
+    @property
+    def axTable(self):
+        raise NotImplementedError
+
 
 class CandidatePlotDefaultLayout(CandidatePlotLayout):
     """ """
-    default_figsize = (16, 7)
+    default_figsize = (16, 6)
     default_dpi = 80
 
-    tableLayout = {
-        "topMargin": 0.05,
-        "leftMargin": 0.05,
-        "rightMargin": 0.05,
-        "lineHeight": 0.10,
-        "columnWidths" : [
-            ("name", 1),
-            ("value", 1),
-            ("unit", 1),
-            ]
-        }
-
     def __init__(self, figsize=None, dpi=None):
-        self.grid = gs.GridSpec(6, 8)
+        self.grid = gs.GridSpec(6, 10)
         self.figsize = self.default_figsize if figsize is None else figsize
         self.dpi = self.default_dpi if dpi is None else dpi
 
     @property
     def axSubints(self):
-        return plt.subplot(self.grid[:4, 2:5])
+        return plt.subplot(self.grid[:4, 3:7])
 
     @property
     def axProfile(self):
-        return plt.subplot(self.grid[4:, 2:5])
+        return plt.subplot(self.grid[4:, 3:7])
 
     @property
     def axDMCurve(self):
-        return plt.subplot(self.grid[:2, 5:])
+        return plt.subplot(self.grid[:2, 7:])
 
     @property
     def axPeriodCurve(self):
-        return plt.subplot(self.grid[2:4, 5:])
+        return plt.subplot(self.grid[2:4, 7:])
 
     @property
     def axWidthCurve(self):
-        return plt.subplot(self.grid[4:, 5:])
+        return plt.subplot(self.grid[4:, 7:])
 
     @property
     def axTable(self):
-        return plt.subplot(self.grid[:, :2])
-
-
+        return plt.subplot(self.grid[:, :3])
 
 
 def plot_text(text, ax, x, y, horizontalalignment='right'):
     ax.text(x, y, text,
         horizontalalignment=horizontalalignment, verticalalignment='center',
-        family='monospace', transform=ax.transAxes, fontsize=12)
+        family='monospace', transform=ax.transAxes, fontsize=11)
+
 
 class Entry(object):
     """ """
@@ -99,15 +103,16 @@ class Entry(object):
     def __repr__(self):
         return str(self)
 
+
 class Table(object):
     """ """
     columnOffsets = {
-        "name"  : 0.20,
-        "value" : 0.85,
-        "unit"  : 0.88
+        "name"  : 0.25,
+        "value" : 0.88,
+        "unit"  : 0.90
         }
-    topMargin = 0.01
-    lineHeight = 0.030
+    topMargin = 0.022
+    lineHeight = 0.035
 
     def __init__(self):
         self.entries = []
@@ -134,7 +139,6 @@ class Table(object):
                 plot_text(entry.value, ax, self.columnOffsets['value'], y)
                 plot_text(entry.unit, ax, self.columnOffsets['unit'], y, 'left')
             y -= self.lineHeight
-
 
 
 class CandidatePlot(object):
@@ -180,7 +184,7 @@ class CandidatePlot(object):
             extent=extent)
         plt.xticks([])
         plt.ylabel("Time (s)")
-        plt.title("Sub-Integrations")
+        plt.title("{:d} Sub-Integrations".format(self.cand.subints.nsubs))
 
     def _plotProfile(self):
         ax = self.layout.axProfile
@@ -191,26 +195,52 @@ class CandidatePlot(object):
             width=1,
             color='#303030')
         plt.xlim(-0.5, prof.size-0.5)
+        plt.ylabel("S/N")
         plt.title("Integrated Profile")
 
     def _plotDMCurve(self):
         ax = self.layout.axDMCurve
         cv = self.cand.dm_curve
-        ax.plot(cv.trials, cv.snr, marker='o', markersize=3)
-        plt.xlim(cv.trials[0], cv.trials[-1])
+        ax.plot(cv.trials, cv.snr, marker='o', markersize=3, color='#FF502A')
+
+        # Call xlim() only if we have more than 1 DM trial, just to avoid a
+        # warning
+        if len(cv.trials) > 1:
+            plt.xlim(cv.trials[0], cv.trials[-1])
         plt.grid(linestyle=':')
-        plt.title("DM Curve")
+        plt.xlabel('DM (pc $\mathrm{cm}^{-3}$)')
+        plt.ylabel("S/N")
+        #plt.title("DM Curve")
 
     def _plotPeriodCurve(self):
         ax = self.layout.axPeriodCurve
         cv = self.cand.period_curve
-        ax.plot(cv.trials, cv.snr)
-        plt.xlim(cv.trials[0], cv.trials[-1])
+
+        dp = cv.trials - self.cand.metadata['best_period']
+        dp_max = abs(dp).max()
+        if dp_max < 1e-3:
+            factor, unit = 1e6, '$\mu$s'
+        elif 1e-3 <= dp_max < 1.0:
+            factor, unit = 1e3, 'ms'
+        else:
+            factor, unit = 1.0, 's'
+
+        dp *= factor
+
+        ax.plot(dp, cv.snr)
+        plt.xlim(dp[0], dp[-1])
         plt.grid(linestyle=':')
-        plt.title("Period Curve")
+        plt.xlabel('Delta Period ({:s})'.format(unit))
+        plt.ylabel("S/N")
+        #plt.title("Period Curve")
 
     def _plotWidthCurve(self):
-        pass
+        ax = self.layout.axWidthCurve
+        cv = self.cand.width_curve
+        ax.plot(cv.trials, cv.snr, marker='o', markersize=3)
+        plt.xlim(cv.trials[0], cv.trials[-1])
+        plt.grid(linestyle=':')
+        #plt.title("Width Curve")
 
     def _plotTable(self):
         table = Table()
@@ -221,12 +251,23 @@ class CandidatePlot(object):
         dec = coord.dec.to_string(unit='degree', precision=2, pad=2)
         glon_deg = coord.galactic.l.deg
         glat_deg = coord.galactic.b.deg
-        tobs = self.cand.metadata['tobs']
+
 
         table.add_entry(Entry("RA", ra))
         table.add_entry(Entry("Dec", dec))
         table.add_entry(Entry("glon", "{:.3f}".format(glon_deg), "deg"))
         table.add_entry(Entry("glat", "{:.3f}".format(glat_deg), "deg"))
+        table.skip_line()
+
+        mjd = self.cand.metadata['mjd']
+        tobs = self.cand.metadata['tobs']
+        # The precision=0 argument ensures that when printing in UTC format,
+        # we do NOT get fractional seconds.
+        time = Time(mjd, scale='utc', format='mjd', precision=0)
+        utc = time.isot
+
+        table.add_entry(Entry("MJD", "{:.6f}".format(mjd)))
+        table.add_entry(Entry("UTC", utc))
         table.add_entry(Entry("Tobs", "{:.2f}".format(tobs), "s"))
         table.skip_line()
 
@@ -235,6 +276,9 @@ class CandidatePlot(object):
 
         dm = self.cand.metadata['best_dm']
         table.add_entry(Entry("DM", "{:.3f}".format(dm)))
+
+        ducy = self.cand.metadata['best_ducy']
+        table.add_entry(Entry("Duty Cycle", "{:.1f}".format(ducy * 100.0), "%"))
 
         snr = self.cand.metadata['best_snr']
         table.add_entry(Entry("S/N", "{:.1f}".format(snr)))
@@ -245,6 +289,7 @@ class CandidatePlot(object):
         self._plotSubints()
         self._plotDMCurve()
         self._plotPeriodCurve()
+        #self._plotWidthCurve()
         self._plotTable()
         self.figure.tight_layout()
 
@@ -252,4 +297,4 @@ class CandidatePlot(object):
         self.figure.show()
 
     def saveimg(self, fname):
-        self.figure.savefig(fname, dpi=self.dpi)
+        self.figure.savefig(fname, dpi=self.layout.dpi)
