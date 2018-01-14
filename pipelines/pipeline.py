@@ -376,12 +376,17 @@ class PipelineManager(object):
             # Re-load TimeSeries associated to the top detection, and run
             # the same pre-processing again.
             fname = cluster.top_detection.metadata['fname']
-            tseries = self.loader(fname)
-            tseries.deredden(rmed_width, minpts=rmed_minpts, inplace=True)
-            tseries.normalise(inplace=True)
 
-            candidate = Candidate.from_pipeline_output(cluster, tseries, nbins=nbins, nsubs=nsubs, logger=self.logger)
-            self.candidates.append(candidate)
+            try:
+                tseries = self.loader(fname)
+                tseries.deredden(rmed_width, minpts=rmed_minpts, inplace=True)
+                tseries.normalise(inplace=True)
+
+                candidate = Candidate.from_pipeline_output(cluster, tseries, nbins=nbins, nsubs=nsubs, logger=self.logger)
+                self.candidates.append(candidate)
+            except Exception as error:
+                self.logger.error("ERROR: Failed to build candidate from {!s}. Reason: {!s}".format(cluster, error))
+
 
         self.candidates = sorted(self.candidates, key=lambda cd: cd.metadata['best_snr'], reverse=True)
         self.logger.info("Done building candidates.")

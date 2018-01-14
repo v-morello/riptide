@@ -113,10 +113,20 @@ class Candidate(object):
         # We need to resample those to a common set of period trials
         # After that, we obtain a 3-D array of S/N trials as a function of:
         # DM, Period, Width that wel call DPW cube.
-        dm_trials, period_trials, width_trials, dpw_cube = create_dpw_cube(cluster, logger=logger)
+        dm_trials, period_trials, width_trials, dpw_cube = \
+            create_dpw_cube(cluster, logger=logger)
 
-        # Extract response curves: 1D slices of the cube across the optimal solution in (DM, Period, Width)
-        idm, iperiod, iwidth = np.unravel_index(dpw_cube.argmax(), dpw_cube.shape)
+        # Extract response curves: 1D slices of the cube across the
+        # optimal solution in (DM, Period, Width) that was returned by
+        # the search.
+        # NOTE: This is not always the same as picking the maximum of
+        # the DPW cube. In particular, we may sometimes get a higher S/N at
+        # higher trial widths, but those were not deemed significant by the
+        # peak detection algorithm.
+        idm = abs(dm_trials - topdet.dm).argmin()
+        iperiod = abs(period_trials - topdet.period).argmin()
+        iwidth = abs(width_trials - topdet.width).argmin()
+
         dm_curve = ResponseCurve(dm_trials, dpw_cube[:, iperiod, iwidth])
         period_curve = ResponseCurve(period_trials, dpw_cube[idm, :, iwidth])
         width_curve = ResponseCurve(width_trials, dpw_cube[idm, iperiod, :])
