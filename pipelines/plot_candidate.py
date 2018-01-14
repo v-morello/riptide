@@ -50,7 +50,7 @@ class CandidatePlotLayout(object):
 
 class CandidatePlotDefaultLayout(CandidatePlotLayout):
     """ """
-    default_figsize = (16, 6)
+    default_figsize = (16, 5)
     default_dpi = 80
 
     def __init__(self, figsize=None, dpi=None):
@@ -68,15 +68,15 @@ class CandidatePlotDefaultLayout(CandidatePlotLayout):
 
     @property
     def axDMCurve(self):
-        return plt.subplot(self.grid[:2, 7:])
+        return plt.subplot(self.grid[:3, 7:])
 
     @property
     def axPeriodCurve(self):
-        return plt.subplot(self.grid[2:4, 7:])
+        return plt.subplot(self.grid[3:, 7:])
 
-    @property
-    def axWidthCurve(self):
-        return plt.subplot(self.grid[4:, 7:])
+    # @property
+    # def axWidthCurve(self):
+    #     return plt.subplot(self.grid[4:, 7:])
 
     @property
     def axTable(self):
@@ -112,7 +112,7 @@ class Table(object):
         "unit"  : 0.90
         }
     topMargin = 0.022
-    lineHeight = 0.035
+    lineHeight = 0.040
 
     def __init__(self):
         self.entries = []
@@ -237,9 +237,21 @@ class CandidatePlot(object):
     def _plotWidthCurve(self):
         ax = self.layout.axWidthCurve
         cv = self.cand.width_curve
-        ax.plot(cv.trials, cv.snr, marker='o', markersize=3)
-        plt.xlim(cv.trials[0], cv.trials[-1])
-        plt.grid(linestyle=':')
+
+        width = self.cand.metadata['best_width']
+        ducy = self.cand.metadata['best_ducy']
+
+        # Duty cycle trials expressed in percent
+        ducy_trials = cv.trials / (width / ducy) * 100.0
+
+        ax.plot(ducy_trials, cv.snr, marker='o', markersize=3, color='#1E8449')
+        plt.xlim(ducy_trials[0], ducy_trials[-1])
+        plt.xscale('log')
+        plt.grid(which='minor', linestyle=':')
+        plt.grid(which='major', linestyle='-')
+        plt.xlabel('Duty Cycle (%)')
+        plt.ylabel("S/N")
+
         #plt.title("Width Curve")
 
     def _plotTable(self):

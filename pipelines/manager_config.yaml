@@ -21,7 +21,7 @@ dm_min: 0.0
 dm_max: 1000.0
 
 # Minimum difference between consecutive DM trials
-dm_step: 4.0
+dm_step: 1.0
 
 ##### Paths to configuration files for the searches
 # NOTE: they must be placed in the same directory as this file.
@@ -34,3 +34,12 @@ harmonic_filtering:
     max_denominator: 30
     snr_tol: 1.50
     dft_bins_tol: 0.10
+
+##### Candidate filtering
+# The cap on candidate number is applied last, after all the other filters
+# These fields can be left empty, in which case the corresponding filter is
+# not applied
+candidate_filters:
+    dm_min: 1.0
+    snr_min: 8.0
+    max_number: 100

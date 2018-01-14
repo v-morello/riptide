@@ -330,6 +330,35 @@ class PipelineManager(object):
         self.clusters = [cl for cl in self.clusters if not cl.is_harmonic]
         self.logger.info("Retained {:d} final Candidates".format(len(self.clusters)))
 
+
+    def _apply_candidate_filter(self, filter_name, func):
+        num_clusters = len(self.clusters)
+        valid_clusters = list(filter(func, self.clusters))
+        num_invalid = num_clusters - len(valid_clusters)
+        self.logger.info("Applied candidate filter \"{:s}\" on {:d} DetectionClusters: {:d} were removed".format(filter_name, num_clusters, num_invalid))
+        self.clusters = valid_clusters
+
+    def apply_candidate_filters(self):
+        params = self.config['candidate_filters']
+        dm_min = params['dm_min']
+        snr_min = params['snr_min']
+        max_number = params['max_number']
+
+        if dm_min:
+            self._apply_candidate_filter(
+                "DM >= {:.2f}".format(dm_min),
+                lambda cl: cl.top_detection.dm >= dm_min)
+
+        if snr_min:
+            self._apply_candidate_filter(
+                "S/N >= {:.2f}".format(snr_min),
+                lambda cl: cl.top_detection.snr >= snr_min)
+
+        if max_number:
+            self.logger.info("Keeping only the top {:d} brightest candidates".format(max_number))
+            self.clusters = self.clusters[:max_number]
+
+
     def build_candidates(self):
         self.logger.info("Building Candidates ...")
         self.candidates = []
@@ -382,6 +411,7 @@ class PipelineManager(object):
 
         self.fetch_clusters()
         self.remove_harmonics()
+        self.apply_candidate_filters()
         self.build_candidates()
         self.save_candidates()
 
