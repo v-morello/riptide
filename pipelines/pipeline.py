@@ -232,11 +232,13 @@ class PipelineManager(object):
         """ Build a list of files to process """
         glob_pattern = self.config['glob']
         filenames = sorted(glob.glob(glob_pattern))
+        self.logger.info("Found a total of {:d} file names corresponding to specified pattern \"{:s}\"".format(len(filenames), glob_pattern))
+        self.logger.info("Retching DM trial values from headers. This may take a while ...")
         dm_trials = {
             self.dm_getter(fname): fname
             for fname in filenames
             }
-        self.logger.info("Found a total of {:d} DM trials corresponding to specified pattern \"{:s}\"".format(len(dm_trials), glob_pattern))
+        self.logger.info("DM trial values have been read.")
 
         # Helper iterator, used to select a sequence of DM trials according to
         # config parameters
@@ -248,8 +250,9 @@ class PipelineManager(object):
 
             # Yield values separated by at least 'step'
             last = None
+            rtol = 1e-7 # Deal with float rounding errors
             for value in array:
-                if not last or value - last >= step:
+                if last is None or value - last >= step * (1-rtol):
                     last = value
                     yield value
 
@@ -415,7 +418,10 @@ class PipelineManager(object):
             search.cluster_detections()
 
         self.fetch_clusters()
-        self.remove_harmonics()
+        # NOTE: As of 22 Jan 2018 I am turning this off for safety
+        # Tests on LOTAAS beams have shown that in the presence
+        # of strong RFI, pulsars can be removed.
+        #self.remove_harmonics()
         self.apply_candidate_filters()
         self.build_candidates()
         self.save_candidates()
