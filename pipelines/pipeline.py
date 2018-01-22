@@ -191,6 +191,15 @@ class PulsarSearch(object):
             ]
         self.logger.info("Clustering complete. Total Clusters: {0:d}".format(len(self.clusters)))
 
+        # NOTE: Debug stuff: build a pandas.DataFrame with cluster params
+        fname = os.path.join(self.manager.config['outdir'], self.name + "_clusters.pickle")
+        self.logger.info("Saving pandas.DataFrame with parameters of all {:d} DetectionClusters to file {:s}".format(len(self.clusters), fname))
+
+        columns = ['period', 'dm', 'width', 'ducy', 'snr']
+        df = pandas.DataFrame(
+            [[getattr(cluster.top_detection, col) for col in columns] for cluster in self.clusters],
+            columns=columns)
+        df.to_pickle(fname)
 
 
 class PipelineManager(object):
