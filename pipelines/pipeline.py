@@ -329,6 +329,7 @@ class PipelineManager(object):
                 cl.search = search
                 self.clusters.append(cl)
 
+
     def remove_harmonics(self):
         self.logger.info("Removing harmonics ...")
 
@@ -370,6 +371,9 @@ class PipelineManager(object):
         dm_min = params['dm_min']
         snr_min = params['snr_min']
         max_number = params['max_number']
+
+        # NOTE: Don't forget to sort by decreasing S/N before applying the filters
+        self.clusters = sorted(self.clusters, key=lambda cl: cl.top_detection.snr, reverse=True)
 
         if dm_min:
             self._apply_candidate_filter(
