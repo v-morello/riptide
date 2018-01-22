@@ -162,6 +162,11 @@ class PulsarSearch(object):
         self.logger.info("Total detections stored: {:d}".format(len(self.detections)))
 
     def cluster_detections(self):
+        self.logger.info("Clustering Detections ...")
+        if not self.detections:
+            self.logger.info("No Detections in store. Nothing to be done.")
+            return
+
         # NOTE: Debug stuff: build a pandas.DataFrame with detection params
         fname = os.path.join(self.manager.config['outdir'], self.name + "_detections.pickle")
         self.logger.info("Saving pandas.DataFrame with parameters of all {:d} Detections to file {:s}".format(len(self.detections), fname))
@@ -170,7 +175,6 @@ class PulsarSearch(object):
         df = pandas.DataFrame(
             [[getattr(det, col) for col in columns] for det in self.detections],
             columns=columns)
-        df = df.sort_values("period")
         df.to_pickle(fname)
 
         self.logger.info("Clustering Detections ...")
@@ -244,7 +248,7 @@ class PipelineManager(object):
         glob_pattern = self.config['glob']
         filenames = sorted(glob.glob(glob_pattern))
         self.logger.info("Found a total of {:d} file names corresponding to specified pattern \"{:s}\"".format(len(filenames), glob_pattern))
-        self.logger.info("Retching DM trial values from headers. This may take a while ...")
+        self.logger.info("Fetching DM trial values from headers. This may take a while ...")
         dm_trials = {
             self.dm_getter(fname): fname
             for fname in filenames
