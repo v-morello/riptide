@@ -10,6 +10,7 @@ from multiprocessing import Pool
 ### Non-standard imports ###
 import yaml
 import numpy as np
+import pandas
 
 ### Local imports ###
 from riptide import TimeSeries, ffa_search, find_peaks
@@ -123,7 +124,6 @@ class PulsarSearch(object):
         self.configure_logger()
         self.detections = []
         self.clusters = []
-        self.candidates = []
 
     @property
     def name(self):
@@ -162,6 +162,17 @@ class PulsarSearch(object):
         self.logger.info("Total detections stored: {:d}".format(len(self.detections)))
 
     def cluster_detections(self):
+        # NOTE: Debug stuff: build a pandas.DataFrame with detection params
+        fname = os.path.join(self.manager.config['outdir'], self.name + "_detections.pickle")
+        self.logger.info("Saving pandas.DataFrame with parameters of all {:d} Detections to file {:s}".format(len(self.detections), fname))
+
+        columns = ['period', 'dm', 'width', 'ducy', 'snr']
+        df = pandas.DataFrame(
+            [[getattr(det, col) for col in columns] for det in self.detections],
+            columns=columns)
+        df = df.sort_values("period")
+        df.to_pickle(fname)
+
         self.logger.info("Clustering Detections ...")
         periods = np.asarray([det.period for det in self.detections])
         tobs = np.median([det.metadata['tobs'] for det in self.detections])
