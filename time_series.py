@@ -109,7 +109,7 @@ class TimeSeries(object):
 
     @classmethod
     def from_numpy_array(cls, array, tsamp, copy=False):
-        return cls(data, tsamp, copy=copy)
+        return cls(array, tsamp, copy=copy)
 
     @classmethod
     def from_binary(cls, fname, tsamp, dtype=np.float32):
