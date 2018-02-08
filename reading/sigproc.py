@@ -60,7 +60,12 @@ sigproc_header_end_flag = 'HEADER_END'
 def read_str(fobj):
     """ Read string from open binary file object. """
     size, = struct.unpack('i', fobj.read(4))
-    return fobj.read(size).decode(encoding='utf-8')
+    # NOTE: reading a string in a binary file via fobj.read() returns
+    # a str in python2, but a bytes in python3. In python3 we need to called
+    # bytes.decode() to get a str, but in python2 calling decode() gives us
+    # a unicode object that must be cast to str again.
+    # The code below works with both python2 and python3.
+    return str(fobj.read(size).decode())
 
 def read_attribute(fobj, keydb):
     """ Read SIGPROC {key, value} pair from open binary file object. """
