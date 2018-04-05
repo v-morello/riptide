@@ -34,7 +34,7 @@ class Metadata(dict):
 
         The 'attrs' dictionary is expected to contain a certain number of required
         keys with a specific type, at the moment these are:
-        source_name, skycoord, dm, mjd
+        source_name, skycoord, dm, mjd, tobs, fname
 
         If any of the above keys are NOT present in 'attrs', they will be set to
         None in the Metadata object. If they are present, they must have the

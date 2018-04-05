@@ -64,7 +64,7 @@ def ffa_search(tseries, rmed_width=4.0, rmed_minpts=101, period_min=1.0, period_
             The output of the search, containing a 2D array representing S/N
             as a function of trial period and trial width.
     """
-    plan = ProcessingPlan(
+    plan = ProcessingPlan.create(
         tseries.nsamp, tseries.tsamp,
         period_min=period_min, period_max=period_max, fpmin=fpmin,
         bins_min=bins_min, bins_max=bins_max, ducy_max=ducy_max, wtsp=wtsp
