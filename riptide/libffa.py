@@ -18,7 +18,7 @@ def load_libffa():
 
     # load the library, using numpy mechanisms
     lib = npct.load_library(
-        os.path.join(fdir, 'c_src', 'libffa'), '.'
+        os.path.join(fdir, '..', 'c_src', 'libffa'), '.'
         )
 
     ### Set argument and return types of the library's functions
