@@ -179,16 +179,6 @@ class PulsarSearch(object):
             self.logger.info("No Detections in store. Nothing to be done.")
             return
 
-        # NOTE: Debug stuff: build a pandas.DataFrame with detection params
-        fname = os.path.join(self.manager.config['outdir'], self.name + "_detections.pickle")
-        self.logger.info("Saving pandas.DataFrame with parameters of all {:d} Detections to file {:s}".format(len(self.detections), fname))
-
-        columns = ['period', 'dm', 'width', 'ducy', 'snr']
-        df = pandas.DataFrame(
-            [[getattr(det, col) for col in columns] for det in self.detections],
-            columns=columns)
-        df.to_pickle(fname)
-
         self.logger.info("Clustering Detections ...")
         periods = np.asarray([det.period for det in self.detections])
         tobs = np.median([det.metadata['tobs'] for det in self.detections])
@@ -203,20 +193,16 @@ class PulsarSearch(object):
             ]
         self.logger.info("Clustering complete. Total Clusters: {0:d}".format(len(self.clusters)))
 
-        # NOTE: Debug stuff: build a pandas.DataFrame with cluster params
-        fname = os.path.join(self.manager.config['outdir'], self.name + "_clusters.pickle")
-        self.logger.info("Saving pandas.DataFrame with parameters of all {:d} DetectionClusters to file {:s}".format(len(self.clusters), fname))
-
-        columns = ['period', 'dm', 'width', 'ducy', 'snr']
-        df = pandas.DataFrame(
-            [[getattr(cluster.top_detection, col) for col in columns] for cluster in self.clusters],
-            columns=columns)
-        df.to_pickle(fname)
 
 
 class PipelineManager(object):
     """ Responsible for the outermost DM loop and top-level pulsar search
     management. """
+    DETECTIONS_FILE_NAME = "detections.pickle"
+    CLUSTERS_FILE_NAME = "clusters.pickle"
+    SUMMARY_FILE_NAME = "summary.tsv"
+    CANDIDATE_NAME_PREFIX = "riptide_cand"
+
     def __init__(self, config_path, override_keys={}):
         """
         Parameters:
@@ -231,9 +217,10 @@ class PipelineManager(object):
         self.config = parse_yaml_config(self.config_path)
         self.config.update(override_keys)
 
+        self.detections = []
         self.clusters = []
         self.candidates = []
-        
+
         self.configure_logger()
         self.configure_loaders()
         self.configure_searches()
@@ -331,6 +318,18 @@ class PipelineManager(object):
             tsbatch = list(map(self.loader, batch))
             yield tsbatch
 
+
+    def fetch_detections(self):
+        """ Place all Detectionr objects from all the searches into a
+        single list. Give each Detection a new attribute tracking
+        which PulsarSearch it belongs to."""
+        self.detections = []
+        for search in self.searches:
+            for det in search.detections:
+                det.search = search
+                self.detections.append(det)
+        self.logger.info("Fetched a total of {:d} Detections".format(len(self.detections)))
+
     def fetch_clusters(self):
         """ Place all DetectionCluster objects from all the searches into a
         single list. Give each DetectionCluster a new attribute tracking
@@ -340,7 +339,7 @@ class PipelineManager(object):
             for cl in search.clusters:
                 cl.search = search
                 self.clusters.append(cl)
-
+        self.logger.info("Fetched a total of {:d} DetectionClusters".format(len(self.clusters)))
 
     def remove_harmonics(self):
         self.logger.info("Removing harmonics ...")
@@ -434,13 +433,65 @@ class PipelineManager(object):
         self.candidates = sorted(self.candidates, key=lambda cd: cd.metadata['best_snr'], reverse=True)
         self.logger.info("Done building candidates.")
 
+
+    def save_detections(self):
+        outdir = self.config['outdir']
+        fname = os.path.join(outdir, self.DETECTIONS_FILE_NAME)
+        self.logger.info("Saving pandas.DataFrame with parameters of all {:d} Detections to file {:s}".format(len(self.detections), fname))
+
+        columns = ['search_name', 'period', 'dm', 'width', 'ducy', 'snr']
+        data = []
+        for det in self.detections:
+            entry = (det.search.config['name'], det.period, det.dm, det.width, det.ducy, det.snr)
+            data.append(entry)
+
+        data = pandas.DataFrame(data, columns=columns)
+        data.to_pickle(fname)
+
+    def save_clusters(self):
+        outdir = self.config['outdir']
+        fname = os.path.join(outdir, self.CLUSTERS_FILE_NAME)
+        self.logger.info("Saving pandas.DataFrame with parameters of all {:d} DetectionClusters to file {:s}".format(len(self.clusters), fname))
+
+        columns = ['search_name', 'period', 'dm', 'width', 'ducy', 'snr']
+        data = []
+        for cl in self.clusters:
+            det = cl.top_detection
+            entry = (cl.search.config['name'], det.period, det.dm, det.width, det.ducy, det.snr)
+            data.append(entry)
+
+        data = pandas.DataFrame(data, columns=columns)
+        data.to_pickle(fname)
+
     def save_candidates(self):
         outdir = self.config['outdir']
         self.logger.info("Saving {:d} candidates to output directory: {:s}".format(len(self.candidates), outdir))
+
+        summary = []
+        columns = ['fname', 'period', 'dm', 'width', 'ducy', 'snr']
+
         for index, cand in enumerate(self.candidates, start=1):
-            outpath = os.path.join(outdir, "riptide_cand_{:04d}.h5".format(index))
+            basename = "{:s}_{:04d}.h5".format(self.CANDIDATE_NAME_PREFIX, index)
+            outpath = os.path.join(outdir, basename)
             self.logger.info("Saving {!s} to file {:s}".format(cand, outpath))
             cand.save_hdf5(outpath)
+
+            md = cand.metadata
+            entry = (
+                basename,
+                md['best_period'],
+                md['best_dm'],
+                md['best_width'],
+                md['best_ducy'],
+                md['best_snr']
+                )
+            summary.append(entry)
+
+        fname = os.path.join(outdir, self.SUMMARY_FILE_NAME)
+        self.logger.info("Saving candidate summary to file {:s}".format(fname))
+        summary = pandas.DataFrame(summary, columns=columns)
+        summary.to_csv(fname, sep='\t', index=False)
+
 
     def run(self):
         self.logger.info("Starting pipeline ...")
@@ -457,15 +508,19 @@ class PipelineManager(object):
         for search in self.searches:
             search.cluster_detections()
 
+        self.fetch_detections()
         self.fetch_clusters()
-        # NOTE: As of 22 Jan 2018 I am turning this off for safety
+        # NOTE: As of 22 Jan 2018 I am turning the harmonic filter off for safety.
         # Tests on LOTAAS beams have shown that in the presence
         # of strong RFI, pulsars can be removed.
         #self.remove_harmonics()
         self.apply_candidate_filters()
         self.build_candidates()
+
+        self.save_detections()
+        self.save_clusters()
         self.save_candidates()
-        self.logger.info("Searches closed. Pipeline run complete.")
+        self.logger.info("Pipeline run complete.")
 
 
 ################################################################################
