@@ -2,7 +2,7 @@
 data_format: presto
 
 # Number of time series searched in parallel
-num_processes: 4
+num_processes: 24
 
 # Glob pattern matching the dedispersed time series to be searched
 # Note that only a subset of these will be searched, depending on the DM
@@ -14,19 +14,22 @@ outdir: "."
 
 # Max value of DM x |sin(b)|. Sets an upper limit on DM trials as a function
 # of observed sky coordinates
-dmsinb_max: 40.0
+dmsinb_max: 35.0
 
 # Hard DM trial limits, regardless of sky coordinates
 dm_min: 0.0
-dm_max: 1000.0
+dm_max: 100.0
 
 # Minimum difference between consecutive DM trials
-dm_step: 1.0
+dm_step: 0.05
 
 ##### Paths to configuration files for the searches
 # NOTE: they must be placed in the same directory as this file.
 search_configs:
-    - search_config.yaml
+    - config_VS.yaml
+    - config_S.yaml
+    - config_L.yaml
+    - config_VL.yaml
 
 ##### Candidate filtering
 # The cap on candidate number is applied last, after all the other filters
