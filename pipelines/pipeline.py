@@ -5,6 +5,7 @@ import logging
 import argparse
 import itertools
 import operator
+import timeit
 from multiprocessing import Pool
 
 ### Non-standard imports ###
@@ -122,6 +123,7 @@ class PulsarSearch(object):
         self.manager = manager
         self.config = config
         self.configure_logger()
+        self._cumulative_walltime = 0.0
         self.detections = []
         self.clusters = []
 
@@ -132,6 +134,11 @@ class PulsarSearch(object):
     @property
     def num_processes(self):
         return self.manager.config['num_processes']
+
+    def cumulative_walltime(self):
+        """ Returns the total amount of time spent in the
+        process_time_series_batch() method, in seconds. """
+        return self._cumulative_walltime
 
     def configure_logger(self):
         logger_name = '.'.join(['PulsarSearch', self.name])
@@ -146,6 +153,7 @@ class PulsarSearch(object):
             batch: list
                 list of TimeSeries to process.
         """
+        start_time = timeit.default_timer()
         pool = Pool(processes=self.num_processes)
 
         # Split the TimeSeries to search between processes
@@ -160,6 +168,10 @@ class PulsarSearch(object):
         self.logger.info("Search complete. New detections: {:d}".format(len(new_detections)))
         self.detections = self.detections + new_detections
         self.logger.info("Total detections stored: {:d}".format(len(self.detections)))
+
+        end_time = timeit.default_timer()
+        self._cumulative_walltime += (end_time - start_time)
+        self.logger.info("Total processing time: {:.2f} seconds".format(self.cumulative_walltime()))
 
     def cluster_detections(self):
         self.logger.info("Clustering Detections ...")
@@ -221,7 +233,7 @@ class PipelineManager(object):
 
         self.clusters = []
         self.candidates = []
-
+        
         self.configure_logger()
         self.configure_loaders()
         self.configure_searches()
@@ -453,7 +465,6 @@ class PipelineManager(object):
         self.apply_candidate_filters()
         self.build_candidates()
         self.save_candidates()
-
         self.logger.info("Searches closed. Pipeline run complete.")
 
 
