@@ -35,7 +35,7 @@ cd c_src
 make all
 ```
 
-And then make sure that the parent directory to the riptide repository ("~/software" in this example) is in the PYTHONPATH.
+And then make sure that the base directory of the riptide repository ("~/software/riptide" in this example) is in the PYTHONPATH.
 
 
 ### Docker image
