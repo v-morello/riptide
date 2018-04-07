@@ -56,9 +56,17 @@ def grouper(iterable, n):
         yield filtered_group
 
 
+def sort_dataframe_by_column(df, column):
+    """ Utility function that handles the change in pandas API made in version
+    0.17.0, where DataFrame.sort() was replaced by DataFrame.sort_values()."""
+    if hasattr(df, 'sort_values'):
+        return df.sort_values(column)
+    else:
+        return df.sort(column)
+
+
 class DetectionCluster(list):
-    """ Cluster of Detection objects. It also keeps in memory the TimeSeries
-    associated with the brightest detection, and only that one. """
+    """ Cluster of Detection objects. """
     def __init__(self, detections):
         super(DetectionCluster, self).__init__(detections)
 
@@ -198,9 +206,9 @@ class PulsarSearch(object):
 class PipelineManager(object):
     """ Responsible for the outermost DM loop and top-level pulsar search
     management. """
-    DETECTIONS_FILE_NAME = "detections.pickle"
-    CLUSTERS_FILE_NAME = "clusters.pickle"
-    SUMMARY_FILE_NAME = "summary.tsv"
+    DETECTIONS_FILE_NAME = "detections.csv"
+    CLUSTERS_FILE_NAME = "clusters.csv"
+    SUMMARY_FILE_NAME = "summary.csv"
     CANDIDATE_NAME_PREFIX = "riptide_cand"
 
     def __init__(self, config_path, override_keys={}):
@@ -378,6 +386,8 @@ class PipelineManager(object):
         self.clusters = valid_clusters
 
     def apply_candidate_filters(self):
+        """ Remove DetectionClusters that do not pass the filters specified into
+        the PipelineManager config file. """
         params = self.config['candidate_filters']
         dm_min = params['dm_min']
         snr_min = params['snr_min']
@@ -402,6 +412,8 @@ class PipelineManager(object):
 
 
     def build_candidates(self):
+        """ Turn remaining clusters (after applying filters) into candidates.
+        """
         self.logger.info("Building Candidates ...")
         self.candidates = []
 
@@ -435,6 +447,10 @@ class PipelineManager(object):
 
 
     def save_detections(self):
+        """ Save detection parameters to pandas.DataFrame """
+        if not self.detections:
+            return
+
         outdir = self.config['outdir']
         fname = os.path.join(outdir, self.DETECTIONS_FILE_NAME)
         self.logger.info("Saving pandas.DataFrame with parameters of all {:d} Detections to file {:s}".format(len(self.detections), fname))
@@ -446,9 +462,14 @@ class PipelineManager(object):
             data.append(entry)
 
         data = pandas.DataFrame(data, columns=columns)
-        data.to_pickle(fname)
+        data = sort_dataframe_by_column(data, 'period')
+        data.to_csv(fname, sep='\t', index=False, float_format='%.8f')
 
     def save_clusters(self):
+        """ Save cluster parameters to pandas.DataFrame """
+        if not self.clusters:
+            return
+
         outdir = self.config['outdir']
         fname = os.path.join(outdir, self.CLUSTERS_FILE_NAME)
         self.logger.info("Saving pandas.DataFrame with parameters of all {:d} DetectionClusters to file {:s}".format(len(self.clusters), fname))
@@ -461,9 +482,14 @@ class PipelineManager(object):
             data.append(entry)
 
         data = pandas.DataFrame(data, columns=columns)
-        data.to_pickle(fname)
+        data = sort_dataframe_by_column(data, 'period')
+        data.to_csv(fname, sep='\t', index=False, float_format='%.8f')
 
     def save_candidates(self):
+        """ Save candidates to HDF5, and write a candidate summary file. """
+        if not self.candidates:
+            return
+
         outdir = self.config['outdir']
         self.logger.info("Saving {:d} candidates to output directory: {:s}".format(len(self.candidates), outdir))
 
@@ -490,10 +516,11 @@ class PipelineManager(object):
         fname = os.path.join(outdir, self.SUMMARY_FILE_NAME)
         self.logger.info("Saving candidate summary to file {:s}".format(fname))
         summary = pandas.DataFrame(summary, columns=columns)
-        summary.to_csv(fname, sep='\t', index=False)
+        summary.to_csv(fname, sep='\t', index=False, float_format='%.8f')
 
 
     def run(self):
+        """ Launch the processing. """
         self.logger.info("Starting pipeline ...")
         self.logger.info("Selecting DM trials ...")
         self.select_dm_trials()
@@ -510,15 +537,19 @@ class PipelineManager(object):
 
         self.fetch_detections()
         self.fetch_clusters()
+        self.save_detections()
+        self.save_clusters()
+
         # NOTE: As of 22 Jan 2018 I am turning the harmonic filter off for safety.
         # Tests on LOTAAS beams have shown that in the presence
         # of strong RFI, pulsars can be removed.
         #self.remove_harmonics()
+
+        # NOTE: candidate filters are actually applied to the list of clusters
+        # Then, those remaining clusters are turned into candidates
         self.apply_candidate_filters()
         self.build_candidates()
 
-        self.save_detections()
-        self.save_clusters()
         self.save_candidates()
         self.logger.info("Pipeline run complete.")
 
