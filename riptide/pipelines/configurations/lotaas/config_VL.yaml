@@ -3,11 +3,11 @@ name: "VL"
 ### Keyword arguments to the ffa_search() function ###
 search:
     period_min: 5.00
-    period_max: 60.00
+    period_max: 120.00
     bins_min: 960
     bins_max: 1040
     fpmin: 10
-    rmed_width: 8.0
+    rmed_width: 10.0
     rmed_minpts: 101
     wtsp: 1.5
     threads: 1
