@@ -11,48 +11,6 @@ import h5py
 from .. import Metadata, SubIntegrations
 
 
-def create_dpw_cube(detections, logger=None):
-    """ Create a DM-Period-Width cube from a list of clustered Detections.
-
-    Returns:
-    --------
-        dm_trials
-        period_trials
-        width_trials
-        cube
-    """
-    if not logger:
-        logger = logging.getLogger('Candidate')
-
-    # Each detection contains a S/N versus Period and Width array
-    # The width trials are guaranteed to be all the same, but the period
-    # trials may differ.
-    # We need to resample those to a common set of period trials
-    pmin = max([det.period_trials[ 0] for det in detections])
-    pmax = min([det.period_trials[-1] for det in detections])
-
-    # Choose the number of common period trials 'ncpt'
-    ncpt = max([len(det.period_trials) for det in detections])
-    logger.info("Re-sampling PW planes with: pmin = {pmin:.9e}, pmax = {pmax:.9e}, num_periods = {ncpt:4d}".format(pmin=pmin, pmax=pmax, ncpt=ncpt))
-
-    period_trials = np.linspace(pmin, pmax, ncpt)
-    width_trials = detections[0].width_trials
-    dm_trials = np.sort(np.asarray([det.dm for det in detections]))
-
-    ndm = len(detections)
-    nw = len(width_trials)
-    cube = np.zeros(shape=(ndm, ncpt, nw))
-
-    # Re-sample all P-W planes in increasing DM order
-    # Create the final DM-Period-Width cube from the output
-    for idm, det in enumerate(sorted(detections, key=operator.attrgetter('dm'))):
-        pwp = det.snr_trials
-        for iw, width in enumerate(width_trials):
-            snr = pwp[:, iw]
-            cube[idm, :, iw] = np.interp(period_trials, det.period_trials, snr)
-
-    return dm_trials, period_trials, width_trials, cube
-
 
 class ResponseCurve(object):
     """ Stores a tuple of arrays representing e.g. a S/N versus DM curve,
