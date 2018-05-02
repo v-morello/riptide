@@ -210,7 +210,6 @@ class CandidatePlot(object):
         plt.grid(linestyle=':')
         plt.xlabel('DM (pc $\mathrm{cm}^{-3}$)')
         plt.ylabel("S/N")
-        #plt.title("DM Curve")
 
     def _plotPeriodCurve(self):
         ax = self.layout.axPeriodCurve
@@ -232,7 +231,6 @@ class CandidatePlot(object):
         plt.grid(linestyle=':')
         plt.xlabel('Delta Period ({:s})'.format(unit))
         plt.ylabel("S/N")
-        #plt.title("Period Curve")
 
     def _plotWidthCurve(self):
         ax = self.layout.axWidthCurve
@@ -251,8 +249,6 @@ class CandidatePlot(object):
         plt.grid(which='major', linestyle='-')
         plt.xlabel('Duty Cycle (%)')
         plt.ylabel("S/N")
-
-        #plt.title("Width Curve")
 
     def _plotTable(self):
         table = Table()
