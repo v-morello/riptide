@@ -18,7 +18,7 @@ riptide loosely stands for "seaRchIng for Pulsars in the TIme Domain". Mostly be
 * pandas
 * h5py
 * astropy
-* pandas
+* pyyaml
 
 ### Installation
 
