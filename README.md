@@ -40,7 +40,21 @@ And then make sure that the base directory of the riptide repository ("~/softwar
 
 ### Docker image
 
-Coming soon.
+The riptide Dockerfile is located in the 'docker' subdirectory. To build the image with the name 'riptide':
+
+```bash
+cd docker
+docker build -t riptide .
+```
+
+Both python3 and ipython are installed within the docker image. To run it interactively:
+
+```bash
+docker run -it --rm riptide bash
+```
+
+Refer to your favourite docker cheat sheet for further information and advanced usage.
+
 
 ### Basic Usage
 
