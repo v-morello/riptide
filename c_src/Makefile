@@ -1,4 +1,3 @@
-CC=gcc
 CFLAGS=-O3 -Wall -std=c99 --fast-math
 OMPFLAGS=-fopenmp
 
