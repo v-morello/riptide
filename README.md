@@ -12,6 +12,7 @@ __riptide__ loosely stands for "seaRchIng for Pulsars in the TIme Domain". Mostl
 ## Dependencies
 
 riptide has the following strict requirements:
+
 * `numpy`
 * `pandas`
 * `h5py`
@@ -19,6 +20,7 @@ riptide has the following strict requirements:
 * `pyyaml`
 
 And the following packages are optional but highly recommended:
+
 * `matplotlib`: required for plotting data products
 
 
@@ -94,6 +96,7 @@ pgram.display()
 ```
 
 `ffa_search` returns three outputs:
+
 1. The de-reddened and normalised copy of the input time series that was actually searched
 2. The search plan that was followed, specifying how the data was iteratively downsampled across the entire search period ramge
 3. The output `Periodogram`
