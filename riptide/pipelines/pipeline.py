@@ -186,8 +186,7 @@ class PulsarSearch(object):
         if not self.detections:
             self.logger.info("No Detections in store. Nothing to be done.")
             return
-
-        self.logger.info("Clustering Detections ...")
+        
         periods = np.asarray([det.period for det in self.detections])
         tobs = np.median([det.metadata['tobs'] for det in self.detections])
         dbi = tobs / periods

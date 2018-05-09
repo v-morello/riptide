@@ -65,7 +65,7 @@ Refer to your favourite docker cheat sheet for further information and advanced 
 
 The core functionality of riptide is to take a single time series as an input and calculate its *periodogram*: the S/N as a function of trial period and trial pulse width. This is what we will demonstrate in this section.
 
-##### Load a time series, or create a fake one
+#### Load a time series, or create a fake one
 
 Time series (or single DM trials) are encapsulated in the aptly named `TimeSeries` class. We can either create an artificial train of pulses (plus some white noise) for test purposes, or load some real data created with some popular pulsar software packages.
 
@@ -81,7 +81,7 @@ tseries_sigproc = TimeSeries.from_sigproc("~/work/pulsars/sigproc_time_series/J0
 ```
 
 
-##### Computing and manipulating periodograms
+#### Computing and manipulating periodograms
 
 Periodograms are computed with the `ffa_search` function, which takes as input a `TimeSeries` and many keyword arguments. The search period range is specified via `period_min` and `period_max`. The duty cycle resolution of the search is set by `bins_min` and `bins_max`; due to how the search is performed under the hood, it is recommended to make `bins_max` approximately 10% higher than `bins_min`.
 
@@ -110,9 +110,9 @@ print(pgram.periods.size, pgram.widths.size, pgram.snrs.shape)
 > 124778 10 (124778, 10)
 ```
 
-##### Important detail: the metadata attribute
+#### Important detail: the metadata attribute
 
-All `TimeSeries` objects and all derived data products (periodogram, pulsar search candidates, etc.) in riptide have a `metadata` dictionary carrying whatever information provided by the software package that created the input time series data. There is of course no header standardization for such data in pulsar astronomy, and the information contained in `metadata` will therefore vary across software packages and observatories. We do however attempt to guarantee some metadata uniformity in __riptide__, by always enforcing the presence of the following metadata keys and their associated data types:
+All `TimeSeries` objects and all derived data products (periodogram, pulsar search candidates, etc.) in riptide have a `metadata` dictionary carrying whatever information provided by the software package that created the input time series data. There is of course no header standardization for such data in pulsar astronomy, and the information contained in `metadata` will therefore vary across software packages and observatories. We do however attempt to guarantee some metadata uniformity in riptide, by always enforcing the presence of the following metadata keys and their associated data types:
 
 * `dm`: `float`, dispersion measure of the input data
 * `fname`: `str`, original file name
