@@ -56,8 +56,8 @@ def split_lines(lines):
 
 def parse_pairs(pairs, extra_lines):
     """ Parse the output of split_lines() into a dictionary. """
-    onoff_pairs = pairs[13:-7]
-    keyval_pairs = pairs[:13] + pairs[-7:]
+    onoff_pairs = pairs[12:-8]
+    keyval_pairs = pairs[:12] + pairs[-8:]
 
     # "Additional notes" at the end of the file
     # We append that to the key-value pair list and parse it as any other
