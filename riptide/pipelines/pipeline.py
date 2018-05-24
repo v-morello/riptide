@@ -186,7 +186,7 @@ class PulsarSearch(object):
         if not self.detections:
             self.logger.info("No Detections in store. Nothing to be done.")
             return
-        
+
         periods = np.asarray([det.period for det in self.detections])
         tobs = np.median([det.metadata['tobs'] for det in self.detections])
         dbi = tobs / periods
@@ -250,7 +250,7 @@ class PipelineManager(object):
         fmt = self.config['data_format'].strip().lower()
         if fmt == 'presto':
             self.loader = TimeSeries.from_presto_inf
-            self.dm_getter = lambda fname: PrestoInf(fname).dm
+            self.dm_getter = lambda fname: PrestoInf(fname)['dm']
         elif fmt == 'sigproc':
             self.loader = TimeSeries.from_sigproc
             self.dm_getter = lambda fname: SigprocHeader(fname)['refdm']
