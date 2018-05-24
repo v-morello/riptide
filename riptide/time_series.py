@@ -241,7 +241,7 @@ class TimeSeries(object):
         """
         inf = PrestoInf(fname)
         metadata = Metadata.from_presto_inf(inf)
-        return cls(inf.load_data(), tsamp=inf.tsamp, metadata=metadata)
+        return cls(inf.load_data(), tsamp=inf['tsamp'], metadata=metadata)
 
     @classmethod
     def from_sigproc(cls, fname, extra_keys={}):

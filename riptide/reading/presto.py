@@ -1,150 +1,108 @@
-"""
-Module to parse PRESTO time series stored as .inf/.dat file pairs.
-"""
-### Standard library imports
+#
+# PRESTO .inf file parsing module
+# (c) Vincent Morello, 2018
+#
 import os
-import glob
-import numpy
+import json
 
-### Non-standard imports
+import numpy
 from astropy.coordinates import SkyCoord
 import astropy.units as uu
 
+# The original C code that reads/writes .inf files can be found here:
+# https://github.com/scottransom/presto/blob/master/src/ioinf.c
+# The official way to parse is based on line order.
 
-#####################################################
+def str2bool(str):
+    """ Convert string to boolean. """
+    return int(str) != 0
 
-# NOTE: all of these 'incorporate' function must have the same
-# signature (PrestoInf, key, value, value_type) even if some
-# of the arguments end up being useless.
+presto_inf_parsing_plan = [
+    ('basename', str),
+    ('telescope', str),
+    ('instrument', str),
+    ('source_name', str),
+    ('raj', str),
+    ('decj', str),
+    ('observer', str),
+    ('mjd', float),
+    ('barycentered', str2bool),
+    ('nsamp', int),
+    ('tsamp', float),
+    ('breaks', str2bool),
+    ('obstype', str),
+    ('fov', float),
+    ('dm', float),
+    ('fbot', float),
+    ('bandwidth', float),
+    ('nchan', int),
+    ('cbw', float),
+    ('analyst', str),
+    ('notes', str)
+    ]
 
-def _incorporate(inf, key, val, vtype):
-    setattr(inf, key, vtype(val))
-    inf.parsed_keys.add(key)
+def split_lines(lines):
+    """ Split lines in a .inf file into description/value pairs. """
+    sep = '= ' # NOTE: the trailing space is important
+    pairs = []
+    extra_lines = []
+    for line in lines:
+        try:
+            descr, value = map(str.strip, line.split(sep))
+            pairs.append((descr, value))
+        except:
+            extra_lines.append(line)
+    return pairs, extra_lines
 
-def _incorporate_bool(inf, key, val, vtype):
-    setattr(inf, key, bool(int(val)))
-    inf.parsed_keys.add(key)
+def parse_pairs(pairs, extra_lines):
+    """ Parse the output of split_lines() into a dictionary. """
+    onoff_pairs = pairs[12:-8]
+    keyval_pairs = pairs[:12] + pairs[-8:]
 
-def _incorporate_onoff(inf, key, val, vtype):
-    # Create empty list attribute to hold on/off bin pairs
-    # if it does not exist already
-    if not hasattr(inf, key):
-        setattr(inf, key, [])
-        inf.parsed_keys.add(key)
+    # "Additional notes" at the end of the file
+    # We append that to the key-value pair list and parse it as any other
+    notes = '\n'.join(extra_lines[1:]).strip()
+    keyval_pairs.append(('notes', notes))
 
-    start, end = map(int, map(str.strip, val.split(',')))
-    onoff = getattr(inf, key)
-    onoff.append((start, end))
+    # Parsed key-value pairs as dictionary
+    items = {}
+    for pair, plan_step in zip(keyval_pairs, presto_inf_parsing_plan):
+        descr, value = pair
+        keyname, keytype = plan_step
+        items[keyname] = keytype(value)
+    return items
 
-#####################################################
+def inf2dict(text):
+    """ Parse the text of a PRESTO .inf file into a dictionary. """
+    lines = text.strip().split('\n')
+    pairs, extra_lines = split_lines(lines)
+    return parse_pairs(pairs, extra_lines)
 
-class PrestoInf(object):
-    """ """
-    ### Parsing plan ###
-    # here the keys are substrings identifying a line in a .inf file
-    # the values are tuples (attribute_name, action, attribute_type)
-    # used to decide how to incorporate the parsed data into the
-    # final object
-    _parsing_plan = {
-        'data file name': ('basename', _incorporate, str),
-        'telescope': ('telescope', _incorporate, str),
-        'instrument': ('instrument', _incorporate, str),
-        'object being observed': ('source', _incorporate, str),
-        'j2000 right ascension': ('raj', _incorporate, str),
-        'j2000 declination': ('decj', _incorporate, str),
-        'observed by': ('observer', _incorporate, str),
-        'epoch of observation': ('mjd', _incorporate, float),
-        'barycentered': ('barycentered', _incorporate_bool, bool),
-        'number of bins': ('nsamp', _incorporate, int),
-        'width of each': ('tsamp', _incorporate, float),
-        'any breaks': ('breaks', _incorporate_bool, bool),
-        'type of observation': ('obstype', _incorporate, str),
-        'beam diameter': ('bdiam', _incorporate, float),
-        'dispersion measure': ('dm', _incorporate, float),
-        'central freq of low channel': ('fbot', _incorporate, float),
-        'total bandwidth': ('bandwidth', _incorporate, float),
-        'number of channels': ('nchan', _incorporate, int),
-        'channel bandwidth': ('cbw', _incorporate, float),
-        'data analyzed by': ('analyst', _incorporate, str),
-
-        # Special treatment for on/off bin pair entries
-        # Here, in tuples (start, end) are appended to the specified attribute,
-        # which is a list. The third element of the tuple is ignored here.
-        'on/off bin pair': ('onoff', _incorporate_onoff, None),
-        }
-
+class PrestoInf(dict):
+    """ Parse PRESTO's .inf files that contain dedispersed time series
+    metadata. """
     def __init__(self, fname):
-        """ Load PRESTO time series data into a convenient object. 'fname' can be either
-        without or with the suffix .inf
-        """
-        if not fname.lower().endswith('.inf'):
-            fname = fname + '.inf'
-
-        self.fname = os.path.abspath(fname)
-        self.parsed_keys = set()
-
-        # Read .inf file into a dictionary {description (str): value (str)}
-        dvdict = self._read(fname)
-
-        # Incorporate values as attributes, following parsing plan
-        self._incorporate_dvdict(dvdict)
-
-    @classmethod
-    def _read(cls, fname, delimiter='='):
-        """ Read .inf file into dictionary {description: str_value}"""
-        dvdict = {}
+        self._fname = os.path.realpath(fname)
         with open(fname, 'r') as fobj:
-            for line in fobj.readlines():
-                try:
-                    chunks = list(map(str.strip, line.split(delimiter)))
-                    descr = chunks[0]
-                    value = chunks[-1]
-                    dvdict[descr] = value
-                except Exception as err:
-                    pass
-        return dvdict
+            items = inf2dict(fobj.read())
+        super(PrestoInf, self).__init__(items)
 
-    @classmethod
-    def _find_plan(cls, descr):
-        return next(
-            plan
-            for partial_descr, plan in cls._parsing_plan.items()
-            if partial_descr.lower() in descr.lower()
-            )
+    @property
+    def fname(self):
+        """ Absolute path to original file. """
+        return self._fname
 
-    def _incorporate_dvdict(self, dvdict):
-        cls = type(self)
-        for descr, val in dvdict.items():
-            try:
-                attr_name, func, attr_type = cls._find_plan(descr)
-            except StopIteration:
-                #print('No parsing action matching \'%s\' was found' % descr)
-                continue
-            func(self, attr_name, val, attr_type)
+    @property
+    def data_fname(self):
+        """ Path to the associated .dat file """
+        # NOTE: second argument of rsplit() is 'maxsplit'
+        return self.fname.rsplit('.', 1)[0] + '.dat'
+
+    @property
+    def skycoord(self):
+        """ astropy.SkyCoord object with the coordinates of the source. """
+        return SkyCoord(self['raj'], self['decj'], unit=(uu.hour, uu.degree))
 
     def load_data(self):
         """ Returns the associated time series data as a numpy float32 array. """
         return numpy.fromfile(self.data_fname, dtype=numpy.float32)
-
-    @property
-    def parsed_attrs(self):
-        return {
-            key: getattr(self, key)
-            for key in self.parsed_keys
-            }
-
-    @property
-    def skycoord(self):
-        return SkyCoord(self.raj, self.decj, unit=(uu.hour, uu.deg), frame='icrs')
-
-    @property
-    def data_fname(self):
-	# NOTE: second argument of rsplit() is 'maxsplit'
-        return self.fname.rsplit('.', 1)[0] + '.dat'
-
-    def __str__(self):
-        cls = type(self).__name__
-        return '%s %s' % (cls, self.basename)
-
-    def __repr__(self):
-        return str(self)

@@ -76,11 +76,8 @@ class Metadata(dict):
         if type(inf) == str:
             inf = PrestoInf(inf)
 
-        attrs = inf.parsed_attrs.copy()
-        attrs['dm'] = inf.dm
+        attrs = dict(inf)
         attrs['skycoord'] = inf.skycoord
-        attrs['source_name'] = inf.source
-        attrs['mjd'] = inf.mjd
         attrs['fname'] = os.path.realpath(inf.fname)
         return cls(attrs)
 
