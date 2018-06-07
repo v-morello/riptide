@@ -148,7 +148,7 @@ class ProcessingPlan(object):
 
         group.create_dataset('widths', data=self._widths, dtype=int)
         for column in self._column_names:
-            group.create_dataset(column, data=self._steps[column].as_matrix())
+            group.create_dataset(column, data=self._steps[column].values)
 
     @classmethod
     def _from_hdf5_file(cls, h5file):

@@ -79,9 +79,9 @@ def ffa_search(tseries, rmed_width=4.0, rmed_minpts=101, period_min=1.0, period_
     npt = num_period_trials(plan)
 
     # Input arrays
-    dsfactors = plan.steps.dsfactor.as_matrix()
-    bins_min = plan.steps.bins_min.as_matrix()
-    bins_max = plan.steps.bins_max.as_matrix()
+    dsfactors = plan.steps.dsfactor.values
+    bins_min = plan.steps.bins_min.values
+    bins_max = plan.steps.bins_max.values
 
     # Allocate output arrays
     periods = np.zeros(npt, dtype=np.float32)
