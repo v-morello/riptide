@@ -1,3 +1,5 @@
+import copy
+
 ##### Non-standard imports #####
 import numpy as np
 import h5py
@@ -7,6 +9,7 @@ from .running_median import fast_running_median
 from .libffa import downsample, generate_signal
 from .reading import PrestoInf, SigprocHeader
 from .metadata import Metadata
+from .ffautils import autocov
 
 
 class TimeSeries(object):
@@ -49,27 +52,51 @@ class TimeSeries(object):
         """ Sampling time in seconds. """
         return self._tsamp
 
-    def normalise(self, inplace=False):
+    def copy(self):
+        """ Returns a new copy of the TimeSeries """
+        return copy.deepcopy(self)
+
+    def normalise(self, inplace=False, correct_autocov=False):
         """ Normalise to zero mean and unit variance. if 'inplace' is False,
         a new TimeSeries object with the normalized data is returned.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         inplace: bool, optional
             If set to True, perform the operation in-place, otherwise, a new
             TimeSeries object is returned. (default: False)
+        correct_autocov: bool, optional
+            If set to True, take into account the covariance between consecutive
+            samples when normalising. Leave to False unless you know *exactly*
+            what you are doing.
+            If  'v' is the sample variance of the data, then normalise by
+            sqrt(v + 2c) instead of sqrt(v). This is used internally to take
+            into account cases where the data has been previously downsampled
+            by a non-integer factor, and where normalising in a naive way leads
+            to overestimated output S/Ns. Also, note that the data MUST be
+            have been previously de-reddened before setting that parameter to
+            True. (default: False)
 
-        Returns:
-        --------
+        Returns
+        -------
         out: TimeSeries or None
             The normalised TimeSeries, if 'inplace' was set to False.
         """
         m = self.data.mean()
-        s = self.data.std()
-        if inplace:
-            self._data = (self.data - m) / s
+        v = self.data.var()
+
+        if correct_autocov:
+            # covariance between consecutive samples
+            c = autocov(self.data - m, 1)
+            norm = (v + 2*c) ** 0.5
         else:
-            return TimeSeries((self.data - m) / s, self.tsamp, metadata=self.metadata)
+            norm = v ** 0.5
+
+        if inplace:
+            self._data = (self.data - m) / norm
+        else:
+            return TimeSeries((self.data - m) / norm, self.tsamp, metadata=self.metadata)
+
 
     def deredden(self, width, minpts=101, inplace=False):
         """ Subtract from the data an aproximate running median. To save time,
