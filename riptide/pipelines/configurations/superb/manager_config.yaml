@@ -19,13 +19,16 @@ dm_step: 0.05
 
 # Paths to configuration files for the searches. They must be placed in the
 # same directory as this file.
-search_configs:
+search_configs: 
+  - config_short.yaml
+  - config_medium.yaml
+  - config_long.yaml
 
 ##### Candidate filtering
 # The cap on candidate number is applied last, after all the other filters
 # These fields can be left empty, in which case the corresponding filter is
 # not applied
 candidate_filters:
-    dm_min: 1.0
-    snr_min: 8.0
-    max_number: 100
+  dm_min:
+  snr_min:
+  max_number:
