@@ -13,18 +13,20 @@ glob: "*.inf"
 outdir: "."
 
 # Max value of DM x |sin(b)|. Sets an upper limit on DM trials as a function
-# of observed sky coordinates
-dmsinb_max: 35.0
+# of observed sky coordinates. If left blank, no upper limit is applied.
+dmsinb_max: 
 
 # Hard DM trial limits, regardless of sky coordinates
+# These fields can be left blank, in which case the associated limit is not
+# applied.
 dm_min: 0.0
 dm_max: 100.0
 
 # Minimum difference between consecutive DM trials
 dm_step: 0.05
 
-##### Paths to configuration files for the searches
-# NOTE: they must be placed in the same directory as this file.
+# Paths to configuration files for the searches. They must be placed in the
+# same directory as this file.
 search_configs:
     - config_VS.yaml
     - config_S.yaml

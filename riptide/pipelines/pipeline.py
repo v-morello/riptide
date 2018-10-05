@@ -40,6 +40,25 @@ def get_logger(name, level=logging.INFO):
         logger.addHandler(handler)
     return logger
 
+def get_lower_dm_limit(dm_trials, dm_min=None):
+    """ 'dm_min' is the minimum DM enforced by the user """
+    if dm_min is not None:
+        return dm_min
+    else:
+        return min(dm_trials)
+ 
+def get_galactic_dm_limit(glat_radians, dmsinb_max, eps=1e-6):
+    return dmsinb_max / (np.sin(abs(glat_radians)) + eps)
+ 
+def get_upper_dm_limit(dm_trials, glat_radians, dm_max=None, dmsinb_max=None, eps=1e-6):
+    """ 'dm_max' is the maximum DM enforced by the user, and 'dmsinb_max' the maximum
+   value of DM x sin |b| allowed. """
+    result = max(dm_trials)
+    if dm_max is not None:
+        result = min(result, dm_max)
+    if dmsinb_max is not None:
+        result = min(result, get_galactic_dm_limit(glat_radians, dmsinb_max))
+    return result
 
 def grouper(iterable, n):
     """ Iterate through iterable, yielding groups of n elements. The last
@@ -54,7 +73,6 @@ def grouper(iterable, n):
     for group in zipper(*args, fillvalue=None):
         filtered_group = [val for val in group if val is not None]
         yield filtered_group
-
 
 def sort_dataframe_by_column(df, column):
     """ Utility function that handles the change in pandas API made in version
@@ -269,7 +287,7 @@ class PipelineManager(object):
             for fname in filenames
             }
         self.logger.info("DM trial values have been read.")
-
+ 
         # Helper iterator, used to select a sequence of DM trials according to
         # config parameters
         def iter_steps(sequence, vmin, vmax, step):
@@ -277,7 +295,7 @@ class PipelineManager(object):
             array = np.asarray(sorted(list(sequence)))
             mask = (array >= vmin) & (array <= vmax)
             array = array[mask]
-
+ 
             # Yield values separated by at least 'step'
             last = None
             rtol = 1e-7 # Deal with float rounding errors
@@ -285,7 +303,7 @@ class PipelineManager(object):
                 if last is None or value - last >= step * (1-rtol):
                     last = value
                     yield value
-
+ 
         # Set max DM trial as a function of both the hard maximum limit and
         # dmsinb_max
         dm_min = self.config['dm_min']
@@ -298,15 +316,19 @@ class PipelineManager(object):
             skycoord = tseries.metadata['skycoord']
             glat_radians = skycoord.galactic.b.rad
             self.logger.info("Read galactic latitude from \"{:s}\" b = {:.3f} deg".format(filenames[0], skycoord.galactic.b.deg))
-
-            galactic_dm_max = dmsinb_max / (np.sin(abs(glat_radians)) + 1e-4)
-            self.logger.info("Requested maximum value of DM x sin |b| ({:.3f}) corresponds to DM = {:.3f}".format(dmsinb_max, galactic_dm_max))
-
-            # Update value of dm_max
-            dm_max = min(dm_max, galactic_dm_max)
-
+ 
+            if dmsinb_max is not None:
+                msg = "Requested maximum value of DM x sin |b| ({:.2f}) corresponds to DM = {:.2f}".format(
+                    dmsinb_max,
+                    get_galactic_dm_limit(glat_radians, dmsinb_max)
+                    )
+                self.logger.info(msg)
+ 
+            dm_min = get_lower_dm_limit(dm_trials.keys(), dm_min=dm_min)
+            dm_max = get_upper_dm_limit(dm_trials.keys(), glat_radians, dm_max=dm_max, dmsinb_max=dmsinb_max)
+ 
         self.logger.info("Selecting DM trials in range [{:.3f}, {:.3f}] with a minimum step of {:.3f}".format(dm_min, dm_max, dm_step))
-
+ 
         # NOTE: this is an iterator
         dm_trial_values = iter_steps(dm_trials.keys(), dm_min, dm_max, dm_step)
         self.dm_trial_paths = [dm_trials[value] for value in dm_trial_values]
