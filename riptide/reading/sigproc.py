@@ -186,6 +186,20 @@ class SigprocHeader(dict):
         return self._bytesize
 
     @property
+    def bytes_per_sample(self):
+        return self['nchans'] * self['nbits'] // 8
+
+    @property
+    def nsamp(self):
+        """ Number of samples in the data """
+        return (os.path.getsize(self.fname) - self.bytesize) // self.bytes_per_sample
+
+    @property
+    def tobs(self):
+        """ Total length of the data in seconds """
+        return self.nsamp * self['tsamp']
+
+    @property
     def skycoord(self):
         """ astropy.SkyCoord object with the coordinates of the source. """
         rajd = parse_float_coord(self['src_raj'])
