@@ -14,11 +14,11 @@ dmsinb_max:
 # Hard DM trial limits, regardless of sky coordinates
 # These fields can be left blank, in which case the associated limit is not
 # applied.
-dm_min: 0.0
-dm_max: 400.0
+dm_min: 240.0
+dm_max: 243.3
 
 # Minimum difference between consecutive DM trials
-dm_step: 1.0
+dm_step: 0.1
 
 # Paths to configuration files for the searches. They must be placed in the
 # same directory as this file.
