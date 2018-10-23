@@ -64,24 +64,47 @@ def ffa_search(tseries, rmed_width=4.0, rmed_minpts=101, period_min=1.0, period_
             The output of the search, containing a 2D array representing S/N
             as a function of trial period and trial width.
     """
+    # # NOTE: Fast method where we first downsample by as much as possible
+    # # Downsample by the largest possible integer factor
+    # if tseries.tsamp * bins_min > period_min:
+    #     raise ValueError('ffa_search(): period_min must be larger than tsamp x bins_min')
+    #
+    # factor = int(period_min / bins_min / tseries.tsamp)
+    # if factor > 1:
+    #     ts = tseries.downsample(factor)
+    # else:
+    #     ts = tseries.copy()
+    #
+    # ### Prepare data: deredden then normalise IN THAT ORDER
+    # ### 'ts' is the post-processed TimeSeries that will be searched
+    # ts.deredden(rmed_width, minpts=rmed_minpts, inplace=True)
+    # ts.normalise(inplace=True, correct_autocov=True)
+    #
+    # plan = ProcessingPlan.create(
+    #     ts.nsamp, ts.tsamp,
+    #     period_min=period_min, period_max=period_max, fpmin=fpmin,
+    #     bins_min=bins_min, bins_max=bins_max, ducy_max=ducy_max, wtsp=wtsp
+    #     )
+
+    # NOTE: Conservative method
+    ### Prepare data: deredden then normalise IN THAT ORDER
+    ### 'ts' is the post-processed TimeSeries that will be searched
+    ts = tseries.deredden(rmed_width, minpts=rmed_minpts)
+    ts.normalise(inplace=True, correct_autocov=True)
+
     plan = ProcessingPlan.create(
-        tseries.nsamp, tseries.tsamp,
+        ts.nsamp, ts.tsamp,
         period_min=period_min, period_max=period_max, fpmin=fpmin,
         bins_min=bins_min, bins_max=bins_max, ducy_max=ducy_max, wtsp=wtsp
         )
-
-    ### Prepare data: downsample, deredden, normalise IN THAT ORDER
-    ### 'ts' is the post-processed TimeSeries that will be searched
-    ts = tseries.deredden(rmed_width, minpts=rmed_minpts)
-    ts.normalise(inplace=True)
 
     ### Prepare the call to the main C function
     npt = num_period_trials(plan)
 
     # Input arrays
-    dsfactors = plan.steps.dsfactor.as_matrix()
-    bins_min = plan.steps.bins_min.as_matrix()
-    bins_max = plan.steps.bins_max.as_matrix()
+    dsfactors = plan.steps.dsfactor.values
+    bins_min = plan.steps.bins_min.values
+    bins_max = plan.steps.bins_max.values
 
     # Allocate output arrays
     periods = np.zeros(npt, dtype=np.float32)

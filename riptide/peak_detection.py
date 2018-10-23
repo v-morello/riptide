@@ -56,7 +56,7 @@ def segment_stats(snrs, boundaries):
     segment. """
     percentiles = (25, 50, 75)
     stats = pandas.DataFrame(
-        [ np.percentile(snrs[s:e], percentiles) for s, e in boundaries[['istart', 'iend']].as_matrix() ],
+        [ np.percentile(snrs[s:e], percentiles) for s, e in boundaries[['istart', 'iend']].values ],
         columns=['p25', 'median', 'p75']
         )
     stats['sigma'] = (stats['p75'] - stats['p25']) / 1.349
