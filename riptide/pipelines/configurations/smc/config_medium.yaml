@@ -4,8 +4,8 @@ name: "medium"
 search:
     period_min: 1.00
     period_max: 4.00
-    bins_min: 480
-    bins_max: 520
+    bins_min: 380
+    bins_max: 420
     fpmin: 10
     rmed_width: 8.0
     rmed_minpts: 101

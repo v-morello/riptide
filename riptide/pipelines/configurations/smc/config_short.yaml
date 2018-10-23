@@ -4,8 +4,8 @@ name: "short"
 search:
     period_min: 0.20
     period_max: 1.00
-    bins_min: 240
-    bins_max: 260
+    bins_min: 190
+    bins_max: 210
     fpmin: 10
     rmed_width: 2.0
     rmed_minpts: 101
