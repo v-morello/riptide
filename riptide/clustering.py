@@ -4,7 +4,6 @@ def iterslices(indices):
     # Special case where there is only one cluster
     if not len(indices):
         yield slice(None, None)
-        raise StopIteration
 
     # Multiple clusters case
     else:
@@ -12,7 +11,6 @@ def iterslices(indices):
         for ii, jj in zip(indices[:-1], indices[1:]):
             yield slice(ii, jj)
         yield slice(indices[-1], None)
-        raise StopIteration
 
 def cluster_1d(x, radius):
     """ Perform clustering on 1D data. Elements of 'x' whose
