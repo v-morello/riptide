@@ -375,6 +375,11 @@ class PipelineManager(object):
         self.logger.info("Fetched a total of {:d} DetectionClusters".format(len(self.clusters)))
 
     def remove_harmonics(self):
+        enabled = self.config['harmonic_filtering']['enabled']
+        if not enabled:
+            self.logger.info("Harmonic filtering is disabled.")
+            return
+
         self.logger.info("Removing harmonics ...")
 
         fmin = self.config['fmin']
@@ -568,11 +573,7 @@ class PipelineManager(object):
         self.fetch_clusters()
         self.save_detections()
         self.save_clusters()
-
-        # NOTE: As of 22 Jan 2018 I am turning the harmonic filter off for safety.
-        # Tests on LOTAAS beams have shown that in the presence
-        # of strong RFI, pulsars can be removed.
-        self.remove_harmonics()
+        self.remove_harmonics() # NOTE: can be disabled in manager config file
 
         # NOTE: candidate filters are actually applied to the list of clusters
         # Then, those remaining clusters are turned into candidates
