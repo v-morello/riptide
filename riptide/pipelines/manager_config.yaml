@@ -1,19 +1,16 @@
 # Data format, 'presto' or 'sigproc'
 data_format: presto
 
+# Minimum and Maximum observing frequencies in MHz
+fmin: 1181.0
+fmax: 1581.0
+
 # Number of time series searched in parallel
 num_processes: 4
 
-# Glob pattern matching the dedispersed time series to be searched
-# Note that only a subset of these will be searched, depending on the DM
-# range and step parameters specified below.
-glob: "*.inf"
-
-# Output directory for Candidates
-outdir: "."
-
 # Max value of DM x |sin(b)|. Sets an upper limit on DM trials as a function
 # of observed sky coordinates
+# If left empty, no upper limit is applied
 dmsinb_max: 40.0
 
 # Hard DM trial limits, regardless of sky coordinates
@@ -27,6 +24,12 @@ dm_step: 1.0
 # NOTE: they must be placed in the same directory as this file.
 search_configs:
     - search_config.yaml
+
+### Harmonic filtering
+harmonic_filtering:
+    max_denominator: 30
+    max_distance: 1.0
+    snr_tol: 1.5
 
 ##### Candidate filtering
 # The cap on candidate number is applied last, after all the other filters
