@@ -4,6 +4,10 @@
 # Data format, 'presto' or 'sigproc'
 data_format: presto
 
+# Minimum and Maximum observing frequencies in MHz
+fmin: 1181.0
+fmax: 1581.0
+
 # Number of time series searched in parallel
 num_processes: 12
 
@@ -12,8 +16,7 @@ num_processes: 12
 dmsinb_max:
 
 # Hard DM trial limits, regardless of sky coordinates
-# These fields can be left blank, in which case the associated limit is not
-# applied.
+# These fields can be left blank, in which case the associated limit is not applied.
 dm_min: 0.0
 dm_max: 400.0
 
@@ -22,16 +25,26 @@ dm_step: 2.0
 
 # Paths to configuration files for the searches. They must be placed in the
 # same directory as this file.
-search_configs: 
+search_configs:
   - config_short.yaml
   - config_medium.yaml
   - config_long.yaml
+
+##### Harmonic filtering
+# See the flag_harmonics() function docstring for an explanation.
+# 'enabled' can be True or False. False means that no removal of harmonic 
+# candidates is attempted.
+harmonic_filtering:
+    enabled: True
+    max_denominator: 30
+    max_distance: 1.0
+    snr_tol: 1.5
 
 ##### Candidate filtering
 # The cap on candidate number is applied last, after all the other filters
 # These fields can be left empty, in which case the corresponding filter is
 # not applied
 candidate_filters:
-  dm_min:
-  snr_min:
-  max_number: 1000
+    dm_min:
+    snr_min:
+    max_number: 300
