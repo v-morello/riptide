@@ -35,7 +35,7 @@ search_configs:
 # 'enabled' can be True or False. False means that no removal of harmonic 
 # candidates is attempted.
 harmonic_filtering:
-    enabled: True
+    enabled: False
     max_denominator: 30
     max_distance: 1.0
     snr_tol: 1.5
@@ -45,6 +45,6 @@ harmonic_filtering:
 # These fields can be left empty, in which case the corresponding filter is
 # not applied
 candidate_filters:
-    dm_min:
+    dm_min: 5.0
     snr_min:
     max_number: 300
