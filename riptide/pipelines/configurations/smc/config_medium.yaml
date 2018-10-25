@@ -1,16 +1,15 @@
-name: "short_periods"
+name: "medium"
 
 ### Keyword arguments to the ffa_search() function ###
 search:
-    period_min: 0.50
-    period_max: 2.00
-    bins_min: 240
-    bins_max: 260
+    period_min: 1.00
+    period_max: 4.00
+    bins_min: 380
+    bins_max: 420
     fpmin: 10
-    rmed_width: 2.0
+    rmed_width: 8.0
     rmed_minpts: 101
     wtsp: 1.5
-    ducy_max: 0.33
     threads: 1
 
 ### Keyword arguments to the find_peaks() function ###
@@ -25,14 +24,14 @@ detect:
 
     # Minimum S/N for a peak in a periodogram to be reported, even if it
     # exceeds the dynamic selection threshold.
-    snr_min: 7.0
+    snr_min: 8.0
 
     # Controls the dynamic S/N selection threshold. Periodograms are split in
     # segments, and for each segment the median and robust standard deviations
     # are calculated. At the center of this segment, the selection threshold is
     # taken to be median + nsigma x robust_std. A polynomial in log(period)
     # is then fitted to the set of reference points thus obtained (see below).
-    nsigma: 7.0
+    nsigma: 8.0
 
     # Degree of polynomial in log(period) fitted to the selection threshold
     # reference points.
@@ -44,14 +43,14 @@ detect:
     # For every detection flagged in a periodogram, we extract a slice of the
     # periodogram centered on the peak's period. The width of this slice
     # expressed in number of DFT bins is the number below.
-    period_slice_width: 2.0
+    period_slice_width: 1.0
 
 ### Candidate parameters ###
 candidates:
     # Number of phase bins used to produce the final folded sub-integrations.
     # The code will always limit nbins to int(period / sampling_time).
-    nbins: 256
+    nbins: 512
 
     # Number of sub-integrations requested. The code will always limit nsubs to
     # int(tobs / period).
-    nsubs: 64
+    nsubs: 128

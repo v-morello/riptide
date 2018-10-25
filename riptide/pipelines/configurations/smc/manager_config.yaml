@@ -1,39 +1,41 @@
+# Configuration files designed to search 6-hour deep pointings
+# of the Small Magellanic Cloud (SMC).
+
 # Data format, 'presto' or 'sigproc'
 data_format: presto
 
 # Minimum and Maximum observing frequencies in MHz
-fmin: 119.43
-fmax: 151.07
+fmin: 1181.0
+fmax: 1581.0
 
 # Number of time series searched in parallel
-num_processes: 24
+num_processes: 12
 
 # Max value of DM x |sin(b)|. Sets an upper limit on DM trials as a function
 # of observed sky coordinates. If left blank, no upper limit is applied.
-dmsinb_max: 
+dmsinb_max:
 
 # Hard DM trial limits, regardless of sky coordinates
 # These fields can be left blank, in which case the associated limit is not applied.
 dm_min: 0.0
-dm_max: 100.0
+dm_max: 400.0
 
 # Minimum difference between consecutive DM trials
-dm_step: 0.05
+dm_step: 2.0
 
 # Paths to configuration files for the searches. They must be placed in the
 # same directory as this file.
 search_configs:
-    - config_VS.yaml
-    - config_S.yaml
-    - config_L.yaml
-    - config_VL.yaml
+  - config_short.yaml
+  - config_medium.yaml
+  - config_long.yaml
 
 ##### Harmonic filtering
 # See the flag_harmonics() function docstring for an explanation.
 # 'enabled' can be True or False. False means that no removal of harmonic 
 # candidates is attempted.
 harmonic_filtering:
-    enabled: True
+    enabled: False
     max_denominator: 30
     max_distance: 1.0
     snr_tol: 1.5
@@ -43,6 +45,6 @@ harmonic_filtering:
 # These fields can be left empty, in which case the corresponding filter is
 # not applied
 candidate_filters:
-    dm_min: 1.0
-    snr_min: 8.0
-    max_number: 100
+    dm_min: 5.0
+    snr_min:
+    max_number: 300
