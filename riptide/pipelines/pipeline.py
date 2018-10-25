@@ -18,7 +18,7 @@ from riptide import TimeSeries, ffa_search, find_peaks
 from riptide.pipelines import Candidate
 from riptide.clustering import cluster_1d
 from riptide.reading import PrestoInf, SigprocHeader
-from riptide.pipelines.harmonic_filtering import test_harmonic_relationship
+from riptide.pipelines.harmonic_filtering import flag_harmonics
 
 def parse_yaml_config(fname):
     with open(fname, 'r') as fobj:
@@ -91,6 +91,10 @@ class DetectionCluster(list):
     @property
     def top_detection(self):
         return max(self, key=operator.attrgetter('snr'))
+
+    def to_dict(self):
+        t = self.top_detection
+        return {"period": t.period, "ducy": t.ducy, "dm": t.dm, "snr": t.snr, "num_detections": len(self)}
 
     def __str__(self):
         name = type(self).__name__
@@ -232,21 +236,24 @@ class PipelineManager(object):
         """
         Parameters:
         -----------
-            config_path: str
-                Path to the YAML config file of the PipelineManager
-            override_keys: dict
-                Updated values for some keys of the YAML config file,
-                specified through the command line arguments of this script.
+        config_path: str
+            Path to the YAML config file of the PipelineManager
+        override_keys: dict
+            Updated values for some keys of the YAML config file,
+            specified through the command line arguments of this script.
         """
+        self.logger = None
+        self.configure_logger()
+
         self.config_path = os.path.realpath(config_path)
         self.config = parse_yaml_config(self.config_path)
         self.config.update(override_keys)
+        self.logger.info("Loaded PipelineManager configuration file: {:s}".format(self.config_path))
 
         self.detections = []
         self.clusters = []
         self.candidates = []
-
-        self.configure_logger()
+        
         self.configure_loaders()
         self.configure_searches()
 
@@ -371,31 +378,43 @@ class PipelineManager(object):
         self.logger.info("Fetched a total of {:d} DetectionClusters".format(len(self.clusters)))
 
     def remove_harmonics(self):
+        enabled = self.config['harmonic_filtering']['enabled']
+        if not enabled:
+            self.logger.info("Harmonic filtering is disabled.")
+            return
+        
+        if not self.detections:
+            return
+
         self.logger.info("Removing harmonics ...")
 
+        fmin = self.config['fmin']
+        fmax = self.config['fmax']
+        tobs = np.median([det.metadata['tobs'] for det in self.detections])
         max_denominator = self.config['harmonic_filtering']['max_denominator']
         snr_tol = self.config['harmonic_filtering']['snr_tol']
-        dft_bins_tol = self.config['harmonic_filtering']['dft_bins_tol']
+        max_distance = self.config['harmonic_filtering']['max_distance']
 
         self.clusters = sorted(self.clusters, key=lambda cl: cl.top_detection.snr, reverse=True)
-        for cl in self.clusters:
-            cl.is_harmonic = False
-        num_harmonics_flagged = 0
-        for fd, hm in itertools.combinations(self.clusters, 2):
-            # If fundamental was previously flagged, move on.
-            if fd.is_harmonic:
-                continue
-            is_harmonic, fraction = test_harmonic_relationship(
-                fd, hm,
-                max_denominator=max_denominator,
-                snr_tol=snr_tol,
-                dft_bins_tol=dft_bins_tol)
-            if is_harmonic:
-                hm.is_harmonic = True
-                num_harmonics_flagged += 1
-                self.logger.info("{!s} was flagged as a harmonic of {!s} with ratio {:d}/{:d}".format(hm, fd, fraction.numerator, fraction.denominator))
-        self.logger.info("Flagged {:d} harmonics".format(num_harmonics_flagged))
-        self.clusters = [cl for cl in self.clusters if not cl.is_harmonic]
+        cparams = list(map(DetectionCluster.to_dict, self.clusters))
+        cparams = flag_harmonics(
+            cparams, 
+            fmin=fmin, fmax=fmax, tobs=tobs, max_denom=max_denominator, 
+            max_distance=max_distance, snr_tol=snr_tol)
+
+        fundamentals = []
+        for cl, par in zip(self.clusters, cparams):
+            if par["is_harmonic"]:
+                fund = self.clusters[par["fundamental_index"]]
+                frac = par["fraction"]
+                msg = "{!s} is a harmonic of {!s} with period ratio {!s}".format(cl, fund, frac)
+                self.logger.debug(msg)
+            else:
+                fundamentals.append(cl)
+
+        num_harmonics = len(self.clusters) - len(fundamentals)
+        self.logger.info("Flagged {:d} harmonics".format(num_harmonics))
+        self.clusters = fundamentals
         self.logger.info("Retained {:d} final Candidates".format(len(self.clusters)))
 
 
@@ -560,11 +579,7 @@ class PipelineManager(object):
         self.fetch_clusters()
         self.save_detections()
         self.save_clusters()
-
-        # NOTE: As of 22 Jan 2018 I am turning the harmonic filter off for safety.
-        # Tests on LOTAAS beams have shown that in the presence
-        # of strong RFI, pulsars can be removed.
-        #self.remove_harmonics()
+        self.remove_harmonics() # NOTE: can be disabled in manager config file
 
         # NOTE: candidate filters are actually applied to the list of clusters
         # Then, those remaining clusters are turned into candidates
