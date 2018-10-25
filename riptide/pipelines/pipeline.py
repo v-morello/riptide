@@ -236,21 +236,24 @@ class PipelineManager(object):
         """
         Parameters:
         -----------
-            config_path: str
-                Path to the YAML config file of the PipelineManager
-            override_keys: dict
-                Updated values for some keys of the YAML config file,
-                specified through the command line arguments of this script.
+        config_path: str
+            Path to the YAML config file of the PipelineManager
+        override_keys: dict
+            Updated values for some keys of the YAML config file,
+            specified through the command line arguments of this script.
         """
+        self.logger = None
+        self.configure_logger()
+
         self.config_path = os.path.realpath(config_path)
         self.config = parse_yaml_config(self.config_path)
         self.config.update(override_keys)
+        self.logger.info("Loaded PipelineManager configuration file: {:s}".format(self.config_path))
 
         self.detections = []
         self.clusters = []
         self.candidates = []
-
-        self.configure_logger()
+        
         self.configure_loaders()
         self.configure_searches()
 
