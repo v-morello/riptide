@@ -379,12 +379,15 @@ class PipelineManager(object):
         if not enabled:
             self.logger.info("Harmonic filtering is disabled.")
             return
+        
+        if not self.detections:
+            return
 
         self.logger.info("Removing harmonics ...")
 
         fmin = self.config['fmin']
         fmax = self.config['fmax']
-        tobs = tobs = np.median([det.metadata['tobs'] for det in self.detections])
+        tobs = np.median([det.metadata['tobs'] for det in self.detections])
         max_denominator = self.config['harmonic_filtering']['max_denominator']
         snr_tol = self.config['harmonic_filtering']['snr_tol']
         max_distance = self.config['harmonic_filtering']['max_distance']
