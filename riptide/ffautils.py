@@ -23,4 +23,6 @@ def autocov(x, s):
     """ Autocovariance of time series, as a function of lag s.
     In particular, autocov(x,0) = var(x)"""
     n = x.size
-    return (x[:n-s]*x[s:]).sum() / (n-s-1)
+    # NOTE: use float64 accumulator to avoid saturation issues when the
+    # data have large values
+    return np.multiply(x[:n-s], x[s:], dtype=np.float64).sum() / (n-s-1)

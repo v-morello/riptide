@@ -67,7 +67,7 @@ class TimeSeries(object):
             TimeSeries object is returned. (default: False)
         correct_autocov: bool, optional
             If set to True, take into account the covariance between consecutive
-            samples when normalising. Leave to False unless you know *exactly*
+            samples when normalising. Leave to False unless you know *EXACTLY*
             what you are doing.
             If  'v' is the sample variance of the data, then normalise by
             sqrt(v + 2c) instead of sqrt(v). This is used internally to take
@@ -82,8 +82,10 @@ class TimeSeries(object):
         out: TimeSeries or None
             The normalised TimeSeries, if 'inplace' was set to False.
         """
-        m = self.data.mean()
-        v = self.data.var()
+        # NOTE: use float64 accumulator to avoid saturation issues when the
+        # data have large values
+        m = self.data.mean(dtype=np.float64)
+        v = self.data.var(dtype=np.float64)
 
         if correct_autocov:
             # covariance between consecutive samples
@@ -91,7 +93,7 @@ class TimeSeries(object):
             norm = (v + 2*c) ** 0.5
         else:
             norm = v ** 0.5
-
+        
         if inplace:
             self._data = (self.data - m) / norm
         else:
