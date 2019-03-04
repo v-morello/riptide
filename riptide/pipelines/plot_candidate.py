@@ -108,8 +108,8 @@ class Table(object):
     """ """
     columnOffsets = {
         "name"  : 0.25,
-        "value" : 0.88,
-        "unit"  : 0.90
+        "value" : 0.87,
+        "unit"  : 0.89
         }
     topMargin = 0.022
     lineHeight = 0.040
@@ -142,17 +142,38 @@ class Table(object):
 
 
 class CandidatePlot(object):
-    """
+    """ Plot a Candidate object
+
+    Parameters
+    ----------
+    cand: Candidate
+        Candidate object to plot
+    layout: str, optional
+        Name of the plot layout (default: 'default')
+    debase: bool, optional
+        If True, subtract from the folded profile its median value before
+        plotting it. This should result in an approximately zero off-pulse
+        mean. (default: True)
+    bar: bool, optional
+        If True, plot the folded profile as a bar chart, otherwise plot
+        it as a line. (default: True)
+    figsize: tuple, optional
+        Tuple (width, height) of the matplotlib.Figure
+    dpi: float, optional
+        dpi resultion of the matplotlib.Figure
     """
     _layouts = {
         'default': CandidatePlotDefaultLayout,
         }
 
-    def __init__(self, cand, layout='default', figsize=None, dpi=None):
+    def __init__(self, cand, layout='default', debase=True, bar=True, figsize=None, dpi=None):
         self.cand = cand
         self.layout = None
+        self.debase = False
+        self.bar = bar
         self.figure = None
         self.shift_bins = 0
+        self.layout = None
 
         self._set_layout(layout, figsize=figsize, dpi=dpi)
         self._compute_shift_bins()
@@ -189,11 +210,21 @@ class CandidatePlot(object):
     def _plotProfile(self):
         ax = self.layout.axProfile
         prof = np.roll(self.cand.subints.normalised_profile, self.shift_bins)
-        ax.bar(
-            np.arange(0, prof.size),
-            prof,
-            width=1,
-            color='#303030')
+        if self.debase:
+            prof -= np.median(prof)
+
+        if self.bar:
+            ax.bar(
+                np.arange(0, prof.size),
+                prof,
+                width=1,
+                color='#303030')
+        else:
+            ax.plot(
+                np.arange(0, prof.size),
+                prof,
+                lw=1.0,
+                color='#303030')
         plt.xlim(-0.5, prof.size-0.5)
         plt.ylabel("S/N")
         plt.title("Integrated Profile")
@@ -283,7 +314,7 @@ class CandidatePlot(object):
         table.add_entry(Entry("Period", "{:.6f}".format(1000.0 * period), "ms"))
 
         dm = self.cand.metadata['best_dm']
-        table.add_entry(Entry("DM", "{:.3f}".format(dm)))
+        table.add_entry(Entry("DM", "{:.3f}".format(dm), "$\mathrm{pc}\,\mathrm{cm}^{-3}$"))
 
         ducy = self.cand.metadata['best_ducy']
         table.add_entry(Entry("Duty Cycle", "{:.1f}".format(ducy * 100.0), "%"))
