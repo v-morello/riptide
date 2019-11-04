@@ -3,35 +3,15 @@
 # Build by running the command:
 # docker build -t riptide .
 ################################################################################
-FROM ubuntu:16.04
-
-RUN echo 'deb http://us.archive.ubuntu.com/ubuntu trusty main multiverse' >> /etc/apt/sources.list
+FROM python:3.7
 
 # A well-formed RUN instruction to install ubuntu packages, following
 # https://docs.docker.com/develop/develop-images/dockerfile_best-practices
 RUN apt-get update && apt-get install -y \
     build-essential \
     git \
-    python3 \
-    python3-dev \
-    python3-pip \
-    python3-tk \
     vim \
  && rm -rf /var/lib/apt/lists/*
-
-##### Python Packages #####
-RUN pip3 install \
-    astropy \
-    h5py \
-    ipython \
-    matplotlib \
-    numpy \
-    pandas \
-    pyyaml
-
-# Aliases
-RUN echo "alias python='python3'" >> ~/.bashrc && \
-    echo "alias pip='pip3'" >> ~/.bashrc
 
 # Smart history search with arrow keys
 RUN echo "\"\e[A\":history-search-backward" >> ~/.inputrc && \
@@ -46,13 +26,17 @@ RUN echo "filetype plugin indent on" >> ~/.vimrc && \
     echo "set pastetoggle=<F2>" >> ~/.vimrc && \
     echo "set hlsearch" >> ~/.vimrc
 
+RUN pip install ipython
+
 ##### riptide #####
 ARG RIPTIDE_REPOSITORY=https://vmorello@bitbucket.org/vmorello/riptide.git
 
+# TODO FIXME (04/11/19): Don't checkout the pachaging branch once it has been merged
 RUN mkdir software \
  && cd software \
  && git clone ${RIPTIDE_REPOSITORY} \
  && cd /software/riptide \
+ && git checkout packaging \
  && make install
 
-ENV PYTHONPATH /software/riptide:${PYTHONPATH}
+ENTRYPOINT [ "/bin/bash" ]

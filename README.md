@@ -27,20 +27,18 @@ And the following packages are optional but highly recommended:
 
 ## Installation
 
-Clone the repository, for example:
+Clone the repository:
 ```bash
-cd ~/software
 git clone https://vmorello@bitbucket.org/vmorello/riptide.git
 ```
 
-Build the C library libffa.so in the c_src/ subdirectory:
+And then in the base directory of `riptide` run
 
 ```bash
-cd c_src
-make all
+make install
 ```
 
-And then make sure that the base directory of the riptide repository (`~/software/riptide` in this example) is in the `PYTHONPATH`.
+This simply runs ``pip install`` in [editable mode](https://pip.pypa.io/en/latest/reference/pip_install/#editable-installs), which means you can freely edit the code. It also installs all required dependencies with ``pip`` that are not present already.
 
 
 ## Docker image
@@ -52,10 +50,10 @@ cd docker
 docker build -t riptide .
 ```
 
-Both python3 and ipython are installed within the docker image. To start a container:
+Both python and ipython are installed within the docker image. To start a container:
 
 ```bash
-docker run -it --rm riptide bash
+docker run -it --rm riptide
 ```
 
 Refer to your favourite docker cheat sheet for further information and advanced usage.
