@@ -52,7 +52,7 @@ ARG RIPTIDE_REPOSITORY=https://vmorello@bitbucket.org/vmorello/riptide.git
 RUN mkdir software \
  && cd software \
  && git clone ${RIPTIDE_REPOSITORY} \
- && cd /software/riptide/c_src \
- && CC=gcc make all
+ && cd /software/riptide \
+ && make install
 
 ENV PYTHONPATH /software/riptide:${PYTHONPATH}

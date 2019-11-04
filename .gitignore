@@ -3,4 +3,5 @@
 *.pyc
 __pycache__
 notebooks/.ipynb_checkpoints/
-.vscode/*
+.vscode
+*.egg-info

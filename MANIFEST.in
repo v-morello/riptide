@@ -1,0 +1,7 @@
+global-include *.py
+global-include *.c
+global-include *.md
+global-include *.yaml
+global-include *.yml
+global-include Makefile
+include LICENSE
