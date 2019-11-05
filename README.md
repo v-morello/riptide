@@ -28,17 +28,16 @@ This simply runs ``pip install`` in [editable mode](https://pip.pypa.io/en/lates
 
 ## Docker image
 
-The riptide Dockerfile is located in the 'docker' subdirectory. To build the image with the name 'riptide':
+The riptide Dockerfile is located in the 'docker' subdirectory. To build the image, simply type:
 
 ```bash
-cd docker
-docker build -t riptide .
+make docker
 ```
 
-Both python and ipython are installed within the docker image. To start a container:
+Which builds an image named `riptide-ffa`. Both python and ipython are installed within the docker image. To start a container:
 
 ```bash
-docker run -it --rm riptide
+docker run -it --rm riptide-ffa
 ```
 
 Refer to your favourite docker cheat sheet for further information and advanced usage.

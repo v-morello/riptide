@@ -5,6 +5,9 @@ TESTS_DIR = ${PKG}/tests
 dist: ## Build source distribution
 	python setup.py sdist
 
+docker: ## Build riptide-ffa docker image
+	docker build --file docker/Dockerfile --tag ${PKG} .
+
 # NOTE: -e installs in "Development Mode"
 # See: https://packaging.python.org/tutorials/installing-packages/
 install: ## Install the package in development mode
@@ -30,4 +33,4 @@ clean: ## Remove all python cache and build files
 	rm -rf dist/
 	rm -rf ${PKG}.egg-info/
 
-.PHONY: dist install uninstall help clean
+.PHONY: dist docker install uninstall help clean

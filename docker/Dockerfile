@@ -1,8 +1,3 @@
-################################################################################
-# NOTE: We use python3 because astropy is moving away from python2
-# Build by running the command:
-# docker build -t riptide .
-################################################################################
 FROM python:3.7
 
 # A well-formed RUN instruction to install ubuntu packages, following
@@ -26,17 +21,15 @@ RUN echo "filetype plugin indent on" >> ~/.vimrc && \
     echo "set pastetoggle=<F2>" >> ~/.vimrc && \
     echo "set hlsearch" >> ~/.vimrc
 
+# Additional packages for convenience
 RUN pip install ipython
 
-##### riptide #####
-ARG RIPTIDE_REPOSITORY=https://vmorello@bitbucket.org/vmorello/riptide.git
+# Install only requirements first, so that this step can be cached
+ENV RIPTIDE_PATH=/software/riptide
+RUN mkdir -p ${RIPTIDE_PATH}
+WORKDIR ${RIPTIDE_PATH}
 
-# TODO FIXME (04/11/19): Don't checkout the pachaging branch once it has been merged
-RUN mkdir software \
- && cd software \
- && git clone ${RIPTIDE_REPOSITORY} \
- && cd /software/riptide \
- && git checkout packaging \
- && make install
-
+# Install riptide
+COPY . ${RIPTIDE_PATH}
+RUN make install
 ENTRYPOINT [ "/bin/bash" ]
