@@ -9,7 +9,6 @@ from setuptools.command.build_py import build_py
 
 def build_libffa():
     """ A custom sequence of build actions to run """
-    print(setuptools.find_packages())
     try:
         cwd = os.getcwd()
         thisdir, __ = os.path.split(__file__)
