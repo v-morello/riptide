@@ -9,21 +9,6 @@ __riptide__ is an end-to-end pulsar searching package implementing the Fast Fold
 
 __riptide__ loosely stands for "seaRchIng for Pulsars in the TIme Domain". Mostly because there are no cool names containing the letters "FFA". Also a subtle reference to Australia where I did my Masters.
 
-## Dependencies
-
-riptide has the following strict requirements:
-
-* `numpy`
-* `pandas`
-* `h5py`
-* `astropy`
-* `pyyaml`
-
-And the following packages are optional but highly recommended:
-
-* `matplotlib`: required for plotting data products
-
-
 
 ## Installation
 
@@ -38,7 +23,7 @@ And then in the base directory of `riptide` run
 make install
 ```
 
-This simply runs ``pip install`` in [editable mode](https://pip.pypa.io/en/latest/reference/pip_install/#editable-installs), which means you can freely edit the code. It also installs all required dependencies with ``pip`` that are not present already.
+This simply runs ``pip install`` in [editable mode](https://pip.pypa.io/en/latest/reference/pip_install/#editable-installs), which means you can freely edit the code. It also installs any required dependencies with ``pip`` that are not present already.
 
 
 ## Docker image
