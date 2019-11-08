@@ -44,7 +44,7 @@ def prune_periodogram(periods, snrs):
     return periods[mask], snrs[mask]
 
 
-def ffa_search(tseries, rmed_width=4.0, rmed_minpts=101, period_min=1.0, period_max=30.0, fpmin=8, bins_min=240, bins_max=260, ducy_max=0.20, wtsp=1.5, threads=1):
+def ffa_search(tseries, rmed_width=4.0, rmed_minpts=101, period_min=1.0, period_max=30.0, fpmin=8, bins_min=240, bins_max=260, ducy_max=0.20, wtsp=1.5):
     """ 
     Run a FFA search of a single TimeSeries object, producing its periodogram.
 
@@ -135,7 +135,6 @@ def ffa_search(tseries, rmed_width=4.0, rmed_minpts=101, period_min=1.0, period_
         ts.data, ts.nsamp,
         dsfactors, bins_min, bins_max, dsfactors.size,
         plan.widths, plan.widths.size,
-        threads,
         periods,
         snrs
         )

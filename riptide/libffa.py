@@ -38,7 +38,6 @@ def load_libffa():
         npct.ndpointer(dtype=np.int64, ndim=1, flags=('C_CONTIGUOUS', 'ALIGNED')),
         ctypes.c_size_t,
         ctypes.c_double,
-        ctypes.c_size_t,
         npct.ndpointer(dtype=np.float32, ndim=2, flags=('C_CONTIGUOUS', 'ALIGNED', 'WRITEABLE')),
         ]
 
@@ -60,7 +59,6 @@ def load_libffa():
         ctypes.c_size_t, # number of ProcessingPlan steps
         npct.ndpointer(dtype=int, ndim=1, flags=('C_CONTIGUOUS', 'ALIGNED')), # sequence: widths
         ctypes.c_size_t, # number of width trials
-        ctypes.c_size_t, # number of threads for S/N evaluation
         npct.ndpointer(dtype=np.float32, ndim=1, flags=('C_CONTIGUOUS', 'ALIGNED', 'WRITEABLE')), # period trials (output)
         npct.ndpointer(dtype=np.float32, ndim=1, flags=('C_CONTIGUOUS', 'ALIGNED', 'WRITEABLE')), # output S/N
         ]
@@ -166,7 +164,7 @@ def ffa_transform_1d(data, pnum):
     return ffa_transform_2d(data[:m*pnum].reshape(m, pnum))
 
 
-def get_snr(data, stdnoise=1.0, threads=1):
+def get_snr(data, stdnoise=1.0):
     """ Compute the S/N ratio of pulse profile(s) for a range of boxcar width
     trials.
 
@@ -177,9 +175,6 @@ def get_snr(data, stdnoise=1.0, threads=1):
             is pulse phase.
         stdnoise: float
             Standard deviation of the background noise in all profiles.
-        threads: int
-            Number of OpenMP threads to use. Each threads processes a block of
-            profiles.
 
     Returns:
     --------
@@ -203,7 +198,7 @@ def get_snr(data, stdnoise=1.0, threads=1):
 
     # Prepare output
     out = np.zeros(shape=(m, nw), dtype=np.float32)
-    LibFFA.get_snr_2d(cinput, m, b, widths, nw, stdnoise**2.0, threads, out)
+    LibFFA.get_snr_2d(cinput, m, b, widths, nw, stdnoise**2.0, out)
 
     # Reshape output properly
     shape = list(data.shape[:-1]) + [nw]

@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h> // memcpy()
-#include <omp.h>
 
 #include "arrayops.h"
 #include "kernels.h"
@@ -102,12 +101,9 @@ void get_snr_2d(
     const long int* restrict widths, // width trials, array of size nw
     size_t nw,                       // number of width trials
     double varnoise,                 // background noise variance. NOTE: has type double, for easier interfacing with python.
-    size_t threads,                  // number of OpenMP threads to use
     float* restrict out              // 2D output buffer with m lines and nw cols
     )
     {
-    omp_set_num_threads(threads);
-    #pragma omp parallel for
     for (size_t ii=0; ii<m; ++ii)
         get_snr(in + ii * b, b, widths, nw, varnoise, out + ii * nw);
     }
@@ -137,7 +133,6 @@ void py_periodogram(
     size_t nsteps,                      // number of plan steps
     const long int* restrict widths,    // sequence of pulse width trials, in number of bins
     size_t nw,                          // number of width trials
-    size_t threads,                     // number of threads for S/N calculation
     float* restrict periods,            // period trials (output)
     float* restrict snr                 // S/N (output)
     )
@@ -167,7 +162,7 @@ void py_periodogram(
 
             // S/N evaluation
             float varnoise = m * ds;
-            get_snr_2d(out, m, b, widths, nw, varnoise, threads, snr);
+            get_snr_2d(out, m, b, widths, nw, varnoise, snr);
 
             // Fill period trials
             for (size_t sh=0; sh<m; ++sh)
