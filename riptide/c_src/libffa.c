@@ -130,8 +130,8 @@ void get_snr(
 // This version of the function convolves profiles with a boxcar that has zero mean
 // and unit power, as it should be.
 void get_snr(
-    const float* restrict in,        // input profile, b bins
-    size_t b,                        // number of bins in profile
+    const float* restrict in,        // input profile
+    size_t size,                     // number of bins in profile
     const long int* restrict widths, // width trials, array of size nw
     size_t nw,                       // number of width trials
     float varnoise,                  // background noise variance
@@ -139,43 +139,40 @@ void get_snr(
     )
     {
     const size_t wmax = widths[nw - 1];
-    const size_t csize = b + wmax; // size of the cumsum buffer
 
     // Compute profile cumulative sum
-    float csum[csize];
+    float csum[size + wmax];
     csum[0] = in[0];
-    for (size_t ii=1; ii<b; ++ii)
+    for (size_t ii = 1; ii < size; ++ii)
         csum[ii] = csum[ii-1] + in[ii];
-    for (size_t ii=b; ii<csize; ++ii)
-        csum[ii] = csum[ii-1] + in[ii - b];
+    for (size_t ii = size; ii < size + wmax; ++ii)
+        csum[ii] = csum[ii-1] + in[ii - size];
 
+    const float stdnoise = sqrt(varnoise);
+    const float profile_sum = csum[size - 1];
+    const float nf = size;
 
-    for (size_t iw=0; iw<nw; ++iw)
+    for (size_t iw=0; iw < nw; ++iw)
         {
         const long int w = widths[iw];
 
-        // Normalisation factors: convolution with a boxcar that has zero mean
-        // and unit power.
-        // NOTE: profsum should be zero in theory, because time series are shifted to
-        // zero mean before processing. However, before FFA transforming, we always
-        // exclude the last incomplete pulse, which could make the profile mean
-        // significantly non zero.
-        const float profsum = csum[b-1];
-        const float invsqrtN = pow(b * varnoise, -0.5);
-        const float x = pow((b - w) / (float)w, 0.5);
-        const float alpha = invsqrtN * (x + 1.0/x);
-        const float beta = -invsqrtN/x * profsum;
+        // Height and baseline value of a boxcar filter with
+        // width w bins, zero mean and unit square sum
+        const float h = sqrt((nf - w) / (nf * w));
+        const float b = -w / (nf - w) * h;
+        const float H = h - b; // height measured from baseline
 
-        // Initialize best S/N with first phase trial at current width
-        float best_snr = alpha * (csum[w] - csum[0]) - beta;
+        // diff at start phase 0, width w
+        // csum[k] = x0 + ... + xk
+        float best_diff = csum[w - 1];
 
         for (size_t ii=0; ii<b; ++ii)
             {
-            float snr = alpha * (csum[ii+w] - csum[ii]) - beta;
-            if (snr > best_snr)
-                best_snr = snr;
+            float diff = csum[ii + w] - csum[ii];
+            if (diff > best_diff)
+                best_diff = diff;
             }
-        out[iw] = best_snr;
+        out[iw] = (H * best_diff + b * profile_sum) / stdnoise;
         }
     }
 
