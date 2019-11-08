@@ -13,21 +13,21 @@ def fold_array(data, psamp, nbins):
     The input data are downsampled by a real-valued factor so that one signal
     period contains exactly the specified number of phase bins.
 
-    Parameters:
-    -----------
-        data: ndarray or array-like
-            Input time series data (one dimensional).
-        psamp: float
-            Folding period in number of samples.
-        nbins: int
-            Number of phase bins in every output single pulse. Cannot exceed
-            psamp.
+    Parameters
+    ----------
+    data: ndarray or array-like
+        Input time series data (one dimensional).
+    psamp: float
+        Folding period in number of samples.
+    nbins: int
+        Number of phase bins in every output single pulse. Cannot exceed
+        psamp.
 
-    Returns:
-    --------
-        single_pulses: ndarray
-            Folded output. A two-dimensional array of shape
-            (num_pulses, num_bins).
+    Returns
+    -------
+    single_pulses: ndarray
+        Folded output. A two-dimensional array of shape
+        (num_pulses, num_bins).
     """
     # Input sanity checks
     nbins = int(round(nbins))
@@ -50,17 +50,17 @@ def fold_array(data, psamp, nbins):
 def downsample_lines(data, nlines):
     """ Downsample a two-dimensional array along its first (vertical) axis.
 
-    Parameters:
-    -----------
-        data: ndarray
-            Input data (two dimensional).
-        nlines: int
-            Requested number of lines in the downsampled output.
+    Parameters
+    ----------
+    data: ndarray
+        Input data (two dimensional).
+    nlines: int
+        Requested number of lines in the downsampled output.
 
-    Returns:
-    --------
-        output: ndarray
-            Downsampled output.
+    Returns
+    -------
+    output: ndarray
+        Downsampled output.
     """
     if data.ndim != 2:
         raise ValueError('Input data must be a 2D array')
@@ -178,7 +178,7 @@ class SubIntegrations(object):
     def plot(self):
         grid_shape = (3, 1)
         plt.subplot2grid(shape=grid_shape, loc=(0, 0), rowspan=2)
-        plt.imshow(self.data, interpolation='nearest', cmap=plt.cm.Greys, aspect='auto')
+        plt.imshow(self.data, interpolation='nearest', cmap='Greys', aspect='auto')
 
         plt.subplot2grid(shape=grid_shape, loc=(2, 0), rowspan=1)
         plt.bar(
@@ -200,20 +200,20 @@ class SubIntegrations(object):
         """ Fold data into a two-dimensional sub-integrations array, wrapped by
         a SubIntegrations object.
 
-        Parameters:
-        -----------
-            data: ndarray
-                Input time series data to fold.
-            tsamp: float
-                Sampling time of the input data.
-            period: float
-                Signal period, same unit as tsamp.
-            nbins: int
-                Number of phase bins (default: 128)
-            nsubs: int
-                If set to None, one sub-integration per complete signal period
-                will be created, and no downsampling along the time axis occurs.
-                (default: None)
+        Parameters
+        ----------
+        data: ndarray
+            Input time series data to fold.
+        tsamp: float
+            Sampling time of the input data.
+        period: float
+            Signal period, same unit as tsamp.
+        nbins: int
+            Number of phase bins (default: 128)
+        nsubs: int
+            If set to None, one sub-integration per complete signal period
+            will be created, and no downsampling along the time axis occurs.
+            (default: None)
         """
         ### This may raise a number of ValueErrors if the input is not right
         cls._check_input(data, tsamp, period, nbins, nsubs)
@@ -236,24 +236,24 @@ class SubIntegrations(object):
     def from_time_series(cls, tseries, period, nbins=128, nsubs=None):
         """ Fold TimeSeries into a two-dimensional sub-integrations array.
 
-        Parameters:
-        -----------
-            tseries: TimeSeries
-                Input time series data to fold
-            period: float
-                Signal period, same unit as tseries.tsamp
-            nbins: int
-                Number of phase bins (default: 128)
-            nsubs: int
-                If set to None, one sub-integration per signal period will be
-                created, and no downsampling along the time axis occurs.
-                (default: None)
+        Parameters
+        ----------
+        tseries: TimeSeries
+            Input time series data to fold
+        period: float
+            Signal period, same unit as tseries.tsamp
+        nbins: int
+            Number of phase bins (default: 128)
+        nsubs: int
+            If set to None, one sub-integration per signal period will be
+            created, and no downsampling along the time axis occurs.
+            (default: None)
 
-        Returns:
-        --------
-            subints: SubIntegrations
-                The folded and appropriately downsampled output, wrapped by
-                a SubIntegrations object.
+        Returns
+        -------
+        subints: SubIntegrations
+            The folded and appropriately downsampled output, wrapped by
+            a SubIntegrations object.
         """
         return cls.from_numpy_array(tseries.data, tseries.tsamp, period, nbins=nbins, nsubs=nsubs)
 

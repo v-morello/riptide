@@ -17,10 +17,18 @@ def running_median(data, width):
 def fast_running_median(data, width, min_points):
     """ Compute an approximate running median of data over large window sizes.
 
-    Parameters:
-        data : input data
-        width: required width of the running median window in number of samples
-        min_points: 
+    Parameters
+    ----------
+    data: ndarray
+        Input data
+    width: int
+        Required width of the running median window in number of samples
+    min_points: int
+        The running median is calculated of a time scrunched version of the
+        input data to save time: minpts is the minimum number of
+        scrunched samples that must fit in the running median window.
+        Lower values make the running median calculation less accurate but
+        faster, due to allowing a higher scrunching factor.
     """
     if width < 3:
         raise ValueError('width must be > 3')
@@ -35,12 +43,6 @@ def fast_running_median(data, width, min_points):
     
     # Make sure num_points is an odd number, makes life easier
     num_points +=  int(not num_points % 2)
-    
-    #print('req_width  = ', width)
-    #print('min_points = ', min_points)
-    #print('dsfactor   = ', dsfactor)
-    #print('num_points = ', num_points)
-    #print('eff_width  = ', num_points * dsfactor)
     
     ### No downsampling needed: easy
     if dsfactor <= 1:

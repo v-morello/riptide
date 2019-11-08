@@ -79,25 +79,25 @@ def generate_signal(nsamp, period, phi0=0.0, ducy=0.01, amplitude=1.0, stdnoise=
     """ Generate a time series containing a periodic signal with a von Mises
     pulse profile. This function is mostly for test purposes.
 
-    Parameters:
-    -----------
-        nsamp: int
-            Number of samples to generate.
-        period: float
-            Period in number of samples.
-        phi0: float
-            Initial pulse phase in number of periods.
-        ducy: float
-            Duty cycle of the pulse.
-        amplitude: float
-            Pulse amplitude.
-        stdnoise: float
-            Standard deviation of the background noise.
+    Parameters
+    ----------
+    nsamp: int
+        Number of samples to generate.
+    period: float
+        Period in number of samples.
+    phi0: float
+        Initial pulse phase in number of periods.
+    ducy: float
+        Duty cycle of the pulse.
+    amplitude: float
+        Pulse amplitude.
+    stdnoise: float
+        Standard deviation of the background noise.
 
-    Returns:
-    --------
-        tseries: ndarray (1D, float)
-           Output time series.
+    Returns
+    -------
+    tseries: ndarray (1D, float)
+        Output time series.
     """
     # von mises parameter
     kappa = log(2.0) / (2.0 * sin(pi*ducy/2.0)**2)
@@ -119,18 +119,18 @@ def generate_signal(nsamp, period, phi0=0.0, ducy=0.01, amplitude=1.0, stdnoise=
 def ffa_transform_2d(data):
     """ Compute the FFA transform of an array of profiles.
 
-    Parameters:
-    -----------
-        data: ndarray (2D)
-            Input time series data in two-dimensional shape (m, b), where m
-            is the number of signal periods and b the number of phase bins.
+    Parameters
+    ----------
+    data: ndarray (2D)
+        Input time series data in two-dimensional shape (m, b), where m
+        is the number of signal periods and b the number of phase bins.
 
-    Returns:
-    --------
-        transform: ndarray (2D)
-            The FFA transform of 'data', as a 2D array of shape (m, b).
-            Line number k corresponds to a summation path with a top-to-bottom
-            right shift of k bins.
+    Returns
+    -------
+    transform: ndarray (2D)
+        The FFA transform of 'data', as a 2D array of shape (m, b).
+        Line number k corresponds to a summation path with a top-to-bottom
+        right shift of k bins.
     """
     m, b = data.shape
     output = np.zeros(shape=(m,b), dtype=np.float32)
@@ -144,21 +144,21 @@ def ffa_transform_1d(data, pnum):
     samples that is a multiple of 'pnum', and therefore ignores the
     last nsamp % pnum samples.
 
-    Parameters:
-    -----------
-        data: ndarray (1D)
-            Input time series data. Trailing samples with indices larger
-            than the largest multiple of pnum are ignored.
-        pnum: int
-            Signal period in samples.
+    Parameters
+    ----------
+    data: ndarray (1D)
+        Input time series data. Trailing samples with indices larger
+        than the largest multiple of pnum are ignored.
+    pnum: int
+        Signal period in samples.
 
-    Returns:
-    --------
-        transform: ndarray (2D)
-            The FFA transform of 'data', as a 2D array of shape
-            (m, pnum), where m is the number of complete periods of the signal.
-            Line number k corresponds to a summation path with a top-to-bottom
-            right shift of k bins.
+    Returns
+    -------
+    transform: ndarray (2D)
+        The FFA transform of 'data', as a 2D array of shape
+        (m, pnum), where m is the number of complete periods of the signal.
+        Line number k corresponds to a summation path with a top-to-bottom
+        right shift of k bins.
     """
     m = data.size // pnum
     return ffa_transform_2d(data[:m*pnum].reshape(m, pnum))
@@ -168,22 +168,22 @@ def get_snr(data, stdnoise=1.0):
     """ Compute the S/N ratio of pulse profile(s) for a range of boxcar width
     trials.
 
-    Parameters:
-    -----------
-        data: ndarray
-            Input profile(s). Can be of any shape, as long as the last axis
-            is pulse phase.
-        stdnoise: float
-            Standard deviation of the background noise in all profiles.
+    Parameters
+    ----------
+    data: ndarray
+        Input profile(s). Can be of any shape, as long as the last axis
+        is pulse phase.
+    stdnoise: float
+        Standard deviation of the background noise in all profiles.
 
-    Returns:
-    --------
-        snr: ndarray
-            Output with the same shape as data, except for the last axis
-            which represents trial pulse width index.
-        widths: ndarray, 1D
-            Trial pulse widths, an array that has the same length as the last
-            axis of 'snr'.
+    Returns
+    -------
+    snr: ndarray
+        Output with the same shape as data, except for the last axis
+        which represents trial pulse width index.
+    widths: ndarray, 1D
+        Trial pulse widths, an array that has the same length as the last
+        axis of 'snr'.
     """
     # Number of bins is the length of the last axis
     b = data.shape[-1]
@@ -209,17 +209,17 @@ def get_snr(data, stdnoise=1.0):
 def downsample(data, factor):
     """ Downsample an array by a real-valued factor.
 
-    Parameters:
-    -----------
-        data: array_like
-            Time series data to downsample.
-        factor: float
-            Downsampling factor.
+    Parameters
+    ----------
+    data: array_like
+        Time series data to downsample.
+    factor: float
+        Downsampling factor.
 
-    Returns:
-    --------
-        out: ndarray, float32
-            Downsampled data.
+    Returns
+    -------
+    out: ndarray, float32
+        Downsampled data.
     """
     if not factor > 1:
         raise ValueError('factor must be > 1')
