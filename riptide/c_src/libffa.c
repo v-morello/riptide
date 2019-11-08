@@ -4,53 +4,8 @@
 #include <string.h> // memcpy()
 #include <omp.h>
 
-typedef struct {
-    const float* restrict data;
-    size_t m;
-    size_t b;
-    } CBlock;
-
-
-typedef struct {
-    size_t h;
-    size_t t;
-    size_t b;
-    size_t g;
-    } CShifts;
-
-
-
-
-// Get the number of profiles in the 'head' part of an input data with m profiles
-inline size_t get_nh(size_t m)
-    {return pow(2.0, floor(log2(m - 1.0)));}
-
-// Get the circular shifts to apply during the merge operation of the FFA transform
-inline CShifts get_shifts(
-        size_t m,  // number of profiles in the input
-        size_t nh, // number of profiles in the head part of the input
-        size_t g   // global top to bottom shift
-        )
-    {
-    size_t nt = m - nh; // number of profiles in the tail part of the input
-    size_t h = (nh - 1.0) / (m - 1.0) * g + 0.5; // head shift
-    size_t t = (nt - 1.0) / (m - 1.0) * g + 0.5; // tail shift
-    CShifts sh = {
-        .h = h,
-        .t = t,
-        .b = g - h - t,
-        .g = g
-        };
-    return sh;
-    }
-
-// C = A + B
-inline void float_array_add(const float* restrict aa, const float* restrict bb, size_t size, float* restrict cc)
-    {
-    for (size_t jj=0; jj<size; ++jj)
-        cc[jj] = aa[jj] + bb[jj];
-    }
-
+#include "arrayops.h"
+#include "kernels.h"
 
 // Downsample a time series by any real-valued factor
 void downsample(
@@ -158,64 +113,6 @@ void get_snr_2d(
     }
 
 
-// Perform the FFA merge operation
-// head and tail are FFA transforms here
-void merge(const CBlock head, const CBlock tail, float* restrict out)
-    {
-    size_t gmax = head.m + tail.m;
-	size_t b = head.b;
-
-    for (size_t g=0; g<gmax; ++g)
-        {
-        CShifts sh = get_shifts(gmax, head.m, g);
-        
-        // Pointers to relevant lines of the inputs and output
-        const float* lh = head.data + sh.h * b;
-        const float* lt = tail.data + sh.t * b;
-        float* lo = out + sh.g * b;
-        
-        // number of bins by which lt has to be left-shifted
-        size_t nleft = (sh.h + sh.b) % b;
-        size_t nright = b - nleft;
-
-        // Do the operation: lo = lh + circ_lshift(lt, nleft)
-        float_array_add(lh, lt + nleft, nright, lo);
-        float_array_add(lh + nright, lt, nleft, lo + nright);
-        } 
-    }
-
-
-// FFA Transform C function
-void transform(
-    const CBlock in,      // Block of input data to FFA transform
-    float* restrict buf,  // Pre-allocated buffer used to store intermediate FFA transforms of head and tail part of input data block
-    float* restrict out   // Where the FFA transform output is stored
-    )
-    {
-    if (in.m <= 1)
-        {
-        memcpy(out, in.data, in.m * in.b * sizeof(float));
-        return;
-        }
-
-    size_t b = in.b;
-    size_t m = in.m;
-    size_t nh = get_nh(m);
-    size_t nt = m - nh;
-
-    CBlock head = {.data = in.data, .m = nh, .b = b};
-    CBlock tail = {.data = in.data + nh * b, .m = nt, .b = b};
-
-    transform(head, out, buf);
-    transform(tail, out + nh * b, buf + nh * b);
-
-    CBlock trhead = {.data = buf, .m = nh, .b = b};
-    CBlock trtail = {.data = buf + nh * b, .m = nt, .b = b};
-    merge(trhead, trtail, out);
-    }
-
-
-
 // FFA Transform function called from python
 void py_transform(
     const float* restrict in, // 2D input array, size m x b
@@ -224,9 +121,8 @@ void py_transform(
     float* restrict out       // output of size m x b, pre-allocated in python
     )
     {
-    CBlock block = {.data = in, .m = m, .b = b};
     float* buf = (float*)malloc(m * b * sizeof(float));
-    transform(block, buf, out);
+    transform(in, m, b, buf, out);
     free(buf); 
     }
 
@@ -266,9 +162,8 @@ void py_periodogram(
         for (size_t b=bmin[istep]; b<bmax[istep]; ++b)
             {
             // FFA transform
-            size_t m = ns / b; 
-            CBlock block = {.data = in, .m = m, .b = b};
-            transform(block, buf, out);
+            size_t m = ns / b;
+            transform(in, m, b, buf, out);
 
             // S/N evaluation
             float varnoise = m * ds;
