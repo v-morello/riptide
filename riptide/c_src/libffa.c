@@ -85,46 +85,6 @@ void downsample(
         }
     }
 
-/*
-// Compute the S/N ratio of a profile for a number of boxcar width trials 
-void get_snr(
-    const float* restrict in,        // input profile, b bins
-    size_t b,                        // number of bins in profile
-    const long int* restrict widths, // width trials, array of size nw
-    size_t nw,                       // number of width trials
-    float varnoise,                  // background noise variance
-    float* restrict out              // output buffer of size nw
-    )
-	{
-	const size_t wmax = widths[nw - 1];
-    const size_t csize = b + wmax; // size of the cumsum buffer
-
-    // Compute profile cumulative sum
-    float csum[csize];
-    csum[0] = in[0];
-    for (size_t ii=1; ii<b; ++ii)
-        csum[ii] = csum[ii-1] + in[ii];
-    for (size_t ii=b; ii<csize; ++ii)
-        csum[ii] = csum[ii-1] + in[ii - b];
-
-    for (size_t iw=0; iw<nw; ++iw)
-        {
-        const long int w = widths[iw];
-        const float norm = pow(w * varnoise, -0.5);
-
-        // Initialize best S/N with first phase trial at current width
-        float best_snr = norm * (csum[w] - csum[0]);
-
-        for (size_t ii=0; ii<b; ++ii)
-            {
-            float snr = norm * (csum[ii+w] - csum[ii]);
-            if (snr > best_snr)
-                best_snr = snr;
-            }
-        out[iw] = best_snr;
-        }
-    }
-*/
 
 // Compute the S/N ratio of a profile for a number of boxcar width trials
 // This version of the function convolves profiles with a boxcar that has zero mean
@@ -165,10 +125,12 @@ void get_snr(
         // diff at start phase 0, width w
         // csum[k] = x0 + ... + xk
         float best_diff = csum[w - 1];
+        const float* A = &csum[0];
+        const float* B = &csum[w];
 
-        for (size_t ii=0; ii<b; ++ii)
+        for (size_t ii = 0; ii < size - 1; ++ii)
             {
-            float diff = csum[ii + w] - csum[ii];
+            float diff = B[ii] - A[ii];
             if (diff > best_diff)
                 best_diff = diff;
             }
