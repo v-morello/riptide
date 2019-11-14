@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-O3 -Wall -std=c99 --fast-math
+CFLAGS=-O3 -Wall -Wextra -std=c99 -march=native
 
 libffa.so: libffa.o
 	$(CC) $(CFLAGS) -shared -Wl,-soname,libffa.so -o libffa.so libffa.o
