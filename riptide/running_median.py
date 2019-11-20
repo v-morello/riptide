@@ -3,6 +3,8 @@ from bisect import insort, bisect_left
 
 
 def running_median(data, width):
+    if not width % 2:
+        raise ValueError("width must be an odd number")
     l = width * [data[0]]
     mididx = (width - 1) // 2
     result = numpy.zeros_like(data)
@@ -38,15 +40,19 @@ def fast_running_median(data, width, min_points):
     width = int(width)
     min_points = int(min_points)
 
+    # num_points = effective width of running median on downsampled data
     dsfactor = max(int(width / float(min_points)), 1)
     num_points = int(numpy.ceil(width / float(dsfactor)))
     
-    # Make sure num_points is an odd number, makes life easier
-    num_points +=  int(not num_points % 2)
-    
-    ### No downsampling needed: easy
+    # Make sure num_points is an odd number, makes life easier when it comes
+    # to padding the edges of the data
+    num_points += int(not num_points % 2)
+
+    ### Edge case: no downsampling needed
     if dsfactor <= 1:
-        return running_median(data, width)
+        # num_points is our final window width even in this case
+        y = numpy.pad(data, num_points // 2, 'median', stat_length=width)
+        return running_median(y, num_points)
     
     ### Add 'width' elements to data on both edges.
     # Fill value at the beginning is the median of the first 'width' samples of data
