@@ -39,6 +39,51 @@ void downsample(
         }
     }
 
+void cumsum(
+    const float* restrict in, 
+    size_t size,
+    size_t nwrap,
+    float* csum)
+    {
+    // csum[k] = x0 + ... + xk
+    csum[0] = in[0];
+    for (size_t ii = 1; ii < size; ++ii)
+        csum[ii] = csum[ii-1] + in[ii];
+    for (size_t ii = size; ii < size + nwrap; ++ii)
+        csum[ii] = csum[ii-1] + in[ii - size];
+    }
+
+
+float get_snr_singlewidth(
+    const float* restrict csum,
+    size_t size,
+    size_t width,
+    float stdnoise)   
+    {
+    const float n = size;
+    const float w = width;
+
+    // Height and baseline value of a boxcar filter with
+    // width w bins, zero mean and unit square sum
+    const float h = sqrt((n - w) / (n * w));
+    const float b = -w / (n - w) * h;
+    const float H = h - b; // height measured from baseline
+    const float profile_sum = csum[size - 1];
+
+    // diff at start phase 0, width w
+    // csum[k] = x0 + ... + xk
+    float best_diff = csum[width - 1];
+
+    for (size_t ii = 0; ii < size - 1; ++ii)
+        {
+        float diff = csum[ii+width] - csum[ii];
+        if (diff > best_diff)
+            best_diff = diff;
+        }
+    float best_snr = (H * best_diff + b * profile_sum) / stdnoise;
+    return best_snr;
+    }
+
 
 // Compute the S/N ratio of a profile for a number of boxcar width trials
 // This version of the function convolves profiles with a boxcar that has zero mean
@@ -53,43 +98,13 @@ void get_snr(
     )
     {
     const size_t wmax = widths[nw - 1];
-
-    // Compute profile cumulative sum
-    float csum[size + wmax];
-    csum[0] = in[0];
-    for (size_t ii = 1; ii < size; ++ii)
-        csum[ii] = csum[ii-1] + in[ii];
-    for (size_t ii = size; ii < size + wmax; ++ii)
-        csum[ii] = csum[ii-1] + in[ii - size];
-
     const float stdnoise = sqrt(varnoise);
-    const float profile_sum = csum[size - 1];
-    const float nf = size;
+
+    float csum[size + wmax];
+    cumsum(in, size, wmax, &csum[0]);
 
     for (size_t iw=0; iw < nw; ++iw)
-        {
-        const long int w = widths[iw];
-
-        // Height and baseline value of a boxcar filter with
-        // width w bins, zero mean and unit square sum
-        const float h = sqrt((nf - w) / (nf * w));
-        const float b = -w / (nf - w) * h;
-        const float H = h - b; // height measured from baseline
-
-        // diff at start phase 0, width w
-        // csum[k] = x0 + ... + xk
-        float best_diff = csum[w - 1];
-        const float* A = &csum[0];
-        const float* B = &csum[w];
-
-        for (size_t ii = 0; ii < size - 1; ++ii)
-            {
-            float diff = B[ii] - A[ii];
-            if (diff > best_diff)
-                best_diff = diff;
-            }
-        out[iw] = (H * best_diff + b * profile_sum) / stdnoise;
-        }
+        out[iw] = get_snr_singlewidth(&csum[0], size, widths[iw], stdnoise);
     }
 
 
