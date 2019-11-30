@@ -93,13 +93,11 @@ void get_snr(
     size_t size,                     // number of bins in profile
     const long int* restrict widths, // width trials, array of size nw
     size_t nw,                       // number of width trials
-    float varnoise,                  // background noise variance
+    float stdnoise,                  // background noise stddev
     float* restrict out              // output buffer of size nw
     )
     {
     const size_t wmax = widths[nw - 1];
-    const float stdnoise = sqrt(varnoise);
-
     float csum[size + wmax];
     cumsum(in, size, wmax, &csum[0]);
 
@@ -115,12 +113,12 @@ void get_snr_2d(
     size_t b,                        // number of bins in each profile
     const long int* restrict widths, // width trials, array of size nw
     size_t nw,                       // number of width trials
-    double varnoise,                 // background noise variance. NOTE: has type double, for easier interfacing with python.
+    double stdnoise,                 // background noise stddev. NOTE: has type double, for easier interfacing with python.
     float* restrict out              // 2D output buffer with m lines and nw cols
     )
     {
     for (size_t ii=0; ii<m; ++ii)
-        get_snr(in + ii * b, b, widths, nw, varnoise, out + ii * nw);
+        get_snr(in + ii * b, b, widths, nw, stdnoise, out + ii * nw);
     }
 
 
@@ -176,8 +174,8 @@ void py_periodogram(
             transform(in, m, b, buf, out);
 
             // S/N evaluation
-            float varnoise = m * ds;
-            get_snr_2d(out, m, b, widths, nw, varnoise, snr);
+            float stdnoise = sqrt(m * ds);
+            get_snr_2d(out, m, b, widths, nw, stdnoise, snr);
 
             // Fill period trials
             for (size_t sh=0; sh<m; ++sh)
