@@ -10,7 +10,6 @@ search:
     rmed_width: 8.0
     rmed_minpts: 101
     wtsp: 1.5
-    threads: 1
 
 ### Keyword arguments to the find_peaks() function ###
 detect:
