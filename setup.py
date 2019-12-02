@@ -1,6 +1,8 @@
 import os
 import setuptools
 import subprocess
+import versioneer
+
 from setuptools import setup
 from setuptools.command.install import install
 from setuptools.command.develop import develop
@@ -60,24 +62,20 @@ install_requires = [
     'pandas',
     'astropy',
     'pyyaml',
-    'h5py',
-    'matplotlib'
+    'matplotlib',
+    'threadpoolctl', # in the pipeline, dynamically limit the number of threads used by numpy libs
+    'schema'
 ]
-
-
-# TODO: dynamic versioning
-VERSION = '0.0.3'
-
 
 setup(
     name='riptide-ffa',
-    url='https://bitbucket.org/vmorello/riptide',
+    version=versioneer.get_version(),
+    url='https://github.com/v-morello/riptide',
     author='Vincent Morello',
     author_email='vmorello@gmail.com',
     description='Pulsar searching with the Fast Folding Algorithm (FFA)',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    version=VERSION,
     packages=setuptools.find_packages(),
     install_requires=install_requires,
     license='MIT License',
@@ -86,17 +84,26 @@ setup(
     # to the package’s folder placed in 'site-packages'
     include_package_data=True,
 
+    entry_points = {
+        'console_scripts': ['rffa=riptide.pipeline.pipeline:main'],
+    },
+
     classifiers=[
-        "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Fortran",
+        "Programming Language :: C",
         "License :: OSI Approved :: MIT License",
         "Operating System :: Unix",
         "Topic :: Scientific/Engineering :: Astronomy"
         ],
-    cmdclass={
+
+    # NOTE TO DEVELOPERS ONLY: 
+    # As of March 2020, the latest official release of versioneer (0.18) does
+    # not support custom cmdclass in setup.py.
+    # Setting up versioneer for riptide thus requires using the tip of the master branch on github.
+    # pip install git+https://github.com/warner/python-versioneer@master
+    cmdclass=versioneer.get_cmdclass({
         'install': CustomInstall,
         'develop': CustomDevelop,
         'build_py': CustomBuildPy
-        }
+        })
 )

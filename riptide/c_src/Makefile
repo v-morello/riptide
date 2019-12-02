@@ -1,4 +1,4 @@
-CC=gcc
+CC?=gcc
 CFLAGS=-O3 -Wall -Wextra -std=c99 -march=native --fast-math
 
 libffa.so: libffa.o

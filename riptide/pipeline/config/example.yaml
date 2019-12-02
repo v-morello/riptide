@@ -1,0 +1,205 @@
+###############################################################################
+# Model configuration file for the riptide pipeline, in YAML format
+###############################################################################
+#
+#
+# Before running any serious search:
+# 1. Review this file carefully
+# 2. You MUST change a few crucial parameters to match your input data
+#    In particular, you need to set the input data format, min and max observing 
+#    frequencies, and define the desired search ranges
+#
+# Although the number of options may appear daunting, a fair number of 
+# parameters can be left to their default values, in particular the
+# internal parameters of clustering and harmonic filtering. But feel
+# free to experiment once you know what you are doing.
+# 
+# Finally, note that indentation is meaningful in YAML. 
+# Refer to a YAML guide for details.
+
+
+# Number of parallel processes (and CPUs) used in the search. One process 
+# searches one DM trial at a time.
+processes: 4
+
+
+data:
+  # Format of the input DM trials, either 'presto' or 'sigproc'
+  format: presto
+
+  # NOTE: the observing band parameters are used to calculate an
+  # internal dedispersion plan to select a minimal subset of DM
+  # trials to process.
+  # Minimum observing frequency in MHz
+  fmin: 1181.0
+
+  # Maximum observing frequency in MHz
+  fmax: 1581.0
+
+  # Number of channels in the data
+  nchans: 1024
+
+
+dmselect:
+  # Minimum DM trial in pc cm^{-3}
+  min: 0.0
+
+  # Maximum DM trial in pc cm^{-3}
+  # This is a hard limit, regardless of sky coordinates (see below)
+  max: 1000.0
+
+  # Maximum value of Trial_DM x |sin b| where b is the Galactic latitude of the observation.
+  # This is a simple method to limit the maximum trial DM as a function of Galactic coordinates
+  # Almost no Galactic pulsars are known to have DM x |sin b| > 40
+  # NOTE: This rule is of course invalid for pulsars in Globular clusters, or pulsars in the Magellanic clouds 
+  #
+  # If set to null, no latitude-dependent cap on the maximum trial DM is applied
+  dmsinb_max: 45.0
+
+
+dereddening:
+  # Width of the running median window in seconds used by the median subtraction
+  # routine before searching the input time series
+  rmed_width: 5.0
+
+  # 'minpts' parameter passed to the ffa_search() function
+  rmed_minpts: 101
+
+
+#
+# The 'ranges' section specifies an arbitrary number (at least one)
+# of period ranges to search, each with their own number of phase bins
+# The 'ranges' section is a list of dictionaries
+# NOTE: The ranges must NOT overlap
+#
+ranges:
+  # Name of the search range, it is only used in logging messages and otherwise irrelevant
+  - name: 'short'
+    # Keyword arguments passed to the ffa_search() function. See that function's
+    # docstring for more information.
+    ffa_search:
+      # Minimum period for this range, in seconds
+      period_min: 0.20
+
+      # Maximum period for this range, in seconds
+      period_max: 0.50
+
+      # Minimum number of output phase bins
+      bins_min: 240
+
+      # Maximum number of output phase bins
+      bins_max: 260
+
+      # Minimum number of signal periods that must fit in the data. In other
+      # words, place a dynamic cap on period_max equal to DATA_LENGTH / fpmin.
+      fpmin: 8
+
+      # Multiplicative factor between consecutive boxcar width trials
+      # Must be > 1. Lower values means more tighly spaced width trials.
+      # wtsp = 1.5 means the following pulse width trials in number of bins:
+      # 1, 2, 3, 4, 6, 9, 13, 19, ...
+      wtsp: 1.5
+    
+    # Keyword arguments passed to the find_peaks() function. See that function's
+    # docstring for more information. For any keyword that does not appear in this 
+    # section, the default value specified in find_peaks() definition will be used.
+    # It is in fact possible to leave this section empty, in which case all the
+    # default values are used
+    find_peaks:
+      # Minimum S/N for a peak to be considered significant
+      # It must also exceed the dynamic selection threshold, whose fitting is
+      # controlled by other parameters
+      # We recommend using a low threshold (6 is a good start), and then
+      # filtering out low S/N candidates at the end (see candidate_filters section)
+      # That way, the DM curves of the candidates will be better sampled
+      smin: 6.0
+    
+    candidates:
+      # Number of phase bins used when producing final Candidate files for
+      # any signal found in this period range. Use a number approximately
+      # equal, or larger than the average number of bins used in the search.
+      bins: 256
+
+      # Number of sub-integrations hen producing final Candidate files for
+      # any signal found in this period range.
+      # NOTE: subints = null is allowed. It means: automatically pick the number 
+      # of full periods that fit inside the data. NOT RECOMMENDED for short periods !
+      # If for a specific candidate with a long period, 'subints' is too large, it will be 
+      # automatically reduced to the number of full periods that fit inside the data.
+      # This should be taken as a *maximum* number of subints in the output candidate files.
+      subints: 32
+
+  # Another search range for longer periods, same structure as above
+  - name: 'medium'
+    ffa_search:
+      period_min: 0.50
+      period_max: 2.00
+      bins_min: 480
+      bins_max: 520
+      fpmin: 8
+      wtsp: 1.5
+    find_peaks:
+      smin: 6.0
+    candidates:
+      bins: 512
+      subints: 32
+
+  # Another search range for longer periods, same structure as above
+  - name: 'long'
+    ffa_search:
+      period_min: 2.00
+      period_max: 120.00
+      bins_min: 960
+      bins_max: 1040
+      fpmin: 8
+      wtsp: 1.5
+    find_peaks:
+      smin: 6.0
+    candidates:
+      bins: 1024
+      subints: 32
+
+
+# Parameters of the peak clustering that is performed once all DM trials have
+# been searched
+clustering:
+  # Clustering radius in units of 1 / Tobs
+  # Two peaks whose frequencies are within (clrad / Tobs) Hz of each other
+  # are considered part of the same cluster
+  radius: 0.2
+
+
+# Harmonic flagging parameters
+# See the docstring of the htest() function in harmonic_testing.py for details
+# NOTE: this is only a flagging operation, the actual *removal* of candidates 
+# flagged as harmonics is entirely optional, see below
+harmonic_flagging:
+  denom_max: 100
+  phase_distance_max: 1.0
+  dm_distance_max: 3.0
+  snr_distance_max: 3.0
+
+
+# Filters applied to the final list of clusters, *just before* the associated
+# candidate files are produced.
+# The cap on candidate number is applied last, after all unworthy candidates have been removed
+# Any of these fields can be left empty, in which case the corresponding filter is NOT applied
+candidate_filters:
+  # Minimum value for the optimal DM of the candidate
+  dm_min: 
+
+  # Minimum value for the best S/N of the candidate
+  snr_min: 7.0
+
+  # If True, then any cluster flagged as a harmonic of another will NOT be produced as a candidate file
+  # If disk space and candidate inspection resources allow it, consider turning
+  # this option off and saving everything.
+  remove_harmonics: True
+
+  # Maximum number of candidates to be saved as files
+  max_number: 
+
+
+# If True, save a PNG plot for every candidate
+# Candidate files can always be loaded and plotted later
+plot_candidates: False

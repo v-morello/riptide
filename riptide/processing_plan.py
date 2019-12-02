@@ -1,6 +1,5 @@
 ### Non-standard imports
 import pandas
-import h5py
 from numpy import ceil
 
 ### Local module imports
@@ -11,7 +10,6 @@ class ProcessingPlan(object):
     """ Defines the sequence of downsamplings and partial searches to perform
     on a time series. Meant to be stored as a class member of a Periodogram
     object. """
-    _HDF5_group_name = 'processing_plan'
     _column_names = [
         'dsfactor', 'tsamp', 'bins_min', 'bins_max', 'period_min', 'period_max'
         ]
@@ -61,16 +59,16 @@ class ProcessingPlan(object):
 
     @staticmethod
     def create(nsamp, tsamp, period_min=1.0, period_max=30.0, fpmin=8, bins_min=240, bins_max=260, ducy_max=0.20, wtsp=1.5):
-        """ Create a new ProcessingPlan instace.
+        """ Create a new ProcessingPlan instance
 
-        Parameters:
-        -----------
-            nsamp: int
-                Number of samples in the time series to be processed with this plan.
-            tsamp: float
-                Sampling time of the time series to be processed.
-            period_min: float
-                Minimum period to search.
+        Parameters
+        ----------
+        nsamp : int
+            Number of samples in the time series to be processed with this plan.
+        tsamp : float
+            Sampling time of the time series to be processed.
+        period_min : float
+            Minimum period to search.
         """
         ### Check input properly
         tsamp = float(tsamp)
@@ -138,42 +136,14 @@ class ProcessingPlan(object):
             ]
         return '\n'.join(lines)
 
-    def _save_to_hdf5_file(self, h5file):
-        """ Create a processing_plan group in given HDF5.File object, and write
-        class members as attributes of that group. """
-        group = h5file.create_group(self._HDF5_group_name)
-
-        for key, val in self._attrs.items():
-            group.attrs.modify(key, val)
-
-        group.create_dataset('widths', data=self._widths, dtype=int)
-        for column in self._column_names:
-            group.create_dataset(column, data=self._steps[column].values)
-
     @classmethod
-    def _from_hdf5_file(cls, h5file):
-        """ Create a ProcessingPlan object from the attributes stored in the
-        processing_plan group of given HDF5.File. """
-        group = h5file[cls._HDF5_group_name]
-        attrs = dict(group.attrs)
-        widths = group['widths'].value
+    def from_dict(cls, items):
+        return cls(items['attrs'], items['widths'], items['steps'])
 
-        columns = {
-            col: group[col].value
-            for col in cls._column_names
-            }
-        steps = pandas.DataFrame.from_dict(columns, orient='columns')
-        steps = steps[cls._column_names] # Re-order columns properly
-        return cls(attrs, widths, steps)
+    def to_dict(self):
+        return {
+            'attrs': self._attrs,
+            'widths': self._widths,
+            'steps': self._steps
+        }
 
-    def save_hdf5(self, fname):
-        """ Save to HDF5 file. """
-        with h5py.File(fname, 'w') as fobj:
-            self._save_to_hdf5_file(fobj)
-
-    @classmethod
-    def load_hdf5(cls, fname):
-        """ Load from HDF5 file. """
-        with h5py.File(fname, 'r') as fobj:
-            plan = cls._from_hdf5_file(fobj)
-        return plan

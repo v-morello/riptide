@@ -32,5 +32,12 @@ clean: ## Remove all python cache and build files
 	rm -rf build/
 	rm -rf dist/
 	rm -rf ${PKG}.egg-info/
+	rm -rf riptide_ffa.egg-info/
 
-.PHONY: dist docker install uninstall help clean
+upload_test: ## Upload the distribution source to the TEST PyPI
+	twine upload --repository-url https://test.pypi.org/legacy/ dist/*
+
+upload: ## Upload the distribution source to the REAL PyPI
+	twine upload dist/*
+
+.PHONY: dist docker install uninstall help clean upload upload_test

@@ -1,12 +1,18 @@
 global-include *.py
+global-include *.h
 global-include *.c
 global-include *.md
 global-include *.yaml
 global-include *.yml
 global-include Makefile
 include LICENSE
+include setup.cfg
+prune .vscode
 
 # NOTE: shared library must be included
 # When the module is installed with 'pip install', it is built in a temporary 
 # directory and THEN are copied to 'site-packages' 
 global-include *.so
+
+include versioneer.py
+include riptide/_version.py

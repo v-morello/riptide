@@ -21,11 +21,11 @@ def fast_running_median(data, width, min_points):
 
     Parameters
     ----------
-    data: ndarray
+    data : ndarray
         Input data
-    width: int
+    width : int
         Required width of the running median window in number of samples
-    min_points: int
+    min_points : int
         The running median is calculated of a time scrunched version of the
         input data to save time: minpts is the minimum number of
         scrunched samples that must fit in the running median window.

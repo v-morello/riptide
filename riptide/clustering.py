@@ -1,38 +1,51 @@
 import numpy as np
 
-def iterslices(indices):
-    # Special case where there is only one cluster
-    if not len(indices):
-        yield slice(None, None)
 
-    # Multiple clusters case
-    else:
-        yield slice(None, indices[0])
-        for ii, jj in zip(indices[:-1], indices[1:]):
-            yield slice(ii, jj)
-        yield slice(indices[-1], None)
+def cluster1d(x, r, already_sorted=False):
+    """
+    Find clusters in one dimensional data using a simple friends of friends
+    algorithm. Two points are in the same cluster if they are within no more
+    than a distance 'r' from each other
 
-def cluster_1d(x, radius):
-    """ Perform clustering on 1D data. Elements of 'x' whose
-    absolute difference is less than 'radius' are considered
-    part of the same cluster. """
+    Parameters
+    ----------
+    x : ndarray
+        Input data
+    r : float
+        Clustering radius
+    already_sorted : bool, optional
+        True if 'x' is already sorted in increasing or decreasing order.
+        This can save some compute time.
+
+    Returns
+    -------
+    clusters : list
+        List of clusters. Each cluster is an array of indices of points in 'x'
+    """
     if not len(x):
         return []
 
-    # Sort input data, compute differences between
-    # consecutive elements, spot those differences
-    # that exceeed the clustering radius
-    x = np.asarray(x)
-    order = x.argsort()
-    y = x[order]
-    dy = np.diff(y)
-    diffmask = dy > radius
+    if not already_sorted:
+        indices = x.argsort()
+        diff = np.diff(x[indices])
+    else:
+        indices = np.arange(len(x))
+        diff = np.diff(x)
 
-    # Indices that mark the end of a cluster
-    ibreaks = np.where(diffmask)[0] + 1
+    # NOTE: diff is the sequence of consecutive differences
+    # of x AFTER it has been sorted
+    # Indices 
+    ibreaks = np.where(abs(diff) > r)[0]
 
+    # In this case, there is only one cluster
+    if not len(ibreaks):
+        return [indices]
+
+    # Cluster bounds indices
+    ibounds = np.concatenate(([0], ibreaks+1, [len(x)]))
+    
     clusters = [
-        order[sl]
-        for sl in iterslices(ibreaks)
-        ]
+        indices[start:end]
+        for start, end in zip(ibounds[:-1], ibounds[1:])
+    ]
     return clusters

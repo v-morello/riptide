@@ -1,5 +1,4 @@
 ##### Non-standard imports #####
-import h5py
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -10,31 +9,37 @@ from .processing_plan import ProcessingPlan
 class Periodogram(object):
     """ Stores the raw output of the FFA search of a time series. """
     def __init__(self, plan, periods, widths, snrs, metadata=None):
-        self._plan = plan
-        self._periods = periods
-        self._widths = widths
-        self._snrs = snrs.reshape(periods.size, widths.size)
+        self.plan = plan
+        self.periods = periods
+        self.widths = widths
+        self.snrs = snrs.reshape(periods.size, widths.size)
         self.metadata = metadata if metadata is not None else Metadata({})
 
     @property
-    def plan(self):
-        return self._plan
-
-    @property
-    def periods(self):
-        return self._periods
-
-    @property
-    def widths(self):
-        return self._widths
-
-    @property
-    def snrs(self):
-        return self._snrs
+    def freqs(self):
+        return 1.0 / self.periods
 
     @property
     def tobs(self):
         return self.metadata['tobs']
+
+    @property
+    def bins_avg(self):
+        """ Average number of phase bins used in the search """
+        return self.plan.bins_avg
+
+    def to_dict(self):
+        return {
+            'plan': self.plan,
+            'periods': self.periods,
+            'widths': self.widths,
+            'snrs': self.snrs,
+            'metadata': self.metadata
+        }
+
+    @classmethod
+    def from_dict(cls, items):
+        return cls(items['plan'], items['periods'], items['widths'], items['snrs'], metadata=items['metadata'])
 
     def plot(self, iwidth=None):
         if iwidth is None:
@@ -63,28 +68,3 @@ class Periodogram(object):
         self.plot(iwidth=iwidth)
         plt.show()
 
-    def save_hdf5(self, fname):
-        """ Save Periodogram object to HDF5 format. """
-        with h5py.File(fname, 'w') as fobj:
-            # Create a group to store metadata, as attributes of said group
-            self.metadata._save_to_hdf5_file(fobj)
-
-            # Create a group to store the ProcessingPlan and store it in there
-            self._plan._save_to_hdf5_file(fobj)
-
-            data_group = fobj.create_group('data')
-            data_group.create_dataset('widths', data=self.widths, dtype=int)
-            data_group.create_dataset('periods', data=self.periods, dtype=np.float32)
-            data_group.create_dataset('snrs', data=self.snrs, dtype=np.float32)
-
-    @classmethod
-    def load_hdf5(cls, fname):
-        """ Load Periodogram object from an HDF5 file. """
-        with h5py.File(fname, 'r') as fobj:
-            metadata = Metadata._from_hdf5_file(fobj)
-            plan = ProcessingPlan._from_hdf5_file(fobj)
-            data_group = fobj['data']
-            periods = data_group['periods'].value
-            widths = data_group['widths'].value
-            snrs = data_group['snrs'].value
-        return cls(plan, periods, widths, snrs, metadata=metadata)

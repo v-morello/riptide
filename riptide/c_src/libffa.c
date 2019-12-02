@@ -163,6 +163,17 @@ void py_periodogram(
         // Downsample
         double ds = dsfactor[istep];         // current downsampling factor
         size_t ns = floor(nsamp / ds);       // number of samples after downsampling
+
+        // If ds is non-integer, then the noise variance in the downsampled data
+        // is scaled by (ds - 1/3) rather than ds
+        double ds_fracpart = ds - floor(ds);
+        double varscale = ds;
+
+        // The correction is applied only if ds "far enough" from integer number
+        // i.e. if the downsampling window shifts by more than one new sample over
+        // the input data
+        if (ds_fracpart * (double)ns > 1.0)
+            varscale = ds - 1.0/3.0;
         
         downsample(tseries, nsamp, ds, in);
 
@@ -174,7 +185,7 @@ void py_periodogram(
             transform(in, m, b, buf, out);
 
             // S/N evaluation
-            float stdnoise = sqrt(m * ds);
+            float stdnoise = sqrt(m * varscale);
             get_snr_2d(out, m, b, widths, nw, stdnoise, snr);
 
             // Fill period trials

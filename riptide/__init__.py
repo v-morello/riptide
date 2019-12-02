@@ -1,32 +1,47 @@
+# NOTE: best to place this at the top in case we want to import
+# it in other files
+from ._version import get_versions
+__version__ = get_versions()['version']
+del get_versions
+
 ### Major classes
 from .time_series import TimeSeries
+from .processing_plan import ProcessingPlan
 from .periodogram import Periodogram
 from .metadata import Metadata
-from .folding import SubIntegrations
+from .candidate import Candidate
 
 ### Major functions
 from .search import ffa_search
 
 from .libffa import (
-    ffa_transform_1d,
-    ffa_transform_2d,
+    ffa1,
+    ffa2,
+    ffafreq,
+    ffaprd,
     generate_signal,
-    downsample,
-    get_snr
+    downsample
     )
 
 from .peak_detection import find_peaks
 
+### Serialization
+from .serialization import save_json, load_json
+
 __all__ = [
     'TimeSeries',
+    'ProcessingPlan',
     'Periodogram',
     'Metadata',
-    'SubIntegrations',
+    'Candidate',
     'ffa_search',
-    'ffa_transform_1d',
-    'ffa_transform_2d',
+    'ffa1',
+    'ffa2',
+    'ffafreq',
+    'ffaprd',
     'generate_signal',
     'downsample',
-    'get_snr',
-    'find_peaks'
+    'find_peaks',
+    'save_json',
+    'load_json'
     ]

@@ -1,20 +1,38 @@
-## Overview
+![License](https://img.shields.io/badge/License-MIT-green.svg)  ![Python versions](https://img.shields.io/pypi/pyversions/riptide-ffa.svg)
 
-__riptide__ is an end-to-end pulsar searching package implementing the Fast Folding Algorithm (FFA). Its interface is entirely in python while the core algorithms are implemented in C. It is being developed with ease of use in mind, without sacrificing execution speed. The main features are:
+# riptide
 
-- Reading time series data written by major pulsar software packages such as PRESTO and SIGPROC
-- Saving / Loading data products to / from HDF5
-- Carry metadata in a flexible format across pipeline stages and into HDF5 outputs.
-- Make nice plots of everything
+__riptide__ ("sea**r**ch**i**ng for **p**ulsars in the **ti**me **d**omain") is a pulsar searching package implementing the Fast Folding Algorithm (FFA), the theoretically optimal search method for periodic signals. Its interface is entirely in python while the core algorithms are implemented in C. riptide provides:  
 
-__riptide__ loosely stands for "seaRchIng for Pulsars in the TIme Domain". Mostly because there are no cool names containing the letters "FFA". Also a subtle reference to Australia where I did my Masters.
+* A library of functions and classes to use interactively to process dedispersed time series  
+* A pipeline executable to process a set of DM trials and output a list of candidate files and other useful data products  
+
+## Citation
+
+If using ``riptide`` contributes to a project that leads to a scientific publication, please cite the article  (NOTE: the link will be updated once the paper appears on arXiv)  
+["Optimal periodicity searching: Revisiting the Fast Folding Algorithm for large scale pulsar surveys"](TODO_FIXME_LINK)
+
+
+## Sensitivity of the FFA
+
+The article covers the topic of the FFA's sensitivity in theory, here is a practical example on a faint source. Below is an L-band observation of [PSR J1932-3655](https://www.atnf.csiro.au/people/joh414/ppdata/1932-3655.html) from the [SUPERB survey](https://arxiv.org/abs/1706.04459), significantly offset from the true position of the source. The first plot was obtained by folding the observation using the known ephemeris of the pulsar with [PSRCHIVE](http://psrchive.sourceforge.net/). This is one of the faintest known pulsar instances identifiable in the survey.
+
+![psrchive_plot](images/J1932-3655_psrchive_small.png "PSRCHIVE direct ephemeris folding")  
+
+And below is a blind detection of the pulsar, running `riptide` on the same observation:  
+![riptide_plot](images/J1932-3655_blind_detection.png "riptide blind detection")
 
 
 ## Installation
 
-Clone the repository:
+The easiest method is to use pip install, which pulls the latest release from the python package index and installs all required dependencies:
+```
+pip install riptide-ffa
+```
+
+The alternative is to clone the repository, especially if you want the absolute latest version:
 ```bash
-git clone https://vmorello@bitbucket.org/vmorello/riptide.git
+git clone https://github.com/v-morello/riptide
 ```
 
 And then in the base directory of `riptide` run
@@ -23,33 +41,20 @@ And then in the base directory of `riptide` run
 make install
 ```
 
-This simply runs ``pip install`` in [editable mode](https://pip.pypa.io/en/latest/reference/pip_install/#editable-installs), which means you can freely edit the code. It also installs any required dependencies with ``pip`` that are not present already.
+This simply runs ``pip install`` in [editable mode](https://pip.pypa.io/en/latest/reference/pip_install/#editable-installs), which means you can freely edit the code. It also installs any required dependencies with ``pip`` that are not present already. The installer also adds a link to the riptide pipeline executable `rffa` in your python environment using a [console_scripts entry point](https://python-packaging.readthedocs.io/en/latest/command-line-scripts.html), check that it all works by typing:
 
-
-## Docker image
-
-The riptide Dockerfile is located in the 'docker' subdirectory. To build the image, simply type:
-
-```bash
-make docker
 ```
-
-Which builds an image named `riptide-ffa`. Both python and ipython are installed within the docker image. To start a container:
-
-```bash
-docker run -it --rm riptide-ffa
+rffa -h
 ```
-
-Refer to your favourite docker cheat sheet for further information and advanced usage.
-
+And you should see the full help of the pipeline application, see below for details on how to use it.
 
 ## Basic Usage: searching a single time series
 
-The core functionality of riptide is to take a single time series as an input and calculate its *periodogram*: the S/N as a function of trial period and trial pulse width. This is what we will demonstrate in this section.
+The core functionality of riptide is to take a single time series as an input and calculate its *periodogram*: the S/N as a function of trial period and trial pulse width.
 
 #### Load a time series, or create a fake one
 
-Time series (or single DM trials) are encapsulated in the aptly named `TimeSeries` class. We can either create an artificial train of pulses (plus some white noise) for test purposes, or load some real data created with some popular pulsar software packages.
+Time series (or single DM trials) are encapsulated in the `TimeSeries` class. We can either create an artificial train of pulses (plus some white noise) for test purposes, or load some real data created with some popular pulsar software packages.
 
 ```python
 from riptide import TimeSeries
@@ -65,7 +70,7 @@ tseries_sigproc = TimeSeries.from_sigproc("~/work/pulsars/sigproc_time_series/J0
 
 #### Computing and manipulating periodograms
 
-Periodograms are computed with the `ffa_search` function, which takes as input a `TimeSeries` and many keyword arguments. The search period range is specified via `period_min` and `period_max`. The duty cycle resolution of the search is set by `bins_min` and `bins_max`; due to how the search is performed under the hood, it is recommended to make `bins_max` approximately 10% higher than `bins_min`.
+Periodograms are computed with the `ffa_search` function, which takes as input a `TimeSeries` and many keyword arguments. The search period range is specified via `period_min` and `period_max`. The duty cycle resolution of the search is set by `bins_min` and `bins_max`; due to how the search is performed under the hood, it is recommended to make `bins_max` approximately 10% larger than `bins_min`.
 
 ```python
 from riptide import ffa_search
@@ -79,9 +84,9 @@ pgram.display()
 
 `ffa_search` returns three outputs:
 
-1. The de-reddened and normalised copy of the input time series that was actually searched
-2. The search plan that was followed, specifying how the data was iteratively downsampled across the entire search period ramge
-3. The output `Periodogram`
+1. The de-reddened and normalised copy of the input time series that was actually searched  
+2. The search plan that was followed, specifying how the data was iteratively downsampled across the entire search period range  
+3. The output `Periodogram`  
 
 Periodograms are actually two-dimensional: they represent a S/N as a function of both trial period and trial width, as shown below. The `display()` method only shows S/N for the best trial width.
 
@@ -96,12 +101,12 @@ print(pgram.periods.size, pgram.widths.size, pgram.snrs.shape)
 
 All `TimeSeries` objects and all derived data products (periodogram, pulsar search candidates, etc.) in riptide have a `metadata` dictionary carrying whatever information provided by the software package that created the input time series data. There is of course no header standardization for such data in pulsar astronomy, and the information contained in `metadata` will therefore vary across software packages and observatories. We do however attempt to guarantee some metadata uniformity in riptide, by always enforcing the presence of the following metadata keys and their associated data types:
 
-* `dm`: `float`, dispersion measure of the input data
-* `fname`: `str`, original file name
-* `mjd`: `float`, epoch of observation
-* `source_name`: `str`
-* `skycoord`: `astropy.SkyCoord`, source coordinates
-* `tobs`: `float`, integration time in seconds
+* `dm`: `float`, dispersion measure of the input data  
+* `fname`: `str`, original file name  
+* `mjd`: `float`, epoch of observation  
+* `source_name`: `str`  
+* `skycoord`: `astropy.SkyCoord`, source coordinates  
+* `tobs`: `float`, integration time in seconds  
 
 If these required attributes were not provided by the original creator of the time series, they are set to the special value `None`. Here's for example the metadata for the SIGPROC time series loaded in code snippet above:
 
@@ -132,6 +137,48 @@ print(tseries_sigproc.metadata)
  'za_start': 0.0}
 ```
 
+### FFA base functions
+
+The python interface of `riptide` exposes some lower-level functions related to calculating the folding transform (interchangeably called FFA transform) of input data at some base integer period. See the documentation of these functions for more details. These are:  
+
+* `ffa2`: FFA transform of a two-dimensional input that represents a pulse stack. The `m` lines of the input represent pulses in chronological order, and the `p` columns represent the phase dimension  
+* `ffa1`: FFA transform of a one-dimensional input, that represents a time series. The function simply selects the largest number of entire pulses that fit in the data, reshapes them into a two-dimensional array, and calls `ffa2()`  
+* `ffafreq`: Returns the trial folding frequencies corresponding to every line in the output of an FFA transform  
+* `ffaprd`: Same as `ffafreq`, but returns trial periods instead  
+
 ## Large scale survey usage: searching multiple DM trials
 
-Multiple DM trial searches are managed by the `Pipeline` class in the `riptide.pipelines` submodule. Documentation coming soon.
+Multiple DM trial searches are managed by the `Pipeline` class in the `riptide.pipeline` submodule. The pipeline executable needs at least two inputs:  
+
+* A configuration file in `YAML` format, of which a number of well-commented examples are provided in the `pipeline/config` directory. To get started, copy one of these files, read the comments carefully and start tweaking them to your needs. The pipeline is highly configurable. This is where the user must specify any required parameters of the observation (e.g. top and bottom bserving frequencies), the desired DM range, the desired search period range(s) and the duty cycle resolution, etc.  
+* A list of dedispersed time series files, obtained by dedispersing the same observation. If your files have been produced by [PRESTO](https://github.com/scottransom/presto), you need to pass a list of `.inf` header files (the associated `.dat` files are expected to be in the same directory). *The input data format must be specified in the configuration file.*  
+
+You can optionally set an output directory as well, otherwise the current working directory is used. Here's an example:
+```
+rffa --config myConfig.yml --outdir search_output input_data/*.inf
+```
+
+Type `rffa -h` for help on all arguments accepted by the pipeline application. Once the pipeline finishes, the following data products will be written in the specified output directory:  
+
+* A CSV table of all detected periodogram peaks across all DM trials  
+* A CSV table of clusters, obtained by grouping together peaks with frequencies close to each other  
+* A CSV table of candidates, which will have the same entries as the clusters table, unless you have enabled harmonic filtering in the config file. In this case any cluster that was flagged as a harmonic of another is removed from the final candidate list.  
+* One JSON file per candidate, which can be loaded using `riptide.load_json()` and plotted / manipulated. These contain header information, a table of peaks associated to the candidate, and a sub-integration plots obtained by folding the DM trial at which they were detected with the highest S/N.  
+* One PNG plot per candidate, if the associated option was enabled in the configuration file.  
+
+
+## Docker image
+
+The riptide Dockerfile is located in the 'docker' subdirectory. To build the image, simply type:
+
+```bash
+make docker
+```
+
+Which builds an image named `riptide-ffa`. Both python and ipython are installed within the docker image. To start a container:
+
+```bash
+docker run -it --rm riptide-ffa
+```
+
+Refer to your favourite docker cheat sheet for further information and advanced usage.

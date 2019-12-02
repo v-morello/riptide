@@ -14,7 +14,7 @@ from .ffautils import generate_width_trials
 
 def load_libffa():
     # this file's dir/name
-    fdir, fname = os.path.split(os.path.abspath(__file__))
+    fdir, __ = os.path.split(os.path.abspath(__file__))
 
     # load the library, using numpy mechanisms
     lib = npct.load_library(
@@ -75,24 +75,35 @@ class LibFFA(object):
 
 ###############################################################################
 
-def generate_signal(nsamp, period, phi0=0.0, ducy=0.01, amplitude=1.0, stdnoise=1.0):
+def generate_signal(nsamp, period, phi0=0.5, ducy=0.02, amplitude=10.0, stdnoise=1.0):
     """ Generate a time series containing a periodic signal with a von Mises
-    pulse profile. This function is mostly for test purposes.
+    pulse profile. This function is useful for test purposes.
 
     Parameters
     ----------
-    nsamp: int
+    nsamp : int
         Number of samples to generate.
-    period: float
+    period : float
         Period in number of samples.
-    phi0: float
+    phi0 : float, optional
         Initial pulse phase in number of periods.
-    ducy: float
-        Duty cycle of the pulse.
-    amplitude: float
-        Pulse amplitude.
-    stdnoise: float
-        Standard deviation of the background noise.
+    ducy : float, optional
+        Duty cycle of the pulse, i.e. the ratio FWHM / Period
+    amplitude : float, optional
+        True amplitude of the signal as defined in the reference paper.
+        The *expectation* of the S/N of the generated signal is
+            S/N_true = amplitude / stdnoise,
+        assuming that a matched filter with the exact shape of the pulse is 
+        employed to measure S/N (here: von Mises with given duty cycle). 
+        riptide employs boxcar filters in the search, which results in a slight
+        S/N loss. See the reference paper for details. 
+
+        A further degradation will be observed on bright signals, because
+        they bias the estimation of the mean and standard deviation of the 
+        noise in a blind search.
+    stdnoise : float, optional
+        Standard deviation of the background noise. If set to 0, a noiseless 
+        signal is generated.
 
     Returns
     -------
@@ -104,7 +115,11 @@ def generate_signal(nsamp, period, phi0=0.0, ducy=0.01, amplitude=1.0, stdnoise=
 
     # Generate pulse train
     phase_radians = (np.arange(nsamp, dtype=float) / period - phi0) * (2 * pi)
-    signal = amplitude * exp(kappa*(cos(phase_radians) - 1.0))
+    signal = exp(kappa*(cos(phase_radians) - 1.0))
+
+    # Normalise to unit L2-norm, then scale by amplitude
+    scale_factor = amplitude * (signal ** 2).sum() ** -0.5
+    signal *= scale_factor
 
     # Add noise
     if stdnoise > 0.0:
@@ -116,57 +131,139 @@ def generate_signal(nsamp, period, phi0=0.0, ducy=0.01, amplitude=1.0, stdnoise=
     return tseries
 
 
-def ffa_transform_2d(data):
-    """ Compute the FFA transform of an array of profiles.
+def ffa2(data):
+    """ 
+    Compute the FFA transform of a two-dimensional input
 
     Parameters
     ----------
-    data: ndarray (2D)
-        Input time series data in two-dimensional shape (m, b), where m
-        is the number of signal periods and b the number of phase bins.
+    data : ndarray (2D)
+        Input time series data in two-dimensional form with shape (m, p),
+        where m is the number of signal periods and p the number of phase bins.
 
     Returns
     -------
-    transform: ndarray (2D)
-        The FFA transform of 'data', as a 2D array of shape (m, b).
-        Line number k corresponds to a summation path with a top-to-bottom
-        right shift of k bins.
+    transform : ndarray (2D)
+        The FFA transform of 'data', as a float32 2D array of shape (m, p)
+
+    See Also
+    --------
+    ffafreq : trial frequencies in the output transform
+    ffaprd : trial periods in the output transform
     """
-    m, b = data.shape
-    output = np.zeros(shape=(m,b), dtype=np.float32)
-    LibFFA.py_transform(data.astype(np.float32), m, b, output)
+    if not data.ndim == 2:
+        raise ValueError("input data must be two-dimensional")
+
+    m, p = data.shape
+    output = np.zeros(shape=(m,p), dtype=np.float32)
+    LibFFA.py_transform(data.astype(np.float32), m, p, output)
     return output
 
 
-def ffa_transform_1d(data, pnum):
-    """ Compute the FFA transform of a time series at a given integer
-    period number. The algorithm only considers a number of time
-    samples that is a multiple of 'pnum', and therefore ignores the
-    last nsamp % pnum samples.
+def ffa1(data, p):
+    """ 
+    Compute the FFA transform of a one-dimensional input (time series)
+    at base period p
 
     Parameters
     ----------
-    data: ndarray (1D)
-        Input time series data. Trailing samples with indices larger
-        than the largest multiple of pnum are ignored.
-    pnum: int
-        Signal period in samples.
+    data : ndarray (1D)
+        Input time series data. If N is the total number of samples in the
+        data, the last N % p samples are ignored, as they do not form a
+        complete pulse period
+    p : int
+        Base period of the transform, in number of samples
 
     Returns
     -------
-    transform: ndarray (2D)
-        The FFA transform of 'data', as a 2D array of shape
-        (m, pnum), where m is the number of complete periods of the signal.
-        Line number k corresponds to a summation path with a top-to-bottom
-        right shift of k bins.
+    transform : ndarray (2D)
+        The FFA transform of 'data', as a float32 2D array of shape (m, p), 
+        where m is the number of complete pulse periods in the data
+
+    See Also
+    --------
+    ffafreq : trial frequencies in the output transform
+    ffaprd : trial periods in the output transform
     """
-    m = data.size // pnum
-    return ffa_transform_2d(data[:m*pnum].reshape(m, pnum))
+    if not data.ndim == 1:
+        raise ValueError("input data must be one-dimensional")
+    if not (isinstance(p, int) and p > 0):
+        raise ValueError("p must be an integer > 1")
+    if p > data.size:
+        raise ValueError("p must be smaller than the total number of samples")
+    m = data.size // p
+    return ffa2(data[:m*p].reshape(m, p))
+
+
+def ffafreq(N, p, dt=1.0):
+    """
+    Returns the trial frequencies that correspond to every folded profile
+    in the FFA output.
+
+    Parameters
+    ----------
+    N : int
+        Total number of samples in the input data
+    p : int
+        Base period of the FFA transform in number of samples
+    dt : float, optional
+        Sampling time
+
+    Returns
+    -------
+    freqs: ndarray
+        Array with m elements containing the sequence of trial frequencies
+        in the FFA output
+    """
+    if not (isinstance(N, int) and N > 0):
+        raise ValueError("N must be a strictly positive integer")
+
+    if not (isinstance(p, int) and p > 1):
+        raise ValueError("p must be an integer > 1")
+
+    if not N >= p:
+        raise ValueError("p must be smaller than (or equal to) N")
+
+    if not dt > 0:
+        raise ValueError("dt must be strictly positive")
+
+    f0 = 1.0 / p
+    m = N // p
+    if m == 1:
+        f = np.asarray([f0])
+    else:
+        s = np.arange(m)
+        f = (f0 - s / (m-1.0) * f0**2)
+    f /= dt
+    return f
+
+
+def ffaprd(N, p, dt=1.0):
+    """
+    Returns the trial periods that correspond to every folded profile
+    in the FFA output.
+
+    Parameters
+    ----------
+    N : int
+        Total number of samples in the input data
+    p : int
+        Base period of the FFA transform in number of samples
+    dt : float, optional
+        Sampling time
+
+    Returns
+    -------
+    periods: ndarray
+        Array with m elements containing the sequence of trial periods
+    """
+    return 1.0 / ffafreq(N, p, dt=dt)
 
 
 def get_snr(data, stdnoise=1.0):
-    """ Compute the S/N ratio of pulse profile(s) for a range of boxcar width
-    trials.
+    """ 
+    Mainly for test purposes. Compute the S/N ratio of pulse profile(s) for
+    a range of boxcar width trials.
 
     Parameters
     ----------
