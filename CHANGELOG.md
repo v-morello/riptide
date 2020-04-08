@@ -5,6 +5,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## 0.1.1 - 2020-04-08
+
+### Fixed
+- Module should now properly installs on OSX, where some C compilation options had to be adapted. `numpy.ctypeslib` also expects shared libraries to have a `.dylib` extension on OSX rather than the linux standard `.so`
+
+
 ## 0.1.0 - 2020-04-08
 
 **This release contains major improvements and additions but breaks compatibility with** `v0.0.x`. If you have any ongoing large-scale searches or projects, stick with the older release you were using. Other users should **definitely** use this new version.

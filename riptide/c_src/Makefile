@@ -1,15 +1,26 @@
+OS=$(shell uname)
 CC?=gcc
-CFLAGS=-O3 -Wall -Wextra -std=c99 -march=native --fast-math
+CFLAGS=-O3 -Wall -Wextra -std=c99 -march=native -ffast-math
 
-libffa.so: libffa.o
-	$(CC) $(CFLAGS) -shared -Wl,-soname,libffa.so -o libffa.so libffa.o
+# Numpy expects differents extensions for a dynamic library on Linux vs. OSX
+# Also, the C compiler option to build a dynamic library is different
+SONAME=libffa.so
+SOOPT=-soname
+ifeq ($(OS),Darwin)
+	SONAME=libffa.dylib
+	SOOPT=-install_name
+endif
 
-libffa.o: libffa.c
+$(SONAME): libffa.o
+	$(CC) $(CFLAGS) -shared -Wl,$(SOOPT),$(SONAME) -o $(SONAME) libffa.o
+
+libffa.o: libffa.c *.h
 	$(CC) $(CFLAGS) -c -fPIC libffa.c -o libffa.o
 
-all: libffa.so
+all: $(SONAME)
 
-.PHONY: clean
+.PHONY: clean 
 
 clean:
 	rm -vf *.o
+	rm -vf $(SONAME)

@@ -9,10 +9,11 @@ include LICENSE
 include setup.cfg
 prune .vscode
 
-# NOTE: shared library must be included
+# NOTE: shared library must be included, regardless of its OS-dependent extension
 # When the module is installed with 'pip install', it is built in a temporary 
 # directory and THEN are copied to 'site-packages' 
 global-include *.so
+global-include *.dylib
 
 include versioneer.py
 include riptide/_version.py
