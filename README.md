@@ -1,4 +1,4 @@
-![License](https://img.shields.io/badge/License-MIT-green.svg)  ![Python versions](https://img.shields.io/pypi/pyversions/riptide-ffa.svg)
+[![arXiv](http://img.shields.io/badge/astro.ph-2004.03701-B31B1B.svg)](https://arxiv.org/abs/2004.03701)   ![License](https://img.shields.io/badge/License-MIT-green.svg)  ![Python versions](https://img.shields.io/pypi/pyversions/riptide-ffa.svg)
 
 # riptide
 
@@ -9,8 +9,8 @@ __riptide__ ("sea**r**ch**i**ng for **p**ulsars in the **ti**me **d**omain") is 
 
 ## Citation
 
-If using ``riptide`` contributes to a project that leads to a scientific publication, please cite the article  (NOTE: the link will be updated once the paper appears on arXiv)  
-["Optimal periodicity searching: Revisiting the Fast Folding Algorithm for large scale pulsar surveys"](TODO_FIXME_LINK)
+If using ``riptide`` contributes to a project that leads to a scientific publication, please cite the article:  
+["Optimal periodicity searching: Revisiting the Fast Folding Algorithm for large scale pulsar surveys"](https://arxiv.org/abs/2004.03701)
 
 
 ## Sensitivity of the FFA
