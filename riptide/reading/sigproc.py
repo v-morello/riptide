@@ -65,6 +65,7 @@ HEADER_START = 'HEADER_START'
 HEADER_END = 'HEADER_END'
 
 
+
 def read_str(fobj):
     """ Read string from open binary file object. """
     size, = struct.unpack('i', fobj.read(4))

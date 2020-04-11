@@ -1,0 +1,72 @@
+processes: 4
+
+data:
+  format: presto
+  fmin: 1181.0
+  fmax: 1581.0
+  nchans: 1024
+
+
+dmselect:
+  min: 0.0
+  max: 1000.0
+  dmsinb_max: null
+
+
+dereddening:
+  rmed_width: 5.0
+  rmed_minpts: 101
+
+ranges:
+  - name: 'medium'
+    ffa_search:
+      period_min: 0.50
+      period_max: 4.00
+      bins_min: 480
+      bins_max: 520
+      fpmin: 8
+      wtsp: 1.5
+    find_peaks:
+      smin: 7.0
+    candidates:
+      bins: 512
+      subints: 32
+
+  - name: 'long'
+    ffa_search:
+      period_min: 4.00
+      period_max: 120.00
+      bins_min: 960
+      bins_max: 1040
+      fpmin: 8
+      wtsp: 1.5
+    find_peaks:
+      smin: 7.0
+    candidates:
+      bins: 1024
+      subints: 32
+
+
+clustering:
+  # Clustering radius in units of 1 / Tobs
+  radius: 0.2
+
+
+# Harmonic flagging parameters
+harmonic_flagging:
+  denom_max: 100
+  phase_distance_max: 1.0
+  dm_distance_max: 3.0
+  snr_distance_max: 3.0
+
+
+# Filters applied to the final list of clusters, *just before* the associated
+# candidate files are produced
+candidate_filters:
+  dm_min: null
+  snr_min: 8.0
+  remove_harmonics: True
+  max_number: null
+
+
+plot_candidates: True

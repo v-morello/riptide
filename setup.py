@@ -16,8 +16,8 @@ def build_libffa():
         thisdir, __ = os.path.split(__file__)
         srcdir = os.path.realpath(os.path.join(thisdir, 'riptide', 'c_src'))
         os.chdir(srcdir)
-        subprocess.check_call('make clean', shell=True)
-        subprocess.check_call('make all', shell=True)
+        subprocess.check_call(['make', 'clean'])
+        subprocess.check_call(['make', 'all'])
     except:
         raise
     finally:
@@ -58,13 +58,17 @@ with open("README.md", "r") as fh:
 
 
 install_requires = [
-    'numpy',
-    'pandas',
+    # NOTE: order matters when pip resolves which numpy version
+    # is required. astropy seems to have the strictest requirements right now
+    # Apparently pip will get a real dependency resolver in the near future
     'astropy',
+    'pandas',
+    'schema',
     'pyyaml',
-    'matplotlib',
     'threadpoolctl', # in the pipeline, dynamically limit the number of threads used by numpy libs
-    'schema'
+    'pytest',
+    'coverage',
+    'matplotlib',
 ]
 
 setup(
@@ -89,10 +93,13 @@ setup(
     },
 
     classifiers=[
-        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
         "Programming Language :: C",
         "License :: OSI Approved :: MIT License",
         "Operating System :: Unix",
+        "Operating System :: MacOS :: MacOS X",
         "Topic :: Scientific/Engineering :: Astronomy"
         ],
 

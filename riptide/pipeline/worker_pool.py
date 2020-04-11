@@ -25,7 +25,11 @@ class WorkerPool(object):
         # results is a list of lists of Detections
         results = pool.map(self.process_time_series, chunk)
         # NOTE: don't forget to close the pool to free up RAM
+        # NOTE: and don't forget to join, otherwise the coverage module
+        # does not properly report coverage for sub-processes spawned by
+        # the pool
         pool.close()
+        pool.join()
         return [det for dlist in results for det in dlist]
 
     def process_time_series(self, ts):

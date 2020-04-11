@@ -68,6 +68,7 @@ class Pipeline(object):
         self.worker_pool = None
         self.peaks = []
         self.clusters = []
+        self.clusters_filtered = []
         self.candidates = []
 
     def wmin(self):
@@ -237,55 +238,51 @@ class Pipeline(object):
         log.info("Applying candidate filters")
         params = self.config['candidate_filters']
 
-        clusters_trimmed = self.clusters
+        clusters_filtered = self.clusters
 
         # DM cut
         dm_min = params['dm_min']
         if dm_min is not None:
             log.warning(f"Applying DM threshold of {dm_min}")
-            clusters_trimmed = list(filter(lambda c: c.centre.dm >= dm_min, clusters_trimmed))
+            clusters_filtered = list(filter(lambda c: c.centre.dm >= dm_min, clusters_filtered))
 
         # S/N cut
         snr_min = params['snr_min']
         if snr_min is not None:
             log.warning(f"Applying S/N threshold of {snr_min}")
-            clusters_trimmed = list(filter(lambda c: c.centre.snr >= snr_min, clusters_trimmed))
+            clusters_filtered = list(filter(lambda c: c.centre.snr >= snr_min, clusters_filtered))
 
         # Harmonic removal
         if params['remove_harmonics']:
             log.warning("Harmonic removal is enabled, clusters flagged as harmonics will NOT be output as candidates")
-            clusters_trimmed = list(filter(lambda c: not c.is_harmonic, clusters_trimmed))
+            clusters_filtered = list(filter(lambda c: not c.is_harmonic, clusters_filtered))
 
         # Cap on number of candidates to build
         nmax = params['max_number']
         if nmax:
-            if len(clusters_trimmed) > nmax:
-                nleft = len(clusters_trimmed)
+            if len(clusters_filtered) > nmax:
+                nleft = len(clusters_filtered)
                 nexcess = nleft - nmax
                 log.warning(
                     f"Number of clusters remaining ({nleft}) exceeds the maximum specified number of candidates ({nmax}). "
                     f"The faintest {nexcess} will not be saved as candidates"
                 )
-            clusters_trimmed = sorted(clusters_trimmed, key=lambda c: c.centre.snr, reverse=True)
-            clusters_trimmed = clusters_trimmed[:nmax]
+            clusters_filtered = sorted(clusters_filtered, key=lambda c: c.centre.snr, reverse=True)
+            clusters_filtered = clusters_filtered[:nmax]
 
-        self.clusters = clusters_trimmed
-        log.info(f"Candidate filters applied. Clusters remaining: {len(self.clusters)}")
+        self.clusters_filtered = clusters_filtered
+        log.info(f"Candidate filters applied. Clusters remaining: {len(self.clusters_filtered)}")
 
 
     @timing
     def build_candidates(self):
         log.info("Building candidates")
         #remove_harmonics = self.config['remove_harmonics']         
-        clusters_decreasing_snr = sorted(self.clusters, key=lambda c: c.centre.snr, reverse=True)
+        clusters_decreasing_snr = sorted(self.clusters_filtered, key=lambda c: c.centre.snr, reverse=True)
 
         if not clusters_decreasing_snr:
             log.info("No clusters: no candidates to build")
             return
-
-        # if remove_harmonics:
-        #     log.warning("Harmonic removal is enabled, clusters flagged as harmonics will NOT be output as candidates")
-        #     clusters_decreasing_snr = list(filter(lambda c: not c.is_harmonic, clusters_decreasing_snr))
 
         # Group candidates by DM, so that we can avoid re-loading some TimeSeries
         # multiple times
@@ -339,17 +336,19 @@ class Pipeline(object):
         log.info("Saved Peak data to {!r}".format(df_peaks_fname))
 
         ### CSV of cluster data
-        df_clusters = clusters_to_dataframe(self.clusters)
-        df_clusters_fname = os.path.join(outdir, 'clusters.csv')
-        df_clusters.to_csv(df_clusters_fname, sep=',', index=False, float_format='%.9f')
-        log.info("Saved Cluster data to {!r}".format(df_peaks_fname))
+        if self.clusters:
+            df_clusters = clusters_to_dataframe(self.clusters)
+            df_clusters_fname = os.path.join(outdir, 'clusters.csv')
+            df_clusters.to_csv(df_clusters_fname, sep=',', index=False, float_format='%.9f')
+            log.info("Saved Cluster data to {!r}".format(df_peaks_fname))
 
         ### CSV of basic candidate parameters
-        df_cands = pandas.DataFrame.from_dict([
-            cand.params for cand in self.candidates
-        ])
-        df_cands_fname = os.path.join(outdir, 'candidates.csv')
-        df_cands.to_csv(df_cands_fname, sep=',', index=False, float_format='%.9f')
+        if self.candidates:
+            df_cands = pandas.DataFrame.from_dict([
+                cand.params for cand in self.candidates
+            ])
+            df_cands_fname = os.path.join(outdir, 'candidates.csv')
+            df_cands.to_csv(df_cands_fname, sep=',', index=False, float_format='%.9f')
 
         ### Candidates and candidate plots
         log.info("Writing candidate files")
@@ -358,6 +357,11 @@ class Pipeline(object):
         arglist = [(rank, cand) for rank, cand in enumerate(self.candidates)]
         pool.map(writer, arglist)
 
+        # NOTE: and don't forget to close/join, otherwise the coverage module
+        # does not properly report coverage for sub-processes spawned by
+        # the pool
+        pool.close()
+        pool.join()
         log.info("Data products written")       
 
     @timing
@@ -389,7 +393,7 @@ class Pipeline(object):
 help_formatter = lambda prog: argparse.ArgumentDefaultsHelpFormatter(prog, max_help_position=16)
 
 
-def parse_arguments():
+def get_parser():
     def outdir(path):
         """ Function that checks the outdir argument """
         if not os.path.isdir(path):
@@ -431,16 +435,29 @@ def parse_arguments():
         '--version', action='version', version=__version__
         )
     parser.add_argument("files", type=str, nargs="+", help="Input file(s) of the right format")
-    args = parser.parse_args()
-    return args
+    return parser
 
 
-def run_program():
+def run_program(args):
+    ### Select non-interactive backend
+    # matplotlib.use('Agg') would not work here, due to importing order 
+    # the console_scripts entry point design means that 'riptide' is always imported first,
+    # importing everything else in riptide's __init__.py, which ends up setting the backend
+    # before the first line of this script is reached
+    # Another alternative is to call the pipeline command with the MPLBACKEND=Agg prefix
+
+    # NOTE: We don't do this at the top of the script, in case someone wants
+    # to import the Pipeline class without switching backends
+    # NOTE 2: Need to do this in run_program() and not main(), because run_program()
+    # is called rom the unit test suite and requires a backend switch as well
+    # (otherwise we get a crash on Travis OSX virtual machine)
+    import matplotlib.pyplot as plt
+    plt.switch_backend('Agg')
+
     logging.basicConfig(
         level=logging.DEBUG,
         format="%(asctime)s %(filename)18s:%(lineno)-4s %(levelname)-8s %(message)s"
         )
-    args = parse_arguments()
 
     logging.getLogger('matplotlib').setLevel('WARNING') # otherwise it gets annoying
     logging.getLogger('riptide').setLevel(args.log_level)
@@ -460,23 +477,12 @@ def run_program():
 
 # NOTE: main() is the entry point of the console script
 def main():
-    ### Select non-interactive backend
-    # matplotlib.use('Agg') would not work here, due to importing order 
-    # the console_scripts entry point design means that 'riptide' is always imported first,
-    # importing everything else in riptide's __init__.py, which ends up setting the backend
-    # before the first line of this script is reached
-    # Another alternative is to call the pipeline command with the MPLBACKEND=Agg prefix
-
-    # NOTE: We don't do this at the top of the script, in case someone wants
-    # to import the Pipeline class without switching backends
-    import matplotlib.pyplot as plt
-    plt.switch_backend('Agg')
-
     # NOTE (IMPORTANT): Force all numpy libraries to use a single thread/CPU
     # Each DM trial is assigned to a different process, and for optimal 
     # performance, each process should be limited to 1 CPU
     with threadpoolctl.threadpool_limits(limits=1):
-        run_program()
+        parser = get_parser()
+        run_program(parser.parse_args())
 
 
 if __name__ == '__main__':

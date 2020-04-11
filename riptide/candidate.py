@@ -134,9 +134,9 @@ class Candidate(object):
         Create a plot of the candidate and save it as PNG under the specified 
         file name. Accepts the same keyword arguments as plot().
         """
-        self.plot(**kwargs)
-        plt.savefig(fname)
-        plt.close()
+        fig = self.plot(**kwargs)
+        fig.savefig(fname)
+        plt.close(fig)
 
     def __str__(self):
         name = type(self).__name__
@@ -270,7 +270,7 @@ def plot_candidate(cand):
     plot_subints(cand.subints, cand.tsmeta['tobs'])
 
     plt.subplot(gs[1:, 2:])
-    plot_profile(cand.subints.sum(axis=0))
+    plot_profile(cand.profile)
 
     plt.subplot(gs[:1, :2])
     plot_table(cand.params, cand.tsmeta)
@@ -279,14 +279,3 @@ def plot_candidate(cand):
     plot_dm_curve(*cand.dm_curve)
 
     plt.tight_layout()
-
-
-if __name__ == '__main__':
-    from riptide import load_json
-    c = load_json("/home/vince/work/time_series/J1119-7936/candidate_0004.json")
-    c.show()
-
-    c = load_json("/home/vince/work/time_series/J1855+0307/candidate_0000.json")
-    c.show()
-
-    plt.show()

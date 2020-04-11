@@ -8,7 +8,6 @@ from .running_median import fast_running_median
 from .libffa import downsample, generate_signal
 from .reading import PrestoInf, SigprocHeader
 from .metadata import Metadata
-from .ffautils import autocov
 from .folding import fold
 from .timing import timing
 
@@ -156,7 +155,8 @@ class TimeSeries(object):
         Returns
         -------
         folded : ndarray
-            The folded data as a numpy array. Has two dimensions if subints
+            The folded data as a numpy array. If subints > 1, it has a shape
+            (subints, bins). Otherwise it is a 1D array with 'bins' elements.
         """
         return fold(self, period, bins, subints=subints)
 
@@ -289,6 +289,9 @@ class TimeSeries(object):
         """
         inf = PrestoInf(fname)
         metadata = Metadata.from_presto_inf(inf)
+        # TODO: check that the number of samples read from the .inf file
+        # matches what is actually in the .dat file, although the possibility of
+        # 'data breaks' could make this difficult
         return cls(inf.load_data(), tsamp=inf['tsamp'], metadata=metadata)
 
     @classmethod

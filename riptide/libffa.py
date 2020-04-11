@@ -320,6 +320,8 @@ def downsample(data, factor):
     """
     if not factor > 1:
         raise ValueError('factor must be > 1')
+    if not factor < len(data):
+        raise ValueError('factor must be < number of samples')
     outsize = int(len(data) / float(factor))
     out = np.zeros(outsize, dtype=np.float32)
     LibFFA.downsample(np.asarray(data, dtype=np.float32), len(data), factor, out)

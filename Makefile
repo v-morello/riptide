@@ -1,6 +1,5 @@
 .DEFAULT_GOAL := help
 PKG = riptide-ffa
-TESTS_DIR = ${PKG}/tests
 
 dist: ## Build source distribution
 	python setup.py sdist
@@ -31,13 +30,12 @@ clean: ## Remove all python cache and build files
 	find . -type d -name "__pycache__" -delete
 	rm -rf build/
 	rm -rf dist/
-	rm -rf ${PKG}.egg-info/
-	rm -rf riptide_ffa.egg-info/
+	rm -f .coverage
 
-upload_test: ## Upload the distribution source to the TEST PyPI
-	twine upload --repository-url https://test.pypi.org/legacy/ dist/*
+tests: ## Run the unit tests
+	py.test tests/*.py
 
-upload: ## Upload the distribution source to the REAL PyPI
-	twine upload dist/*
+coverage: ## Run the unit tests and print a coverage report
+	coverage run -m pytest && coverage combine && coverage report -m --omit riptide/_version.py
 
-.PHONY: dist docker install uninstall help clean upload upload_test
+.PHONY: dist docker install uninstall help clean upload upload_test tests coverage

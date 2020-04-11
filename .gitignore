@@ -2,6 +2,6 @@
 *.so
 *.pyc
 __pycache__
-notebooks/.ipynb_checkpoints/
 .vscode
 *.egg-info
+.coverage

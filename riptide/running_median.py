@@ -32,6 +32,7 @@ def fast_running_median(data, width, min_points):
         Lower values make the running median calculation less accurate but
         faster, due to allowing a higher scrunching factor.
     """
+    # TODO: test against absurdly large parameters
     if width < 3:
         raise ValueError('width must be > 3')
     if min_points < 3:

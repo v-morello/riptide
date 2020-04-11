@@ -14,6 +14,7 @@ void downsample(
     float* out
     )
     {
+    const double epsilon = 1e-7;
     size_t outsize = floor(size / factor);
     
     // ii = output sample index
@@ -32,7 +33,14 @@ void downsample(
 
         if (start < js)
             val += in[js-1] * (js - start);
-        if (end > je)
+        
+        // NOTE: in some rare case where nsamp_in is an integer
+        // multiple of nsamp_out, end might exceed je = floor(end) by
+        // an infinitesimal amount. in[je] is out of bounds in that case,
+        // causing bogus values to be read, or possibly a segfault.
+        // Requiring end > (je + epsilon) protects against that case.
+        // TODO: rewrite the whole downsample() function more cleanly
+        if (end > (je + epsilon))
             val += in[je] * (end - je);
 
         out[ii] = val;
