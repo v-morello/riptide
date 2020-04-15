@@ -85,11 +85,16 @@ class Metadata(dict):
         if type(sh) == str:
             sh = SigprocHeader(sh, extra_keys=extra_keys)
 
-        # Make sure this is a 32-bit dedispersed time series
-        if sh['nbits'] != 32:
-            raise ValueError('Only 32-bit data is currently supported. File \'{0:s}\' contains {1:d}-bit data.'.format(sh.fname, sh['nbits']))
         if sh['nchans'] > 1:
-            raise ValueError('File \'{0:s}\' contains multi-channel data (nchans = {1:d}), instead of a dedispersed time series'.format(sh.fname, sh['nchans']))
+            raise ValueError(f"File {sh.fname!r} contains multi-channel data (nchans = {sh['nchans']}), instead of a dedispersed time series")
+
+        # Make sure this is a 32-bit dedispersed time series
+        # We support either: 32-bit float data, or 8-bit data but only if signedness is specified in the header
+        nbits = sh['nbits']
+        if not nbits in {8, 32}:
+            raise ValueError(f"Only 8-bit and 32-bit SIGPROC data are supported. File {sh.fname!r} contains {nbits}-bit data")
+        if nbits == 8 and 'signed' not in sh:
+            raise ValueError(f"SIGPROC Header says this is 8-bit data, but does not specify its signedness via the 'signed' key")
 
         attrs = dict(sh).copy()
         attrs['dm'] = attrs.get('refdm', None)

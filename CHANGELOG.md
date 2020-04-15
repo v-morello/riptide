@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Metadata` is now correctly carrying the "tobs" attribute for TimeSeries loaded from SIGPROC data. This was causing a cryptic error when processing SIGPROC dedispersed time series with the pipeline.
 
 ### Added
+- Can now read and process 8-bit SIGPROC data
 - Can now read SIGPROC header keys of boolean type. In particular the "signed" key (which defines the signedness of 8-bit SIGPROC data) is now supported by default.
 
 

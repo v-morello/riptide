@@ -113,8 +113,8 @@ def read_sigproc_header(fobj, extra_keys={}):
         Optional {key: type} dictionary, specifying how to parse any
         non-standard keys that could be found in the header
 
-    Returns:
-    --------
+    Returns
+    -------
     header : dict
         Dictionary containing the SIGPROC header attributes
     bytesize : int

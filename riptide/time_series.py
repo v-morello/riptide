@@ -321,13 +321,20 @@ class TimeSeries(object):
         sig = SigprocHeader(fname, extra_keys=extra_keys)
 
         # This call checks if the file contains a dedispersed time series
-        # in 32-bit format
+        # in either 8-bit or 32-bit format
+        # For 8-bit data, the signedness is specified via the 'signed' boolean key
         metadata = Metadata.from_sigproc(sig, extra_keys=extra_keys)
 
         # Load time series data
         with open(fname, 'rb') as fobj:
             fobj.seek(sig.bytesize)
-            data = np.fromfile(fobj, dtype=np.float32)
+            if metadata['nbits'] == 8:
+                dtype = np.int8 if metadata['signed'] else np.uint8
+                # Don't forget to cast to float32 after reading !
+                data = np.fromfile(fobj, dtype=dtype).astype(np.float32)
+            else: # assume float32
+                data = np.fromfile(fobj, dtype=np.float32)
+
         return cls(data, tsamp=sig['tsamp'], metadata=metadata)
 
     @property
