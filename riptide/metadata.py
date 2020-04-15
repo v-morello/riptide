@@ -97,6 +97,7 @@ class Metadata(dict):
         attrs['source_name'] = attrs.get('source_name', None)
         attrs['mjd'] = attrs.get('tstart', None)
         attrs['fname'] = os.path.realpath(sh.fname)
+        attrs['tobs'] = sh.tobs
         return cls(attrs)
 
     def to_dict(self):

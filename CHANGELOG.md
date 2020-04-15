@@ -5,10 +5,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## 0.1.2 - 2020-04-15
+
+### Fixed
+- `Metadata` is now correctly carrying the "tobs" attribute for TimeSeries loaded from SIGPROC data. This was causing a cryptic error when processing SIGPROC dedispersed time series with the pipeline.
+
+### Added
+- Can now read SIGPROC header keys of boolean type. In particular the "signed" key (which defines the signedness of 8-bit SIGPROC data) is now supported by default.
+
+
 ## 0.1.1 - 2020-04-08
 
 ### Fixed
-- Module should now properly installs on OSX, where some C compilation options had to be adapted. `numpy.ctypeslib` also expects shared libraries to have a `.dylib` extension on OSX rather than the linux standard `.so`
+- Module should now properly install on OSX, where some C compilation options had to be adapted. `numpy.ctypeslib` also expects shared libraries to have a `.dylib` extension on OSX rather than the linux standard `.so`
 
 
 ## 0.1.0 - 2020-04-08
