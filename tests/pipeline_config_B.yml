@@ -1,0 +1,55 @@
+# Config: dmsinb_max specified, all candidate filters specified, harmonic filtering ON, plotting ON
+processes: 2
+
+data:
+  format: presto
+  fmin: 1181.0
+  fmax: 1581.0
+  nchans: 1024
+
+
+dmselect:
+  min: 0.0
+  max: 1000.0
+  dmsinb_max: 45.0
+
+
+dereddening:
+  rmed_width: 5.0
+  rmed_minpts: 101
+
+ranges:
+  - name: 'medium'
+    ffa_search:
+      period_min: 0.50
+      period_max: 4.00
+      bins_min: 480
+      bins_max: 520
+      fpmin: 8
+      wtsp: 1.5
+    find_peaks:
+      smin: 7.0
+    candidates:
+      bins: 512
+      subints: 32
+
+
+clustering:
+  radius: 0.2
+
+
+harmonic_flagging:
+  denom_max: 100
+  phase_distance_max: 1.0
+  dm_distance_max: 3.0
+  snr_distance_max: 3.0
+
+
+candidate_filters:
+  dm_min: 5.0
+  snr_min: 8.0
+  remove_harmonics: True
+  max_number: 1
+
+
+plot_candidates: True

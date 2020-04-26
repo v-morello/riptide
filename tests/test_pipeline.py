@@ -70,7 +70,7 @@ def generate_data_presto(basename, dm=0.0, amplitude=20.0, ducy=0.05):
     return inf_text, ts.data.astype(np.float32)
 
 
-def runner_presto_fakepsr(outdir):
+def runner_presto_fakepsr(fname_conf, outdir):
     # Write test data
     # NOTE: generate a signal bright enough to get harmonics and thus make sure
     # that the harmonic filter gets to run
@@ -93,7 +93,6 @@ def runner_presto_fakepsr(outdir):
         data.tofile(dat_path)
         
     ### Run pipeline ###
-    fname_conf = os.path.join(os.path.dirname(__file__), 'pipeline_config.yml')
     files = glob.glob(f'{outdir}/*.inf')
     cmdline_args = ['--config', fname_conf, '--outdir', outdir] + files
     parser = get_parser()
@@ -113,7 +112,7 @@ def runner_presto_fakepsr(outdir):
     assert abs(topcand.params['snr'] - 18.6) < 0.1
 
 
-def runner_presto_purenoise(outdir):
+def runner_presto_purenoise(fname_conf, outdir):
     """
     Check that pipeline runs well even if no candidates are found
     """
@@ -127,9 +126,25 @@ def runner_presto_purenoise(outdir):
     data.tofile(dat_path)
 
     ### Run pipeline ###
-    fname_conf = os.path.join(os.path.dirname(__file__), 'pipeline_config.yml')
     files = glob.glob(f'{outdir}/*.inf')
     cmdline_args = ['--config', fname_conf, '--outdir', outdir] + files
+    parser = get_parser()
+    args = parser.parse_args(cmdline_args)
+    run_program(args)
+
+    ### Check output sanity ###
+    assert not glob.glob(f"{outdir}/*.json")
+    assert not glob.glob(f"{outdir}/*.png")
+
+
+def runner_presto_nodata(fname_conf, outdir):
+    """
+    Check that pipeline runs well even when no input time series are passed
+    """
+    ### Run pipeline ###
+    # NOTE: must add empty argument at the end, otherwise argument parser 
+    # complains that 'files' argument is required
+    cmdline_args = ['--config', fname_conf, '--outdir', outdir, ""]
     parser = get_parser()
     args = parser.parse_args(cmdline_args)
     run_program(args)
@@ -138,9 +153,29 @@ def runner_presto_purenoise(outdir):
 def test_pipeline_presto_fakepsr():
     # NOTE: outdir is a full path (str)
     with tempfile.TemporaryDirectory() as outdir:
-        runner_presto_fakepsr(outdir)
+        fname_conf = os.path.join(os.path.dirname(__file__), 'pipeline_config_A.yml')
+        runner_presto_fakepsr(fname_conf, outdir)
+
+    with tempfile.TemporaryDirectory() as outdir:
+        fname_conf = os.path.join(os.path.dirname(__file__), 'pipeline_config_B.yml')
+        runner_presto_fakepsr(fname_conf, outdir)
 
 
 def test_pipeline_presto_purenoise():
     with tempfile.TemporaryDirectory() as outdir:
-        runner_presto_purenoise(outdir)
+        fname_conf = os.path.join(os.path.dirname(__file__), 'pipeline_config_A.yml')
+        runner_presto_purenoise(fname_conf, outdir)
+
+    with tempfile.TemporaryDirectory() as outdir:
+        fname_conf = os.path.join(os.path.dirname(__file__), 'pipeline_config_B.yml')
+        runner_presto_purenoise(fname_conf, outdir)
+
+
+def test_pipeline_presto_nodata():
+    with tempfile.TemporaryDirectory() as outdir:
+        fname_conf = os.path.join(os.path.dirname(__file__), 'pipeline_config_A.yml')
+        runner_presto_nodata(fname_conf, outdir)
+
+    with tempfile.TemporaryDirectory() as outdir:
+        fname_conf = os.path.join(os.path.dirname(__file__), 'pipeline_config_B.yml')
+        runner_presto_nodata(fname_conf, outdir)

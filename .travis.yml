@@ -2,43 +2,24 @@ language: python
 
 branches:
   only:
+    - master
+    - dev
     - testing
 
-env:
-  - MPLBACKEND=Agg
+env: MPLBACKEND=Agg
 
-jobs:
-  include:
-    - name: "Python 3.8 on Xenial"
-      dist: xenial
-      python: 3.8
-      before_script: make install
+dist: xenial
 
-    - name: "Python 3.7 on Xenial"
-      dist: xenial
-      python: 3.7
-      before_script: make install
+python:
+  - "3.6"
+  - "3.7"
+  - "3.8"
 
-    - name: "Python 3.6 on Xenial"
-      dist: xenial
-      python: 3.6
-      before_script: make install
+install:
+  - pip install codecov
+  - make install
 
-    # NOTE: commenting OSX build for now, as Travis CI OSX has a strange issue with matplotlib,
-    # where saving Candidate plots with the pipeline causes a hang.
-    # Strangely enough, commenting out Periodogram plotting tests resolves the problem.
-
-    # - name: "OSX Xcode 11"
-    #   os: osx
-    #   language: shell # 'language: python' is an error on Travis CI macOS
-
-    #   # NOTE: 'make install' currently calls 'pip' which is fine on linux,
-    #   # but on macOS we need to call ** pip3 ** explicitly, at least on Travis macOS virtual machines.
-    #   # For now, we do NOT choose the name of 'pip' as a function of OS in the base Makefile,
-    #   # because doing so will likely end up breaking things for people using conda environments 
-    #   # on their mac (which we expect the majority of users to do)
-    #   before_script:
-    #     # install in development mode
-    #     - pip3 install -e .
-
+# Runs unit tests and generates coverage report
 script: make tests
+
+after_success: codecov

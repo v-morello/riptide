@@ -67,7 +67,7 @@ install_requires = [
     'pyyaml',
     'threadpoolctl', # in the pipeline, dynamically limit the number of threads used by numpy libs
     'pytest',
-    'coverage',
+    'pytest-cov',
     'matplotlib',
 ]
 

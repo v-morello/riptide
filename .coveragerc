@@ -2,3 +2,15 @@
 branch = True
 parallel = True
 concurrency = multiprocessing
+include =
+    riptide/*
+omit =
+    riptide/_version.py
+
+[report]
+exclude_lines =
+    # Exclude pipeline.py main(), that's not directly testable because it needs
+    # to parse the command line read from the terminal. However, we do test argument 
+    # parsing and the run_program() entry point
+    if __name__ == .__main__.:
+    def main

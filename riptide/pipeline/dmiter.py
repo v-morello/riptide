@@ -46,8 +46,6 @@ class DMIterator(object):
         self.mdlist = []     # list of Metadata objects read from input files
 
     def tobs_median(self):
-        if not self.mdlist:
-            raise ValueError("No TimeSeries appear to have been loaded")
         return np.median([meta['tobs'] for meta in self.mdlist])
 
     def dm_step(self, dm):
@@ -63,15 +61,9 @@ class DMIterator(object):
         return step
 
     def get_metadata_loader(self, fmt):
-        choices = list(self.METADATA_LOADERS.keys())
-        if not fmt in choices:
-            raise ValueError("fmt must be one of {}".format(choices))
         return self.METADATA_LOADERS[fmt]
 
     def get_timeseries_loader(self, fmt):
-        choices = list(self.TIMESERIES_LOADERS.keys())
-        if not fmt in choices:
-            raise ValueError("fmt must be one of {}".format(choices))
         return self.TIMESERIES_LOADERS[fmt]
 
     def get_dm_trial(self, dm):
@@ -79,10 +71,7 @@ class DMIterator(object):
         Get the TimeSeries with the given DM, if it exists. Raises ValueError
         otherwise.
         """
-        try:
-            meta = next(m for m in self.mdlist if m['dm'] == dm)
-        except StopIteration:
-            raise ValueError(f"No DM trial with specified DM = {dm}")
+        meta = next(m for m in self.mdlist if m['dm'] == dm)
         return self.tsloader(meta['fname'])
 
     def prepare(self, files, fmt='presto'):

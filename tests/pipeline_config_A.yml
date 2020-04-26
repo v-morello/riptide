@@ -1,4 +1,5 @@
-processes: 4
+# Config: no dmsinb_max, no candidate filters specified, harmonic filtering OFF, plotting OFF
+processes: 2
 
 data:
   format: presto
@@ -10,7 +11,7 @@ data:
 dmselect:
   min: 0.0
   max: 1000.0
-  dmsinb_max: null
+  dmsinb_max:
 
 
 dereddening:
@@ -48,11 +49,9 @@ ranges:
 
 
 clustering:
-  # Clustering radius in units of 1 / Tobs
   radius: 0.2
 
 
-# Harmonic flagging parameters
 harmonic_flagging:
   denom_max: 100
   phase_distance_max: 1.0
@@ -60,13 +59,11 @@ harmonic_flagging:
   snr_distance_max: 3.0
 
 
-# Filters applied to the final list of clusters, *just before* the associated
-# candidate files are produced
 candidate_filters:
-  dm_min: null
-  snr_min: 8.0
-  remove_harmonics: True
-  max_number: null
+  dm_min:
+  snr_min:
+  remove_harmonics: False
+  max_number:
 
 
-plot_candidates: True
+plot_candidates: False

@@ -5,16 +5,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## 0.1.3 - UNRELEASED
+## 0.1.3 - 2020-04-27
 
 ### Fixed
 - Fixed a rare but serious bug in the C function downsample() where the code would attempt to read one element beyond the end of the input array. This would happen only when the downsampling factor was such that `nsamp_input / dsfactor` was exactly an integer. This would cause the last sample in the output to have an absurd value, or a segmentation fault.
-- Fixed a crash in the pipeline that would occur when significant peak clusters were found, but none had a S/N that would exceed the `candidate_filters.snr_min` configuration parameter. Turning the resulting empty list of clusters into a CSV file failed. 
+- Fixed a crash in the pipeline that would occur when significant peak clusters were found, but none had a S/N that would exceed the `candidate_filters.snr_min` configuration parameter. Turning the resulting empty list of clusters into a CSV would then fail. 
 - Fixed a related problem where clusters whose S/N was below `candidate_filters.snr_min` were not saved to the CSV file, which was not the intended behaviour.
 
 ### Added
-- Unit tests, coverage to be expanded
+- Unit test suite, to be improved and expanded
 - Travis CI
+- Codecov integration
 
 
 ## 0.1.2 - 2020-04-15

@@ -32,10 +32,7 @@ clean: ## Remove all python cache and build files
 	rm -rf dist/
 	rm -f .coverage
 
-tests: ## Run the unit tests
-	py.test tests/*.py
+tests: ## Run the unit tests and print a coverage report
+	pytest --cov --verbose --cov-report term-missing
 
-coverage: ## Run the unit tests and print a coverage report
-	coverage run -m pytest && coverage combine && coverage report -m --omit riptide/_version.py
-
-.PHONY: dist docker install uninstall help clean upload upload_test tests coverage
+.PHONY: dist docker install uninstall help clean upload upload_test tests
