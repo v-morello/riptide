@@ -59,7 +59,7 @@ def load_libffa():
         ctypes.c_size_t, # number of ProcessingPlan steps
         npct.ndpointer(dtype=int, ndim=1, flags=('C_CONTIGUOUS', 'ALIGNED')), # sequence: widths
         ctypes.c_size_t, # number of width trials
-        npct.ndpointer(dtype=np.float32, ndim=1, flags=('C_CONTIGUOUS', 'ALIGNED', 'WRITEABLE')), # period trials (output)
+        npct.ndpointer(dtype=float, ndim=1, flags=('C_CONTIGUOUS', 'ALIGNED', 'WRITEABLE')), # period trials (output)
         npct.ndpointer(dtype=np.float32, ndim=1, flags=('C_CONTIGUOUS', 'ALIGNED', 'WRITEABLE')), # output S/N
         ]
     return lib

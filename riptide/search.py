@@ -128,7 +128,7 @@ def ffa_search(tseries, period_min=1.0, period_max=30.0, fpmin=8, bins_min=240, 
     bins_max = plan.steps.bins_max.values
 
     # Allocate output arrays
-    periods = np.zeros(npt, dtype=np.float32)
+    periods = np.zeros(npt, dtype=float) # double precision required here
     snrs = np.zeros(npt * plan.widths.size, dtype=np.float32)
 
     #### The main C function that does all the work #####

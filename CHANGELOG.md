@@ -5,6 +5,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## 0.1.4 - UNRELEASED
+
+### Fixed
+- Trial periods are now stored as double precision floats (`double` in C, `float` in python). When searching very long time series (several hours) and short trial periods, single precision floats were inaccurate enough that small groups of consecutive period trials erroneously ended up having the exact same value. Incorrect detection periods would propagate down the pipeline, and `Candidate` objects could end up being folded with a period slightly offset from the true value.
+
+
 ## 0.1.3 - 2020-04-27
 
 ### Fixed

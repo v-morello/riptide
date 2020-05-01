@@ -154,7 +154,7 @@ void py_periodogram(
     size_t nsteps,                      // number of plan steps
     const long int* restrict widths,    // sequence of pulse width trials, in number of bins
     size_t nw,                          // number of width trials
-    float* restrict periods,            // period trials (output)
+    double* restrict periods,            // period trials (output)
     float* restrict snr                 // S/N (output)
     )
     {
