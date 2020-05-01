@@ -9,21 +9,25 @@ log = logging.getLogger('riptide.worker_pool')
 
 class WorkerPool(object):
     """ 
-    deredden_params: dict
-    range_confs: list of dicts
+    deredden_params : dict
+    range_confs : list of dicts
         List of dicts from the 'ranges' section of the YAML config file
-    processes: int
+    loader : func
+        Function that takes a file path as its only argument, and returns
+        a TimeSeries object
+    processes : int
         Number of parallel processes
     """
-    def __init__(self, deredden_params, range_confs, processes):
+    def __init__(self, deredden_params, range_confs, loader, processes=1):
         self.deredden_params = deredden_params
         self.range_confs = range_confs
+        self.loader = loader
         self.processes = int(processes)
 
-    def process_chunk(self, chunk):
+    def process_fname_list(self, fnames):
         pool = multiprocessing.Pool(processes=self.processes)
         # results is a list of lists of Detections
-        results = pool.map(self.process_time_series, chunk)
+        results = pool.map(self.process_fname, fnames)
         # NOTE: don't forget to close the pool to free up RAM
         # NOTE: and don't forget to join, otherwise the coverage module
         # does not properly report coverage for sub-processes spawned by
@@ -32,8 +36,9 @@ class WorkerPool(object):
         pool.join()
         return [det for dlist in results for det in dlist]
 
-    def process_time_series(self, ts):
+    def process_fname(self, fname):
         allpeaks = []
+        ts = self.loader(fname)
         dm = ts.metadata['dm']
         log.debug("Searching DM = {:.3f}".format(dm))
 
@@ -53,5 +58,5 @@ class WorkerPool(object):
             __, __, pgram = ffa_search(ts, **kw_search)
             peaks, polycos = find_peaks(pgram, **conf['find_peaks'])
             allpeaks.extend(peaks)
+        log.debug(f"Done searching DM = {dm:.3f}, peaks found: {len(allpeaks)}")
         return allpeaks
-

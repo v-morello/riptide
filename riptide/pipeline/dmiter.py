@@ -161,11 +161,10 @@ class DMIterator(object):
                 keep.append(icur)
         self.mdlist = [self.mdlist[ii] for ii in keep]
     
-    def iterate(self, chunksize=1):
+    def iterate_fnames(self, chunksize=1):
         chunk = []
-        for meta in self.mdlist:   
-            ts = self.tsloader(meta['fname'])
-            chunk.append(ts)
+        for meta in self.mdlist:
+            chunk.append(meta['fname'])
 
             if len(chunk) == chunksize:
                 yield chunk

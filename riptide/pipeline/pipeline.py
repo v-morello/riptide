@@ -152,10 +152,16 @@ class Pipeline(object):
             fmax=conf['data']['fmax'],
             nchans=conf['data']['nchans'],
         )
-        self.worker_pool = WorkerPool(conf['dereddening'], conf['ranges'], processes=conf['processes'])
-
         log.debug("Input files: {}".format(len(files)))
         self.dmiter.prepare(files, fmt=self.config['data']['format'])
+
+        # NOTE: call dmiter.prepare() first. Before that, dmiter.tsloader is None
+        self.worker_pool = WorkerPool(
+            conf['dereddening'], 
+            conf['ranges'],
+            loader=self.dmiter.tsloader,
+            processes=conf['processes']
+        )
         log.info("Pipeline ready")
         
     @timing
@@ -165,9 +171,9 @@ class Pipeline(object):
         """
         log.info("Running search")
         peaks = []
-        for chunk in self.dmiter.iterate(chunksize=self.config['processes']):
+        for fnames in self.dmiter.iterate_fnames(chunksize=self.config['processes']):
             peaks.extend(
-                self.worker_pool.process_chunk(chunk)
+                self.worker_pool.process_fname_list(fnames)
             )        
         self.peaks = sorted(peaks, key=lambda p: p.period)
         log.info("Total peaks found: {}".format(len(peaks)))

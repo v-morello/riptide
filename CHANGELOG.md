@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Trial periods are now stored as double precision floats (`double` in C, `float` in python). When searching very long time series (several hours) and short trial periods, single precision floats were inaccurate enough that small groups of consecutive period trials erroneously ended up having the exact same value. Incorrect detection periods would propagate down the pipeline, and `Candidate` objects could end up being folded with a period slightly offset from the true value.
 
+### Changed
+- The pipeline worker sub-processes now get passed a *file path* to a time series as an input, rather than a full `TimeSeries` object, which saves the cost of communicating a lot of data between processes.
+
 
 ## 0.1.3 - 2020-04-27
 
