@@ -426,6 +426,13 @@ def get_parser():
         help="Output directory for the data products",
     )
     parser.add_argument(
+        "-f", 
+        "--logfile",
+        type=str,
+        default=None,
+        help="Save logs to given file. If not specified, no logfile is saved"
+    )
+    parser.add_argument(
         "--log-level",
         type=str,
         default='DEBUG',
@@ -460,13 +467,16 @@ def run_program(args):
     import matplotlib.pyplot as plt
     plt.switch_backend('Agg')
 
-    logging.basicConfig(
-        level=logging.DEBUG,
-        format="%(asctime)s %(filename)18s:%(lineno)-4s %(levelname)-8s %(message)s"
-        )
+    handlers = [logging.StreamHandler()]
+    if args.logfile:
+        handlers.append(logging.FileHandler(args.logfile, mode='w'))
 
-    logging.getLogger('matplotlib').setLevel('WARNING') # otherwise it gets annoying
-    logging.getLogger('riptide').setLevel(args.log_level)
+    logging.basicConfig(
+        level=args.log_level,
+        format='%(asctime)s %(filename)18s:%(lineno)-4s %(levelname)-8s %(message)s',
+        handlers=handlers
+    )
+    logging.getLogger('matplotlib').setLevel('WARNING') # otherwise it can get annoying
 
     if args.log_timings:
         logging.getLogger('riptide.timing').setLevel('DEBUG')

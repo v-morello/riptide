@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - The pipeline worker sub-processes now get passed a *file path* to a time series as an input, rather than a full `TimeSeries` object, which saves the cost of communicating a lot of data between processes.
 
+### Added
+- Added option to save pipeline logs to file
+
 
 ## 0.1.3 - 2020-04-27
 
