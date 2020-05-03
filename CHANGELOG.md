@@ -5,13 +5,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## 0.1.4 - UNRELEASED
+## 0.1.4 - 2020-05-03
+
+This version reduces RAM usage significantly. Trial periods are now stored as double precision floats.
 
 ### Fixed
-- Trial periods are now stored as double precision floats (`double` in C, `float` in python). When searching very long time series (several hours) and short trial periods, single precision floats were inaccurate enough that small groups of consecutive period trials erroneously ended up having the exact same value. Incorrect detection periods would propagate down the pipeline, and `Candidate` objects could end up being folded with a period slightly offset from the true value.
+- Trial periods are now stored as *double* precision floats (`double` in C, `float` in python). When searching very long time series (several hours) and short trial periods, single precision floats were inaccurate enough that small groups of consecutive period trials erroneously ended up having the exact same value. Incorrect detection periods would propagate down the pipeline, and `Candidate` objects could end up being folded with a period slightly offset from the true value.
 
 ### Changed
-- The pipeline worker sub-processes now get passed a *file path* to a time series as an input, rather than a full `TimeSeries` object, which saves the cost of communicating a lot of data between processes.
+- The pipeline worker sub-processes now get passed a *file path* to a time series as an input, rather than a full `TimeSeries` object, which saves the cost of communicating a lot of data between processes
+- The buffers used for downsampling and FFA transforming the data when calculating periodograms are now given the smallest possible size. They only need to hold `N / f` data points, where `N` is the number of samples in the raw time series, and `f` the first downsampling factor in the search plan. Buffers were previously given a size of `N` which was often wasteful.
 
 ### Added
 - Added option to save pipeline logs to file

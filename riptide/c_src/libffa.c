@@ -154,16 +154,17 @@ void py_periodogram(
     size_t nsteps,                      // number of plan steps
     const long int* restrict widths,    // sequence of pulse width trials, in number of bins
     size_t nw,                          // number of width trials
-    double* restrict periods,            // period trials (output)
+    double* restrict periods,           // period trials (output)
     float* restrict snr                 // S/N (output)
     )
     {
     // Allocate buffer for downsampled time series
-    float* in = (float*)malloc(nsamp * sizeof(float)); 
+    size_t bytesize = floor(nsamp / dsfactor[0]) * sizeof(float);
+    float* in = (float*)malloc(bytesize);
 
     // Allocate FFA buffers
-    float* out = (float*)malloc(nsamp * sizeof(float));
-    float* buf = (float*)malloc(nsamp * sizeof(float));
+    float* out = (float*)malloc(bytesize);
+    float* buf = (float*)malloc(bytesize);
 
     // MAIN LOOP
     for (size_t istep=0; istep<nsteps; ++istep)
