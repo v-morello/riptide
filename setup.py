@@ -89,7 +89,10 @@ setup(
     include_package_data=True,
 
     entry_points = {
-        'console_scripts': ['rffa=riptide.pipeline.pipeline:main'],
+        'console_scripts': [
+            'rffa=riptide.pipeline.pipeline:main',
+            'rseek=riptide.apps.rseek:main'
+        ],
     },
 
     classifiers=[
