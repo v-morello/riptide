@@ -216,4 +216,6 @@ def find_peaks(pgram, smin=6.0, segwidth=5.0, nstd=6.0, minseg=10, polydeg=2, cl
             #log.debug(peak)
             peaks.append(peak)
         polycos[iw] = cur_polycos
+    
+    peaks = sorted(peaks, key=lambda p: p.snr, reverse=True)
     return peaks, polycos
