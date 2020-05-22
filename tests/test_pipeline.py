@@ -45,17 +45,10 @@ def runner_presto_fakepsr(fname_conf, outdir):
 
     for dm, amplitude, ducy in params:
         basename = f"fake_DM{dm:.3f}"
-        inf_path = os.path.join(outdir, basename + '.inf')
-        dat_path = os.path.join(outdir, basename + '.dat')
-        inf_text, data = generate_data_presto(
-            basename, tobs=DATA_TOBS, tsamp=DATA_TSAMP, period=SIGNAL_PERIOD, 
+        generate_data_presto(
+            outdir, basename, tobs=DATA_TOBS, tsamp=DATA_TSAMP, period=SIGNAL_PERIOD, 
             dm=dm, amplitude=amplitude, ducy=ducy
         )
-
-        with open(inf_path, 'w') as f:
-            f.write(inf_text)
-
-        data.tofile(dat_path)
         
     ### Run pipeline ###
     files = glob.glob(f'{outdir}/*.inf')
@@ -83,15 +76,10 @@ def runner_presto_purenoise(fname_conf, outdir):
     """
     dm = 0.0
     basename = f"purenoise_DM{dm:.3f}"
-    inf_text, data = generate_data_presto(
-        basename, tobs=DATA_TOBS, tsamp=DATA_TSAMP, period=SIGNAL_PERIOD, 
+    generate_data_presto(
+        outdir, basename, tobs=DATA_TOBS, tsamp=DATA_TSAMP, period=SIGNAL_PERIOD, 
         dm=dm, amplitude=0.0
     )
-    inf_path = os.path.join(outdir, basename + '.inf')
-    dat_path = os.path.join(outdir, basename + '.dat')
-    with open(inf_path, 'w') as f:
-        f.write(inf_text)
-    data.tofile(dat_path)
 
     ### Run pipeline ###
     files = glob.glob(f'{outdir}/*.inf')
