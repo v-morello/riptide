@@ -41,12 +41,17 @@ And then in the base directory of `riptide` run
 make install
 ```
 
-This simply runs ``pip install`` in [editable mode](https://pip.pypa.io/en/latest/reference/pip_install/#editable-installs), which means you can freely edit the code. It also installs any required dependencies with ``pip`` that are not present already. The installer also adds a link to the riptide pipeline executable `rffa` in your python environment using a [console_scripts entry point](https://python-packaging.readthedocs.io/en/latest/command-line-scripts.html), check that it all works by typing:
+This simply runs ``pip install`` in [editable mode](https://pip.pypa.io/en/latest/reference/pip_install/#editable-installs), which means you can freely edit the code. It also installs any required dependencies with ``pip`` that are not present already. The installer also adds links to two command-line apps in your python environment using [console_scripts entry points](https://python-packaging.readthedocs.io/en/latest/command-line-scripts.html):  
 
+* `rffa`: The full end-to-end pipeline to search multiple DM trials, see below for details on how to use it.
+* `rseek`: A lightweight app to search a single time series and print significant candidates found, useful for quick data checks.
+
+You may check that it all works by typing:  
 ```
 rffa -h
+rseek -h
 ```
-And you should see the full help of the pipeline application, see below for details on how to use it.
+And you should see the full help of both applications.
 
 ## Basic Usage: searching a single time series
 
@@ -145,6 +150,23 @@ The python interface of `riptide` exposes some lower-level functions related to 
 * `ffa1`: FFA transform of a one-dimensional input, that represents a time series. The function simply selects the largest number of entire pulses that fit in the data, reshapes them into a two-dimensional array, and calls `ffa2()`  
 * `ffafreq`: Returns the trial folding frequencies corresponding to every line in the output of an FFA transform  
 * `ffaprd`: Same as `ffafreq`, but returns trial periods instead  
+
+
+### The rseek command-line app
+
+`rseek` is just a handy way of running `ffa_search()` on a single DM trial from the command-line. It loads the file, runs `ffa_search()`, gets the parameters of all significant periodogram peaks with the `find_peaks()` function and prints them in a table. `rseek` does not save any candidate files or data products; for serious purposes, use the full pipeline (see next section). Here's an example on a 9-minute Parkes observation of J1855+0307, a pulsar with a 845.3 ms period and a dispersion measure of 402.5 pc cm<sup>-3</sup>. We prealably dedispersed the data at DM = 400 pc cm<sup>-3</sup> using PRESTO. We search a small range of periods around that of the pulsar, which comes out as the top candidate followed by a number of harmonic detections.
+
+```bash
+$ rseek --Pmin 0.5 --Pmax 2.0 --bmin 480 --bmax 520 -f presto J1855+0307_DM400.00.inf
+       period          freq  width     ducy       dm    snr
+  0.845357496   1.182931488      9    1.80%   400.00   18.8
+  1.690691667   0.591473903      3    0.60%   400.00   13.5
+  0.563578039   1.774377159     13    2.61%   400.00    9.8
+  1.268019042   0.788631690      4    0.80%   400.00    8.6
+  1.868482971   0.535193532    141   28.26%   400.00    8.4
+  1.127142787   0.887199041      6    1.20%   400.00    7.1
+```
+
 
 ## Large scale survey usage: searching multiple DM trials
 

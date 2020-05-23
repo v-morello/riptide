@@ -5,6 +5,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## 0.1.5 - 2020-05-23
+
+### Changed
+- `find_peaks()` now always returns peaks in decreasing S/N order
+
+### Added
+- `rseek` command-line application that searches a single dedispersed time series and prints a list of significant peaks found
+
+
 ## 0.1.4 - 2020-05-03
 
 This version reduces RAM usage significantly. Trial periods are now stored as double precision floats.
