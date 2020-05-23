@@ -8,9 +8,10 @@ from riptide import TimeSeries, ffa_search, find_peaks
 from riptide.clustering import cluster1d
 
 
+log = logging.getLogger('riptide.rseek')
 help_formatter = lambda prog: argparse.ArgumentDefaultsHelpFormatter(prog, max_help_position=16)
 
-
+    
 def get_parser():
     parser = argparse.ArgumentParser(
         formatter_class=help_formatter,
@@ -21,7 +22,11 @@ def get_parser():
         )
     )
     parser.add_argument(
-        "--Pmin", type=float, default=0.5, 
+        "-f", "--format", type=str, choices=('presto', 'sigproc'), required=True, 
+        help="Input TimeSeries format"
+    )
+    parser.add_argument(
+        "--Pmin", type=float, default=1.0, 
         help="Minimum trial period in seconds"
     )
     parser.add_argument(
@@ -41,16 +46,30 @@ def get_parser():
         help="Only report peaks above this minimum S/N"
     )
     parser.add_argument(
-        "--clrad", type=float, default=0.2, 
+        "--wtsp", type=float, default=1.5, 
+        help="Geometric factor between consecutive trial pulse widths"
+    )
+    parser.add_argument(
+        "--rmed_width", type=float, default=4.0, 
+        help="Width (in seconds) of the running median filter to subtract from the input data before processing"
+    )
+    parser.add_argument(
+        "--rmed_minpts", type=float, default=101, 
         help=(
-            "Clustering radius in units of 1/Tobs. Peaks with similar frequencies"
-            " are grouped together, and only the brightest one of the group"
-            " is printed"
+        "The running median is calculated of a time scrunched version of the"
+        " input data to save time: rmed_minpts is the minimum number of"
+        " scrunched samples that must fit in the running median window"
+        " Lower values make the running median calculation less accurate but"
+        " faster, due to allowing a higher scrunching factor"
         )
     )
     parser.add_argument(
-        "-f", "--format", type=str, choices=('presto', 'sigproc'), required=True, 
-        help="Input TimeSeries format"
+        "--clrad", type=float, default=0.2, 
+        help=(
+            "Frequency clustering radius in units of 1/Tobs. Peaks with similar"
+            " freqs are grouped together, and only the brightest one of the group"
+            " is printed"
+        )
     )
     parser.add_argument(
         "fname", type=str, 
@@ -84,19 +103,23 @@ def run_program(args):
         'sigproc': TimeSeries.from_sigproc,
         'presto' : TimeSeries.from_presto_inf
     }
-
-    loader = LOADERS.get(args.format, None)
-    if not loader:
-        raise ValueError(f"Unknown format {args.format!r}")
+    loader = LOADERS[args.format]
 
     # Search and find peaks
     ts = loader(args.fname)
+
+    log.debug(f"Searching period range [{args.Pmin}, {args.Pmax}] seconds with {args.bmin} to {args.bmax} phase bins")
     __, __, pgram = ffa_search(
         ts,
         period_min=args.Pmin,
         period_max=args.Pmax,
         bins_min=args.bmin,
-        bins_max=args.bmax
+        bins_max=args.bmax,
+        rmed_width=args.rmed_width,
+        rmed_minpts=args.rmed_minpts,
+        wtsp=args.wtsp,
+        fpmin=1, # No dynamic cap on period_max
+        ducy_max=0.3
     )
     peaks, __ = find_peaks(pgram, smin=args.smin, clrad=args.clrad)
 
