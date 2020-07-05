@@ -1,56 +1,103 @@
 import os
+import sys
 import setuptools
 import subprocess
 import versioneer
 
-from setuptools import setup
-from setuptools.command.install import install
-from setuptools.command.develop import develop
-from setuptools.command.build_py import build_py
+from setuptools import setup, Extension
+from setuptools.command.build_ext import build_ext
 
 
-def build_libffa():
-    """ A custom sequence of build actions to run """
+class get_pybind_include(object):
+    """Helper class to determine the pybind11 include path
+    The purpose of this class is to postpone importing pybind11
+    until it is actually installed, so that the ``get_include()``
+    method can be invoked. """
+
+    def __str__(self):
+        import pybind11
+        return pybind11.get_include()
+
+
+ext_modules = [
+    Extension(
+        # Must match the module name passed to the PYBIND11_MODULE macro in the C++ source
+        'riptide.libcpp',
+
+        # Sort input source files to ensure bit-for-bit reproducible builds
+        # (https://github.com/pybind/python_example/pull/53)
+        sorted(['riptide/cpp/python_bindings.cpp']),
+
+        # Path to pybind11 headers
+        include_dirs=[get_pybind_include()],
+        language='c++'
+    ),
+]
+
+
+# cf http://bugs.python.org/issue26689
+def has_flag(compiler, flagname):
+    """Return a boolean indicating whether a flag name is supported on
+    the specified compiler.
+    """
+    import tempfile
+    import os
+    with tempfile.NamedTemporaryFile('w', suffix='.cpp', delete=False) as f:
+        f.write('int main (int argc, char **argv) { return 0; }')
+        fname = f.name
     try:
-        cwd = os.getcwd()
-        thisdir, __ = os.path.split(__file__)
-        srcdir = os.path.realpath(os.path.join(thisdir, 'riptide', 'c_src'))
-        os.chdir(srcdir)
-        subprocess.check_call(['make', 'clean'])
-        subprocess.check_call(['make', 'all'])
-    except:
-        raise
+        compiler.compile([fname], extra_postargs=[flagname])
+    except setuptools.distutils.errors.CompileError:
+        return False
     finally:
-        os.chdir(cwd)
+        try:
+            os.remove(fname)
+        except OSError:
+            pass
+    return True
 
 
-class CustomInstall(install):
-    def run(self):
-        self.announce("Building C library ...")
-        build_libffa()
-        install.run(self)
+def cpp_flag(compiler):
+    """Return the -std=c++[11/14/17] compiler flag.
+    The newer version is prefered over c++11 (when it is available).
+    """
+    flags = ['-std=c++17', '-std=c++14', '-std=c++11']
+    for flag in flags:
+        if has_flag(compiler, flag):
+            return flag
+    raise RuntimeError('Unsupported compiler -- at least C++11 support is needed!')
 
 
-class CustomDevelop(develop):
-    def run(self):
-        self.announce("Building C library ...")
-        build_libffa()
-        develop.run(self)
+class BuildExt(build_ext):
+    """A custom build extension for adding compiler-specific options."""
+    c_opts = {
+        'msvc': ['/EHsc'],
+        'unix': ['-O3', '-march=native', '-ffast-math'],
+    }
+    l_opts = {
+        'msvc': [],
+        'unix': [],
+    }
 
+    if sys.platform == 'darwin':
+        darwin_opts = ['-stdlib=libc++', '-mmacosx-version-min=10.7']
+        c_opts['unix'] += darwin_opts
+        l_opts['unix'] += darwin_opts
 
-# NOTE: It is necessary to also have a custom build_py command !
-# During the first 'pip install' on a given machine, pip caches the packages
-# with all its build files into a wheel (.whl). To do so, it runs the
-# 'build_py' command and stores all resulting files in the .whl. If 'build_py'
-# does not call build_actions(), then the .whl will NOT contain the compiled 
-# binaries. And in this case, running pip install another time (in another 
-# conda environment for example) actually installs that cached .whl which 
-# contains no binaries, and the module does not work.
-class CustomBuildPy(build_py):
-    def run(self):
-        self.announce("Building C library ...")
-        build_libffa()
-        build_py.run(self)
+    def build_extensions(self):
+        ct = self.compiler.compiler_type
+        opts = self.c_opts.get(ct, [])
+        link_opts = self.l_opts.get(ct, [])
+        if ct == 'unix':
+            opts.append(cpp_flag(self.compiler))
+            if has_flag(self.compiler, '-fvisibility=hidden'):
+                opts.append('-fvisibility=hidden')
+
+        for ext in self.extensions:
+            ext.define_macros = [('VERSION_INFO', '"{}"'.format(self.distribution.get_version()))]
+            ext.extra_compile_args = opts
+            ext.extra_link_args = link_opts
+        build_ext.build_extensions(self)
 
 
 with open("README.md", "r") as fh:
@@ -71,6 +118,12 @@ install_requires = [
     'matplotlib',
 ]
 
+
+setup_requires = [
+    'pybind11>=2.5.0',
+]
+
+
 setup(
     name='riptide-ffa',
     version=versioneer.get_version(),
@@ -82,6 +135,7 @@ setup(
     long_description_content_type='text/markdown',
     packages=setuptools.find_packages(),
     install_requires=install_requires,
+    setup_requires=setup_requires,
     license='MIT License',
 
     # NOTE (IMPORTANT): This means that everything mentioned in MANIFEST.in will be copied at install time 
@@ -106,14 +160,12 @@ setup(
         "Topic :: Scientific/Engineering :: Astronomy"
         ],
 
+    ext_modules=ext_modules,
+
     # NOTE TO DEVELOPERS ONLY: 
     # As of March 2020, the latest official release of versioneer (0.18) does
     # not support custom cmdclass in setup.py.
     # Setting up versioneer for riptide thus requires using the tip of the master branch on github.
     # pip install git+https://github.com/warner/python-versioneer@master
-    cmdclass=versioneer.get_cmdclass({
-        'install': CustomInstall,
-        'develop': CustomDevelop,
-        'build_py': CustomBuildPy
-        })
+    cmdclass=versioneer.get_cmdclass({'build_ext': BuildExt}),
 )
