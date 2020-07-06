@@ -30,19 +30,14 @@ py::array_t<float> fused_rollback_add(py::array_t<float> arr_x, py::array_t<floa
 
 py::array_t<float> ffa2(py::array_t<float> arr_input)
 {
-    auto input = arr_input.mutable_unchecked<2>();
+    auto input = arr_input.unchecked<2>();
     const size_t rows = input.shape(0);
     const size_t cols = input.shape(1);
 
     std::unique_ptr<float[]> temp(new float[rows * cols]);
     auto output = py::array_t<float, py::array::c_style>({rows, cols});
 
-    riptide::transform(
-        riptide::Block(input.mutable_data(0, 0), rows, cols), 
-        temp.get(), 
-        output.mutable_data(0, 0)
-        );
-
+    riptide::transform(input.data(0, 0), rows, cols, temp.get(), output.mutable_data(0, 0));
     return output;
 }
 
@@ -59,11 +54,10 @@ double benchmark_ffa2(size_t rows, size_t cols, size_t loops)
     float* out = temp + size;
     memset(input, 0, size * sizeof(float));
 
-    auto block = riptide::Block(input, rows, cols);
     auto start = std::chrono::high_resolution_clock::now();
 
     for (size_t i = 0; i < loops; ++i)
-        riptide::transform(block, temp, out);
+        riptide::transform(input, rows, cols, temp, out);
 
     auto end = std::chrono::high_resolution_clock::now();
     return std::chrono::duration<double>(end - start).count() / loops;

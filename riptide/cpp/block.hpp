@@ -2,40 +2,53 @@
 #define BLOCK_HPP
 
 #include <cstddef> // size_t
+#include <type_traits>
 #include "kernels.hpp"
 
 
 namespace riptide {
 
-/* Represents a contiguous two-dimensional array */
-class Block {
+/* Wraps a pointer that stores a contiguous two-dimensional array */
+template <typename T>
+class BlockTemplate {
 
 public:
-    float* const data;
+    T* const data;
     const size_t rows;
     const size_t cols;
 
 public:
-    Block(float* ptr, size_t rows, size_t cols)
+    BlockTemplate(T* ptr, size_t rows, size_t cols)
         : data(ptr), rows(rows), cols(cols)
         {}
 
     size_t head_size() const 
         {return rows >> 1;}
 
-    float* rowptr(size_t irow) const 
+    T* rowptr(size_t irow) const 
         {return data + irow * cols;}
 
-    Block head() const 
-        {return Block(data, head_size(), cols);}
+    BlockTemplate head() const 
+        {return BlockTemplate(data, head_size(), cols);}
 
-    Block tail() const 
+    BlockTemplate tail() const 
         {
         const size_t h = head_size();
-        return Block(rowptr(h), rows - h, cols);
+        return BlockTemplate(rowptr(h), rows - h, cols);
+        }
+    
+    BlockTemplate<std::add_const_t<T>> const_view() const
+        {
+        return BlockTemplate<std::add_const_t<T>>(data, rows, cols);
         }
 
-}; // class Block
+}; // class BlockTemplate
+
+/* Wraps a float pointer that stores a contiguous two-dimensional array */
+typedef BlockTemplate<float> Block; 
+
+/* Wraps a const float pointer that stores a contiguous two-dimensional array */
+typedef BlockTemplate<const float> ConstBlock;
 
 } // namespace riptide
 

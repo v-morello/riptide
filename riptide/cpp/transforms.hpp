@@ -10,7 +10,7 @@
 
 namespace riptide {
 
-void merge(Block thead, Block ttail, Block out)
+void merge(ConstBlock thead, ConstBlock ttail, Block out)
     {
     const size_t m = out.rows;
     const size_t p = out.cols;
@@ -27,7 +27,7 @@ void merge(Block thead, Block ttail, Block out)
     }
 
 
-void transform(Block input, Block temp, Block out)
+void transform(ConstBlock input, Block temp, Block out)
     {
     const size_t m = input.rows;
     const size_t p = input.cols;
@@ -46,16 +46,16 @@ void transform(Block input, Block temp, Block out)
 
     transform(input.head(), out.head(), temp.head());
     transform(input.tail(), out.tail(), temp.tail());
-    merge(temp.head(), temp.tail(), out);
+    merge(temp.head().const_view(), temp.tail().const_view(), out);
     }
 
 
-void transform(Block input, float* temp, float* out)
+void transform(const float* input, size_t rows, size_t cols, float* temp, float* out)
     {
     transform(
-        input, 
-        Block(temp, input.rows, input.cols), 
-        Block(out, input.rows, input.cols)
+        ConstBlock(input, rows, cols),
+        Block(temp, rows, cols),
+        Block(out, rows, cols)
         );
     }
 
