@@ -50,16 +50,20 @@ py::array_t<float> ffa2(py::array_t<float> arr_input)
 double benchmark_ffa2(size_t rows, size_t cols, size_t loops)
 {
     const size_t size = rows * cols;
-    std::unique_ptr<float[]> input(new float[size]);
-    std::unique_ptr<float[]> temp(new float[size]);
-    std::unique_ptr<float[]> out(new float[size]);
-    memset(input.get(), 0, size * sizeof(float));
 
-    auto block = riptide::Block(input.get(), rows, cols);
+    // NOTE: performance slightly increases when all buffers are contiguous
+    // (better memory locality)
+    std::unique_ptr<float[]> buffer(new float[3 * size]);
+    float* input = buffer.get();
+    float* temp = input + size;
+    float* out = temp + size;
+    memset(input, 0, size * sizeof(float));
+
+    auto block = riptide::Block(input, rows, cols);
     auto start = std::chrono::high_resolution_clock::now();
 
     for (size_t i = 0; i < loops; ++i)
-        riptide::transform(block, temp.get(), out.get());
+        riptide::transform(block, temp, out);
 
     auto end = std::chrono::high_resolution_clock::now();
     return std::chrono::duration<double>(end - start).count() / loops;
