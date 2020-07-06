@@ -46,7 +46,7 @@ void transform(ConstBlock input, Block temp, Block out)
 
     transform(input.head(), out.head(), temp.head());
     transform(input.tail(), out.tail(), temp.tail());
-    merge(temp.head().const_view(), temp.tail().const_view(), out);
+    merge(temp.head().as_const(), temp.tail().as_const(), out);
     }
 
 

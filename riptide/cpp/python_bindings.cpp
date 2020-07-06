@@ -12,7 +12,19 @@
 namespace py = pybind11;
 
 
-py::array_t<float> fused_rollback_add(py::array_t<float> arr_x, py::array_t<float> arr_y, ptrdiff_t shift)
+py::array_t<float> rollback(py::array_t<float> arr_x, size_t shift)
+{
+    // Array proxies
+    auto x = arr_x.unchecked<1>();
+    const size_t size = x.size();
+
+    auto arr_output = py::array_t<float, py::array::c_style>({size});
+    riptide::rollback(x.data(0), size, shift, arr_output.mutable_data(0));
+    return arr_output;
+}
+
+
+py::array_t<float> fused_rollback_add(py::array_t<float> arr_x, py::array_t<float> arr_y, size_t shift)
 {
     if (arr_x.size() != arr_x.size())
         throw std::invalid_argument("Arrays must have the same number of elements");
@@ -66,10 +78,14 @@ double benchmark_ffa2(size_t rows, size_t cols, size_t loops)
 
 PYBIND11_MODULE(libcpp, m)
 {
-    
+    m.def(
+        "rollback", &rollback, 
+        "Rotate input array backwards by shift elements. shift must be positive. In numpy that would be equivalent to out = roll(x, -shift)"
+    );
+
     m.def(
         "fused_rollback_add", &fused_rollback_add, 
-        "Add x with y rolled by shift elements to the LEFT, and store the result in z. shift must be positive. In numpy that would equivalent to: z = x + roll(y, -shift)"
+        "Add x with y rolled backwards by shift elements, and store the result in z. shift must be positive. In numpy that would equivalent to: z = x + roll(y, -shift)"
     );
 
     m.def(

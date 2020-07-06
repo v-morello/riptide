@@ -37,7 +37,7 @@ public:
         return BlockTemplate(rowptr(h), rows - h, cols);
         }
     
-    BlockTemplate<std::add_const_t<T>> const_view() const
+    BlockTemplate<std::add_const_t<T>> as_const() const
         {
         return BlockTemplate<std::add_const_t<T>>(data, rows, cols);
         }

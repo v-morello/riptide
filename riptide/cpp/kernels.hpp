@@ -24,6 +24,20 @@ void fused_rollback_add(const float* __restrict__ x, const float* __restrict__ y
     add(x + q, y, p, z + q);
     }
 
+
+/*
+Rotate x backwards by shift elements and stored the result in out. shift must be positive.
+In numpy that would equivalent to: out = roll(x, -shift)
+*/
+void rollback(const float* __restrict__ x, size_t size, size_t shift, float* __restrict__ out)
+    {
+    const size_t p = shift % size;
+    const size_t q = size - p;
+    memcpy(out, x + p, q * sizeof(float));
+    memcpy(out + q, x, p * sizeof(float));
+    }
+
+
 } // namespace riptide
 
 #endif // KERNELS_HPP
