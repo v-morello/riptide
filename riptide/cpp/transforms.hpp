@@ -50,13 +50,14 @@ void transform(ConstBlock input, Block temp, Block out)
     }
 
 
-void transform(const float* input, size_t rows, size_t cols, float* temp, float* out)
+Block transform(const float* input, size_t rows, size_t cols, float* temp, float* out)
     {
     transform(
         ConstBlock(input, rows, cols),
         Block(temp, rows, cols),
         Block(out, rows, cols)
         );
+    return Block(out, rows, cols);
     }
 
 
