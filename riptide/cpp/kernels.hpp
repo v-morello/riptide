@@ -6,7 +6,7 @@
 namespace riptide {
 
 /* Add x with y, and store the result in z */
-void add(const float *x, const float *y, size_t size, float *z)
+void add(const float* __restrict__ x, const float* __restrict__ y, size_t size, float* __restrict__ z)
     {
     for (size_t i = 0; i < size; ++i)
         z[i] = x[i] + y[i];
@@ -16,7 +16,7 @@ void add(const float *x, const float *y, size_t size, float *z)
 Add x with y rolled by shift elements to the LEFT, and store the result in z. shift must be positive.
 In numpy that would equivalent to: z = x + roll(y, -shift)
 */
-void fused_rollback_add(const float *x, const float *y, size_t size, size_t shift, float *z)
+void fused_rollback_add(const float* __restrict__ x, const float* __restrict__ y, size_t size, size_t shift, float* __restrict__ z)
     {
     const size_t p = shift % size;
     const size_t q = size - p;
