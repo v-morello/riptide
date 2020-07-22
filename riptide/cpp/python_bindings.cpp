@@ -40,6 +40,17 @@ py::array_t<float> fused_rollback_add(py::array_t<float> arr_x, py::array_t<floa
 }
 
 
+py::array_t<float> circular_prefix_sum(py::array_t<float> arr_x, size_t nsum)
+{
+    // Array proxies
+    auto x = arr_x.unchecked<1>();
+    const size_t size = x.size();
+    auto arr_output = py::array_t<float, py::array::c_style>({nsum});
+    riptide::circular_prefix_sum(x.data(0), size, nsum, arr_output.mutable_data(0));
+    return arr_output;
+}
+
+
 py::array_t<float> ffa2(py::array_t<float> arr_input)
 {
     auto input = arr_input.unchecked<2>();
@@ -86,6 +97,11 @@ PYBIND11_MODULE(libcpp, m)
     m.def(
         "fused_rollback_add", &fused_rollback_add, 
         "Add x with y rolled backwards by shift elements, and store the result in z. shift must be positive. In numpy that would equivalent to: z = x + roll(y, -shift)"
+    );
+
+    m.def(
+        "circular_prefix_sum", &circular_prefix_sum, 
+        "Compute the circular prefix sum of the input array over nsum elements"
     );
 
     m.def(
