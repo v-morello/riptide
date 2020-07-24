@@ -10,6 +10,7 @@
 #include "block.hpp"
 #include "transforms.hpp"
 #include "snr.hpp"
+#include "downsample.hpp"
 
 
 namespace py = pybind11;
@@ -130,6 +131,21 @@ py::array_t<float> snr2(py::array_t<float> arr_x, py::array_t<size_t> arr_widths
 }
 
 
+py::array_t<float> downsample(py::array_t<float> arr_x, double f)
+{
+    auto x = arr_x.unchecked<1>();
+    const size_t size = x.size();
+
+    riptide::check_downsampling_factor(size, f);
+
+    // Allocate output array
+    const size_t outsize = riptide::downsampled_size(size, f);
+    auto output = py::array_t<float, py::array::c_style>({outsize});
+
+    riptide::downsample(x.data(0), size, f, output.mutable_data(0));
+    return output;
+}
+
 
 PYBIND11_MODULE(libcpp, m)
 {
@@ -166,6 +182,11 @@ PYBIND11_MODULE(libcpp, m)
     m.def(
         "snr2", &snr2, py::arg("data"), py::arg("widths"), py::arg("stdnoise") = 1.0,
         "S/N of multiple pulse profiles for multiple boxcar filter widths. 'data' must be a 2D array with shape (num_profiles, num_bins)."
+    );
+
+    m.def(
+        "downsample", &downsample, py::arg("data"), py::arg("factor"),
+        "Downsample data by a real-valued factor"
     );
 
 } // PYBIND11_MODULE
