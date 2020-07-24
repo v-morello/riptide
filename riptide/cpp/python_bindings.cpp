@@ -1,12 +1,15 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
 
+#include <algorithm>
+#include <stdexcept>
 #include <cstring> // memset()
 #include <chrono>
 
 #include "kernels.hpp"
 #include "block.hpp"
 #include "transforms.hpp"
+#include "snr.hpp"
 
 
 namespace py = pybind11;
@@ -87,10 +90,51 @@ double benchmark_ffa2(size_t rows, size_t cols, size_t loops)
 }
 
 
+py::array_t<float> snr1(py::array_t<float> arr_x, py::array_t<size_t> arr_widths, float stdnoise)
+{
+    // Array proxies
+    auto x = arr_x.unchecked<1>();
+    const size_t size = x.size();
+
+    auto widths = arr_widths.unchecked<1>();
+    const size_t num_widths = widths.size();
+
+    riptide::check_stdnoise(stdnoise);
+    riptide::check_trial_widths(widths.data(0), num_widths, size); 
+
+    auto arr_output = py::array_t<float, py::array::c_style>({num_widths});
+
+    riptide::snr1(x.data(0), size, widths.data(0), num_widths, stdnoise, arr_output.mutable_data(0));
+    return arr_output;
+}
+
+
+py::array_t<float> snr2(py::array_t<float> arr_x, py::array_t<size_t> arr_widths, float stdnoise)
+{
+    // Array proxies
+    auto x = arr_x.unchecked<2>();
+    const size_t rows = x.shape(0);
+    const size_t cols = x.shape(1);
+
+    auto widths = arr_widths.unchecked<1>();
+    const size_t num_widths = widths.size();
+
+    riptide::check_stdnoise(stdnoise);
+    riptide::check_trial_widths(widths.data(0), num_widths, cols); 
+
+    auto arr_output = py::array_t<float, py::array::c_style>({rows, num_widths});
+    auto block = riptide::ConstBlock(x.data(0, 0), rows, cols);
+
+    riptide::snr2(block, widths.data(0), num_widths, stdnoise, arr_output.mutable_data(0, 0));
+    return arr_output;
+}
+
+
+
 PYBIND11_MODULE(libcpp, m)
 {
     m.def(
-        "rollback", &rollback, 
+        "rollback", &rollback,
         "Rotate input array backwards by shift elements. shift must be positive. In numpy that would be equivalent to out = roll(x, -shift)"
     );
 
@@ -112,6 +156,16 @@ PYBIND11_MODULE(libcpp, m)
     m.def(
         "benchmark_ffa2", &benchmark_ffa2, 
         "Benchmark the ffa2() function. Returns the time per loop in seconds."
+    );
+
+    m.def(
+        "snr1", &snr1, py::arg("data"), py::arg("widths"), py::arg("stdnoise") = 1.0,
+        "S/N of a single pulse profile for multiple boxcar filter widths"
+    );
+
+    m.def(
+        "snr2", &snr2, py::arg("data"), py::arg("widths"), py::arg("stdnoise") = 1.0,
+        "S/N of multiple pulse profiles for multiple boxcar filter widths. 'data' must be a 2D array with shape (num_profiles, num_bins)."
     );
 
 } // PYBIND11_MODULE

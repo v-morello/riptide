@@ -38,12 +38,26 @@ void rollback(const float* __restrict__ x, size_t size, size_t shift, float* __r
     }
 
 
+// out = x + a
 void add_scalar(const float* __restrict__ x, size_t size, const float a, float* __restrict__ out)
     {
     for (size_t i = 0; i < size; ++i)
         out[i] = x[i] + a;
     }
 
+
+// max(x[i] - y[i])
+float diff_max(const float* __restrict__ x, const float* __restrict__ y, size_t size)
+    {
+    float dmax = x[0] - y[0];
+    for (size_t i = 1; i < size; ++i)
+        {
+        const float d = x[i] - y[i];
+        if (d > dmax)
+            dmax = d;
+        }
+    return dmax;
+    }
 
 /*
 size is the size of the input array x, while nsum is the length of the prefix summation.
@@ -85,7 +99,6 @@ void circular_prefix_sum(const float* __restrict__ x, size_t size, size_t nsum, 
     // Last incomplete wrap
     add_scalar(out, r, q * sumx, out + q * size);
     }
-
 
 } // namespace riptide
 
