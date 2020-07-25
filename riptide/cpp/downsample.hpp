@@ -23,6 +23,21 @@ size_t downsampled_size(size_t num_samples, double f)
     return floor((num_samples - 1.0) / f);
     }
 
+/*
+Variance of background Gaussian noise after downsampling a time series with 'num_samples' elements by a real-valued factor f.
+*/
+double downsampled_variance(size_t num_samples, double f)
+    {
+    const double k = floor(f);
+    const double r = f - k;
+    const double x = downsampled_size(num_samples, f) * r;
+    if (x > 1)
+        return f - 1.0 / 3.0;
+    else
+        return pow(k-1, 2) + 2.0/3.0 * pow(x, 2) - x + 1.0;
+    }
+
+
 /* 
 Downsample input array by a real-valued factor. Output must have capacity for floor((size - 1.0) / f) elements
 */

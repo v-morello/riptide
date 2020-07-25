@@ -11,6 +11,7 @@
 #include "transforms.hpp"
 #include "snr.hpp"
 #include "downsample.hpp"
+#include "periodogram.hpp"
 
 
 namespace py = pybind11;
@@ -147,6 +148,36 @@ py::array_t<float> downsample(py::array_t<float> arr_x, double f)
 }
 
 
+std::tuple< py::array_t<double>, py::array_t<uint32_t>, py::array_t<float> > periodogram(
+    py::array_t<float> arr_data,
+    double tsamp,
+    py::array_t<size_t> arr_widths,
+    double period_min,
+    double period_max,
+    size_t bins_min,
+    size_t bins_max)
+    {
+    auto data = arr_data.unchecked<1>();
+    size_t size = data.size();
+    auto widths = arr_widths.unchecked<1>();
+    size_t num_widths = widths.size();
+
+    size_t length = riptide::periodogram_length(size, tsamp, period_min, period_max, bins_min, bins_max);
+
+    auto periods = py::array_t<double, py::array::c_style>({length});
+    auto foldbins = py::array_t<uint32_t, py::array::c_style>({length});
+    auto snrs = py::array_t<float, py::array::c_style>({length, num_widths});
+
+    riptide::periodogram(
+        data.data(0), size, tsamp, widths.data(0), num_widths, 
+        period_min, period_max, bins_min, bins_max, 
+        periods.mutable_data(0), foldbins.mutable_data(0), snrs.mutable_data(0)
+        );
+
+    return std::make_tuple(periods, foldbins, snrs);
+    }
+
+
 PYBIND11_MODULE(libcpp, m)
 {
     m.def(
@@ -188,5 +219,11 @@ PYBIND11_MODULE(libcpp, m)
         "downsample", &downsample, py::arg("data"), py::arg("factor"),
         "Downsample data by a real-valued factor"
     );
+
+    m.def(
+        "periodogram", &periodogram,
+        py::arg("data"), py::arg("tsamp"), py::arg("widths"), py::arg("period_min"), py::arg("period_max"), py::arg("bins_min"), py::arg("bins_max"),
+        "Compute the periodogram of a time series. Returns a 3-tuple of arrays: trial periods, number of phase bins, S/N"
+    );    
 
 } // PYBIND11_MODULE

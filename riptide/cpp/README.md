@@ -45,3 +45,11 @@ Where `tau` is the sampling interval. For `Pmax = p + 1` and `tau = 1`, this yie
 ```
 ceilshift = ceil(p * (m - 1) * (1 - p * tau / Pmax))
 ```
+
+### Height and baseline of a boxcar filter with zero mean and unit square sum
+
+Let `n` be the total number of bins of the boxcar, and `w` its width expressed in number of bins. Its height `h` and baseline value `b` are:
+```
+h = sqrt((n - w) / (n * w))
+b = - w / (n - w) * h
+```
