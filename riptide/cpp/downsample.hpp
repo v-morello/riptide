@@ -20,7 +20,7 @@ Number of samples in a time series after it has been downsampled by a real-value
 */
 size_t downsampled_size(size_t num_samples, double f)
     {
-    return floor((num_samples - 1.0) / f);
+    return floor(num_samples / f);
     }
 
 /*
@@ -63,7 +63,9 @@ void downsample(const float* __restrict__ in, size_t size, double f, float* __re
         const size_t imin = floor(start);
         // NOTE: floor() is OK in imax calculation, 
         // because the input sample index imax covers the input x-coordinate range [imax, imax+1]
-        const size_t imax = floor(end);
+        // NOTE 2: when f divides size, for the last output sample we have end = N,
+        // hence the need to enforce imax < N
+        const size_t imax = std::min(floor(end), N - 1.0);
 
         // Weights to be applied to samples imin and imax
         // Other input samples are weighted by 1
