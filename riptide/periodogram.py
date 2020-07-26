@@ -4,15 +4,15 @@ import matplotlib.pyplot as plt
 
 ##### Local imports #####
 from .metadata import Metadata
-from .processing_plan import ProcessingPlan
+
 
 class Periodogram(object):
     """ Stores the raw output of the FFA search of a time series. """
-    def __init__(self, plan, periods, widths, snrs, metadata=None):
-        self.plan = plan
-        self.periods = periods
+    def __init__(self, widths, periods, foldbins, snrs, metadata=None):
         self.widths = widths
-        self.snrs = snrs.reshape(periods.size, widths.size)
+        self.periods = periods
+        self.foldbins = foldbins
+        self.snrs = snrs
         self.metadata = metadata if metadata is not None else Metadata({})
 
     @property
@@ -23,23 +23,18 @@ class Periodogram(object):
     def tobs(self):
         return self.metadata['tobs']
 
-    @property
-    def bins_avg(self):
-        """ Average number of phase bins used in the search """
-        return self.plan.bins_avg
-
     def to_dict(self):
         return {
-            'plan': self.plan,
-            'periods': self.periods,
             'widths': self.widths,
+            'periods': self.periods,
+            'foldbins': self.foldbins,
             'snrs': self.snrs,
             'metadata': self.metadata
         }
 
     @classmethod
     def from_dict(cls, items):
-        return cls(items['plan'], items['periods'], items['widths'], items['snrs'], metadata=items['metadata'])
+        return cls(items['widths'], items['periods'], items['foldbins'], items['snrs'], metadata=items['metadata'])
 
     def plot(self, iwidth=None):
         if iwidth is None:
@@ -67,4 +62,3 @@ class Periodogram(object):
         plt.figure(figsize=figsize, dpi=dpi)
         self.plot(iwidth=iwidth)
         plt.show()
-

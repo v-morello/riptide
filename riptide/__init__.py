@@ -6,7 +6,6 @@ del get_versions
 
 ### Major classes
 from .time_series import TimeSeries
-from .processing_plan import ProcessingPlan
 from .periodogram import Periodogram
 from .metadata import Metadata
 from .candidate import Candidate
@@ -30,7 +29,6 @@ from .serialization import save_json, load_json
 
 __all__ = [
     'TimeSeries',
-    'ProcessingPlan',
     'Periodogram',
     'Metadata',
     'Candidate',

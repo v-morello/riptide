@@ -22,7 +22,7 @@ def test_ffa_search():
     bins_max = 260
     period_min = 0.8 * period
     period_max = 1.2 * period
-    tsdr, plan, pgram = ffa_search(
+    tsdr, pgram = ffa_search(
         ts, 
         period_min=period_min, period_max=period_max, 
         bins_min=bins_min, bins_max=bins_max
@@ -35,15 +35,10 @@ def test_ffa_search():
     assert pgram.tobs == length
     assert all(pgram.freqs == 1.0 / pgram.periods)
 
-    # NOTE: bins_max is EXclusive, and bins_avg is currently an int
-    # (although the cast to int might be superfluous, to be verified)
-    # TODO: implement this correctly and fix code where necessary
-    #assert pgram.bins_avg == int(round((bins_min + (bins_max - 1)) / 2.0))
-
     # Test that running with deredden = False and already_normalised = True
     # returns a reference to the input TimeSeries (data left untouched)
     # This is how ffa_search() is called by the pipeline
-    tsdr, plan, pgram = ffa_search(
+    tsdr, pgram = ffa_search(
         ts, 
         period_min=period_min, period_max=period_max, 
         bins_min=bins_min, bins_max=bins_max,

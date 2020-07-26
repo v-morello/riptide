@@ -109,7 +109,7 @@ def run_program(args):
     ts = loader(args.fname)
 
     log.debug(f"Searching period range [{args.Pmin}, {args.Pmax}] seconds with {args.bmin} to {args.bmax} phase bins")
-    __, __, pgram = ffa_search(
+    __, pgram = ffa_search(
         ts,
         period_min=args.Pmin,
         period_max=args.Pmax,

@@ -67,7 +67,7 @@ def runner_presto_fakepsr(fname_conf, outdir):
     assert abs(topcand.params['period'] - SIGNAL_PERIOD) < 1.00e-4
     assert topcand.params['dm'] == 10.0
     assert topcand.params['width'] == 13
-    assert abs(topcand.params['snr'] - 18.6) < 0.1
+    assert abs(topcand.params['snr'] - 18.5) < 0.15
 
 
 def runner_presto_purenoise(fname_conf, outdir):

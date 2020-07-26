@@ -49,7 +49,7 @@ def test_rseek_fakepsr():
     # NOTE: these checks depend on the RNG seed and the program options
     topcand = df.iloc[0]
     assert abs(topcand.freq - SIGNAL_FREQ) < 0.1 / DATA_TOBS
-    assert abs(topcand.snr - 18.6) < 0.5
+    assert abs(topcand.snr - 18.5) < 0.15
     assert topcand.dm == 0
     assert topcand.width == 13
     

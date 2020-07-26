@@ -19,7 +19,7 @@ class Peak(typing.NamedTuple):
     period: float
     freq: float
     width: int
-    ducy: float  # duty cycle = width / average_folding_bins
+    ducy: float  # duty cycle
     iw: int      # width trial index
     ip: int      # period trial index
     snr: float
@@ -193,7 +193,6 @@ def find_peaks(pgram, smin=6.0, segwidth=5.0, nstd=6.0, minseg=10, polydeg=2, cl
     f = pgram.freqs
     T = pgram.tobs
     dm = pgram.metadata['dm']
-    bins_avg = pgram.bins_avg
 
     peaks = []
     polycos = {}
@@ -205,13 +204,15 @@ def find_peaks(pgram, smin=6.0, segwidth=5.0, nstd=6.0, minseg=10, polydeg=2, cl
         )
         for ipeak in cur_peak_indices:
             peak_freq = f[ipeak]
+            peak_bins = pgram.foldbins[ipeak]
+            peak_ducy = float(width) / peak_bins
 
             # NOTE: type enforcement is necessary, otherwise some Peak members
             # have np.float32 type which causes trouble down the line
             # NOTE 2: dm can be None on fake time series
             peak = Peak(
                 freq=float(peak_freq), period=float(1.0/peak_freq), width=int(width), 
-                ducy=float(width/bins_avg), iw=int(iw), ip=int(ipeak), snr=float(s[ipeak]), 
+                ducy=float(peak_ducy), iw=int(iw), ip=int(ipeak), snr=float(s[ipeak]), 
                 dm=dm)
             #log.debug(peak)
             peaks.append(peak)

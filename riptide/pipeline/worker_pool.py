@@ -55,9 +55,9 @@ class WorkerPool(object):
                 'deredden': False,
                 'already_normalised': True
                 })
-            tsdr, plan, pgram = ffa_search(ts, **kw_search)
+            tsdr, pgram = ffa_search(ts, **kw_search)
             peaks, polycos = find_peaks(pgram, **conf['find_peaks'])
             allpeaks.extend(peaks)
-            del tsdr, plan, pgram, peaks, polycos # Free RAM ASAP
+            del tsdr, pgram, peaks, polycos # Free RAM ASAP
         log.debug(f"Done searching DM = {dm:.3f}, peaks found: {len(allpeaks)}")
         return allpeaks
