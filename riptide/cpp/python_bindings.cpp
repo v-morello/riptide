@@ -12,6 +12,7 @@
 #include "snr.hpp"
 #include "downsample.hpp"
 #include "periodogram.hpp"
+#include "running_median.hpp"
 
 
 namespace py = pybind11;
@@ -178,6 +179,18 @@ std::tuple< py::array_t<double>, py::array_t<uint32_t>, py::array_t<float> > per
     }
 
 
+py::array_t<float> running_median(py::array_t<float> arr_x, size_t width)
+{
+    auto x = arr_x.unchecked<1>();
+    const size_t size = x.size();
+
+    auto output = py::array_t<float, py::array::c_style>({size});
+
+    riptide::running_median<float>(x.data(0), size, width, output.mutable_data(0));
+    return output;
+}
+
+
 PYBIND11_MODULE(libcpp, m)
 {
     m.def(
@@ -224,6 +237,11 @@ PYBIND11_MODULE(libcpp, m)
         "periodogram", &periodogram,
         py::arg("data"), py::arg("tsamp"), py::arg("widths"), py::arg("period_min"), py::arg("period_max"), py::arg("bins_min"), py::arg("bins_max"),
         "Compute the periodogram of a time series. Returns a 3-tuple of arrays: trial periods, number of phase bins, S/N"
-    );    
+    );
+
+    m.def(
+        "running_median", &running_median, py::arg("data"), py::arg("width"),
+        "Calculate the running median of a 1D array with a median window of 'width' elements."
+    );
 
 } // PYBIND11_MODULE
