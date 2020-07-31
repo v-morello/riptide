@@ -137,6 +137,7 @@ class Pipeline(object):
         files: list
         """
         log.info("Preparing pipeline")
+        log.debug("Input files: {}".format(len(files)))
         conf = self.config
 
         # The DM iterator is in charge of:
@@ -144,23 +145,23 @@ class Pipeline(object):
         # - selecting the DM trials in the right range with the right dynamic step
         # - yielding them in chunks of size = number of parallel processes
         self.dmiter = DMIterator(
-            dm_min=conf['dmselect']['min'],
-            dm_max=conf['dmselect']['max'],
+            files,
+            conf['dmselect']['min'],
+            conf['dmselect']['max'],
             dmsinb_max=conf['dmselect']['dmsinb_max'],
+            fmt=conf['data']['format'],
             wmin=self.wmin(),
             fmin=conf['data']['fmin'],
             fmax=conf['data']['fmax'],
             nchans=conf['data']['nchans'],
         )
-        log.debug("Input files: {}".format(len(files)))
-        self.dmiter.prepare(files, fmt=self.config['data']['format'])
 
         # NOTE: call dmiter.prepare() first. Before that, dmiter.tsloader is None
         self.worker_pool = WorkerPool(
             conf['dereddening'], 
             conf['ranges'],
-            loader=self.dmiter.tsloader,
-            processes=conf['processes']
+            processes=conf['processes'],
+            fmt=conf['data']['format']
         )
         log.info("Pipeline ready")
         
@@ -171,7 +172,7 @@ class Pipeline(object):
         """
         log.info("Running search")
         peaks = []
-        for fnames in self.dmiter.iterate_fnames(chunksize=self.config['processes']):
+        for fnames in self.dmiter.iterate_filenames(chunksize=self.config['processes']):
             peaks.extend(
                 self.worker_pool.process_fname_list(fnames)
             )        
@@ -213,8 +214,8 @@ class Pipeline(object):
 
         log.info("Flagging harmonics")
         tobs = self.dmiter.tobs_median()
-        fmin = self.config['data']['fmin']
-        fmax = self.config['data']['fmax']
+        fmin = self.dmiter.fmin
+        fmax = self.dmiter.fmax
         kwargs = self.config['harmonic_flagging']
         
         clusters_decreasing_snr = sorted(self.clusters, key=lambda c: c.centre.snr, reverse=True)
@@ -282,8 +283,7 @@ class Pipeline(object):
 
     @timing
     def build_candidates(self):
-        log.info("Building candidates")
-        #remove_harmonics = self.config['remove_harmonics']         
+        log.info("Building candidates")      
         clusters_decreasing_snr = sorted(self.clusters_filtered, key=lambda c: c.centre.snr, reverse=True)
 
         if not clusters_decreasing_snr:
@@ -299,7 +299,8 @@ class Pipeline(object):
         log.debug(f"{len(clusters_decreasing_snr)} candidates to build from {len(grouped_clusters)} TimeSeries")
 
         for dm, clusters in grouped_clusters.items():
-            ts = self.dmiter.get_dm_trial(dm)
+            fname = self.dmiter.get_filename(dm)
+            ts = self.worker_pool.loader(fname)
             ts = ts.deredden(
                 width=self.config['dereddening']['rmed_width'], 
                 minpts=self.config['dereddening']['rmed_minpts'])

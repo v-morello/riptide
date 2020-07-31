@@ -1,7 +1,7 @@
 import logging
 import multiprocessing
 
-from riptide import ffa_search, find_peaks
+from riptide import TimeSeries, ffa_search, find_peaks
 
 
 log = logging.getLogger('riptide.worker_pool')
@@ -17,11 +17,19 @@ class WorkerPool(object):
         a TimeSeries object
     processes : int
         Number of parallel processes
+    fmt : str
+        TimeSeries file format
     """
-    def __init__(self, deredden_params, range_confs, loader, processes=1):
+
+    TIMESERIES_LOADERS = {
+        'sigproc': TimeSeries.from_sigproc,
+        'presto': TimeSeries.from_presto_inf
+    }
+
+    def __init__(self, deredden_params, range_confs, processes=1, fmt='presto'):
         self.deredden_params = deredden_params
         self.range_confs = range_confs
-        self.loader = loader
+        self.loader = self.TIMESERIES_LOADERS[fmt]
         self.processes = int(processes)
 
     def process_fname_list(self, fnames):

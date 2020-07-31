@@ -93,19 +93,6 @@ def runner_presto_purenoise(fname_conf, outdir):
     assert not glob.glob(f"{outdir}/*.png")
 
 
-def runner_presto_nodata(fname_conf, outdir):
-    """
-    Check that pipeline runs well even when no input time series are passed
-    """
-    ### Run pipeline ###
-    # NOTE: must add empty argument at the end, otherwise argument parser 
-    # complains that 'files' argument is required
-    cmdline_args = ['--config', fname_conf, '--outdir', outdir, ""]
-    parser = get_parser()
-    args = parser.parse_args(cmdline_args)
-    run_program(args)
-
-
 def test_pipeline_presto_fakepsr():
     # NOTE: outdir is a full path (str)
     with tempfile.TemporaryDirectory() as outdir:
@@ -125,13 +112,3 @@ def test_pipeline_presto_purenoise():
     with tempfile.TemporaryDirectory() as outdir:
         fname_conf = os.path.join(os.path.dirname(__file__), 'pipeline_config_B.yml')
         runner_presto_purenoise(fname_conf, outdir)
-
-
-def test_pipeline_presto_nodata():
-    with tempfile.TemporaryDirectory() as outdir:
-        fname_conf = os.path.join(os.path.dirname(__file__), 'pipeline_config_A.yml')
-        runner_presto_nodata(fname_conf, outdir)
-
-    with tempfile.TemporaryDirectory() as outdir:
-        fname_conf = os.path.join(os.path.dirname(__file__), 'pipeline_config_B.yml')
-        runner_presto_nodata(fname_conf, outdir)
