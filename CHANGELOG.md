@@ -5,6 +5,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## 0.2.0 - UNRELEASED
+
+### Changed
+- The `ffa_search()` function now only returns two values: the de-reddened `TimeSeries` that was actually searched, and a `Periodogram` object. The `ProcessingPlan` class has been removed.
+- Clean rewrite of all kernels in C++. Python bindings for said kernels are now generated with `pybind11` which requires a lot less boilerplate code. Kernel functions can imported in python from the `riptide.libcpp` submodule.
+
+### Added
+- The `Periodogram` returned by `ffa_search` now has a `foldbins` member, which is the number of phase bins that were used when folding the data for a particular trial period. Using this information, the pipeline now returns  the *true* duty cycle of the candidates; it was previously returning only an estimate equal to `width / bins_avg` where `width` was the best pulse width in bins, and `bins_avg = (bins_min + bins_max) / 2`.
+- `running_median()` function in C++, it is around 8x faster than its former python counterpart.
+- Tests for `running_median()`.
+
+### Removed
+- Removed `ProcessingPlan` class. It used to be passed to the old C function that was computing the periodogram. Its job is now directly performed by the new C++ function `periodogram()`.
+- Removed old C kernels
+
+
 ## 0.1.5 - 2020-05-23
 
 ### Changed
