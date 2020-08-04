@@ -247,18 +247,3 @@ class DMIterator(object):
 
     def tobs_median(self):
         return np.median([md['tobs'] for md in self.metadata_list])
-
-
-if __name__ == '__main__':
-    import glob
-
-    logging.basicConfig(
-        level='DEBUG',
-        format='%(asctime)s %(filename)18s:%(lineno)-4s %(levelname)-8s %(message)s')
-
-    dmiter = DMIterator(
-        glob.glob("/home/vince/work/time_series/J1855+0307/*.inf"),
-        399, 435.0, fmt='presto', wmin=1.0e-3)
-
-    for fname in dmiter.iterate_filenames(chunksize=2):
-        print(fname)
