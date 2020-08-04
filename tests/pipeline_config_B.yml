@@ -3,9 +3,9 @@ processes: 2
 
 data:
   format: presto
-  fmin: 1181.0
-  fmax: 1581.0
-  nchans: 1024
+  fmin:
+  fmax:
+  nchans:
 
 
 dmselect:

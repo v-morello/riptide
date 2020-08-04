@@ -3,11 +3,7 @@
 ###############################################################################
 #
 #
-# Before running any serious search:
-# 1. Review this file carefully
-# 2. You MUST change a few crucial parameters to match your input data
-#    In particular, you need to set the input data format, min and max observing 
-#    frequencies, and define the desired search ranges
+# Review this file carefully before running any serious search
 #
 # Although the number of options may appear daunting, a fair number of 
 # parameters can be left to their default values, in particular the
@@ -27,33 +23,38 @@ data:
   # Format of the input DM trials, either 'presto' or 'sigproc'
   format: presto
 
-  # NOTE: the observing band parameters are used to calculate an
-  # internal dedispersion plan to select a minimal subset of DM
-  # trials to process.
+  # OBSERVING BAND PARAMETERS: Leave blank unless necessary
+  # The observing band parameters are read from the input time series files whenever possible.
+  # For SIGPROC dedispersed time series, this information is NOT part of the header and must
+  # be manually specified. fmin / fmax / nchans are used to calculate an internal dedispersion plan
+  # to select a minimal subset of DM trials to process.
   # Minimum observing frequency in MHz
-  fmin: 1181.0
+  fmin:
 
   # Maximum observing frequency in MHz
-  fmax: 1581.0
+  fmax:
 
   # Number of channels in the data
-  nchans: 1024
+  nchans:
 
 
 dmselect:
   # Minimum DM trial in pc cm^{-3}
+  # If left blank, start at the minimum available trial DM
   min: 0.0
 
   # Maximum DM trial in pc cm^{-3}
   # This is a hard limit, regardless of sky coordinates (see below)
+  # If left blank, stop at the maximum available trial DM
   max: 1000.0
 
   # Maximum value of Trial_DM x |sin b| where b is the Galactic latitude of the observation.
   # This is a simple method to limit the maximum trial DM as a function of Galactic coordinates
   # Almost no Galactic pulsars are known to have DM x |sin b| > 40
-  # NOTE: This rule is of course invalid for pulsars in Globular clusters, or pulsars in the Magellanic clouds 
+  # NOTE: This rule is of course invalid for pulsars in Globular clusters, 
+  # or pulsars in the Magellanic clouds 
   #
-  # If set to null, no latitude-dependent cap on the maximum trial DM is applied
+  # If left blank, no latitude-dependent cap on the maximum trial DM is applied
   dmsinb_max: 45.0
 
 
