@@ -137,8 +137,8 @@ def validate_ranges_contiguity(ranges):
         period_min_b = b['ffa_search']['period_min']
         if not period_max_a == period_min_b:
             raise InvalidSearchRange(
-                "Search ranges are not either non-contiguous, or not ordered "
-                "by increasing trial period")
+                "Search ranges are not either non-contiguous, or not ordered by increasing trial "
+                f"period (period_max ({period_max_a:.6e}) != next period_min ({period_min_b:.6e})")
 
 
 def validate_ranges(ranges, tsamp_max):
@@ -186,20 +186,6 @@ def validate_pipeline_config(conf):
     try:
         validated = PIPELINE_CONFIG_SCHEMA.validate(conf)
     except Exception as ex:
-        # Suppress long exception chain caused by schema library
+        # Suppress long and confusing exception chain caused by schema library
         raise InvalidPipelineConfig(str(ex)) from None
     return validated
-
-
-if __name__ == '__main__':
-    import yaml
-
-    with open('/home/vince/repositories/riptide/riptide/pipeline/config/example.yaml', 'r') as fobj:
-        conf = yaml.safe_load(fobj)
-
-    #del conf['dmselect']
-    #del conf['ranges'][0]['ffa_search']['period_min']
-
-    validated = validate_pipeline_config(conf)
-
-    validate_ranges(validated['ranges'], 64e-6)

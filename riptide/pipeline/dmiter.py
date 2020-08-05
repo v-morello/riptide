@@ -247,3 +247,6 @@ class DMIterator(object):
 
     def tobs_median(self):
         return np.median([md['tobs'] for md in self.metadata_list])
+
+    def tsamp_max(self):
+        return max([md['tsamp'] for md in self.metadata_list])

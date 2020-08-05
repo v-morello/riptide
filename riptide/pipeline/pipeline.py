@@ -16,6 +16,7 @@ import threadpoolctl
 from riptide import __version__, ffa_search, find_peaks, Candidate
 from riptide.clustering import cluster1d
 
+from riptide.pipeline.config_validation import validate_pipeline_config, validate_ranges
 from riptide.pipeline.dmiter import DMIterator
 from riptide.pipeline.worker_pool import WorkerPool
 from riptide.pipeline.peak_cluster import PeakCluster, clusters_to_dataframe
@@ -62,8 +63,10 @@ class Pipeline(object):
         Configuration dictionary loaded from YAML file
     """
     def __init__(self, config):
-        # TODO: validate config
-        self.config = config
+        # This only validates the format, not the actual parameter values.
+        # More checks are performed later when the parameters of the input
+        # time series are known
+        self.config = validate_pipeline_config(config)
         self.dmiter = None
         self.worker_pool = None
         self.peaks = []
@@ -155,6 +158,11 @@ class Pipeline(object):
             fmax=conf['data']['fmax'],
             nchans=conf['data']['nchans'],
         )
+
+        tsamp_max = self.dmiter.tsamp_max()
+        log.info(
+            f"Max sampling time = {tsamp_max:.6e} s, checking pipeline config parameter values")
+        validate_ranges(conf['ranges'], tsamp_max)
 
         # NOTE: call dmiter.prepare() first. Before that, dmiter.tsloader is None
         self.worker_pool = WorkerPool(
