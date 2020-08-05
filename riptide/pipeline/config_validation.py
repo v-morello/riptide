@@ -18,11 +18,17 @@ SEARCH_RANGE_SCHEMA = Schema({
         'bins_min': int,
         'bins_max': int,
         Optional('fpmin'): int,
-        Optional('wtsp'): float
+        Optional('wtsp'): float,
+        Optional('ducy_max'): float,
         },
 
     'find_peaks': {
-        Optional('smin'): float
+        Optional('smin'): float,
+        Optional('segwidth'): float,
+        Optional('nstd'): float,
+        Optional('minseg'): float,
+        Optional('polydeg'): float,
+        Optional('clrad'): float,
         },
 
     'candidates': {
@@ -93,6 +99,33 @@ PIPELINE_CONFIG_SCHEMA = Schema({
 })
 
 
+def validate_config(conf):
+    """
+    Validate pipeline configuration dictionary and raise an error if it is
+    incorrect.
+
+    Parameters
+    ----------
+    conf : dict
+        Configuration dictionary loaded from the pipeline config file
+
+    Returns
+    -------
+    validated : dict
+        Validated configuration dictionary. Some data types may have been
+        changed (e.g. into to float, or float to int when both are allowed
+        for a config parameter).
+    """
+    valid = PIPELINE_CONFIG_SCHEMA.validate(conf)
+    # TODO
+    # Further checks to perform:
+    # * Ranges are contiguous
+    # * Candidate bins is not too large
+    # In general, leave the pipeline code raise errors, except when it takes too long to wait
+    # for the error to be raised (e.g. it is raised only at Candidate building stage)
+    return valid
+
+
 if __name__ == '__main__':
     import yaml
 
@@ -100,5 +133,5 @@ if __name__ == '__main__':
         conf = yaml.safe_load(fobj)
 
     print(
-        yaml.dump(PIPELINE_CONFIG_SCHEMA.validate(conf), indent=4)
+        yaml.dump(validate_config(conf), indent=4)
     )
