@@ -1,6 +1,14 @@
 from schema import Schema, Use, Optional, And, Or
 
 
+class InvalidSearchRange(Exception):
+    pass
+
+
+class InvalidPipelineConfig(Exception):
+    pass
+
+
 def strictly_positive(x):
     return x > 0
 
@@ -13,10 +21,10 @@ SEARCH_RANGE_SCHEMA = Schema({
     'name': str,
 
     'ffa_search': {
-        'period_min': float,
-        'period_max': float,
-        'bins_min': int,
-        'bins_max': int,
+        'period_min': And(Use(float), strictly_positive, error="period_min must be a number > 0"),
+        'period_max': And(Use(float), strictly_positive, error="period_max must be a number > 0"),
+        'bins_min': And(int, strictly_positive, error="bins_min must be an int > 0"),
+        'bins_max': And(int, strictly_positive, error="bins_max must be an int > 0"),
         Optional('fpmin'): int,
         Optional('wtsp'): float,
         Optional('ducy_max'): float,
@@ -99,10 +107,65 @@ PIPELINE_CONFIG_SCHEMA = Schema({
 })
 
 
-def validate_config(conf):
+def validate_range(rg, tsamp_max):
+    """ """
+    # NOTE: In general, we leave the pipeline code to raise the exceptions,
+    # except if it takes too long for it to detect them; for example, if the number of candidate
+    # bins is too large, we have to wait until the candidate building stage.
+    period_min = rg['ffa_search']['period_min']
+    period_max = rg['ffa_search']['period_max']
+    bins_min = rg['ffa_search']['bins_min']
+    cand_bins = rg['candidates']['bins']
+
+    if bins_min * tsamp_max > period_min:
+        raise InvalidSearchRange(
+            f"Search range {period_min:.3e} to {period_max:.3e} seconds: requested phase "
+            "resolution is too high w.r.t. coarsest input time series "
+            f"(tsamp = {tsamp_max:.3e} seconds). Use smaller bins_min or larger period_min.") 
+
+    if cand_bins * tsamp_max > period_min:
+        raise InvalidSearchRange(
+            f"Search range {period_min:.3e} to {period_max:.3e} seconds: "
+            f"cannot fold candidates with such high resolution ({cand_bins:d} bins). "
+            f"The coarsest input time series ({tsamp_max:.3e} seconds) does not allow it")  
+
+
+def validate_ranges_contiguity(ranges):
+    """ """
+    for a, b in zip(ranges[:-1], ranges[1:]):
+        period_max_a = a['ffa_search']['period_max']
+        period_min_b = b['ffa_search']['period_min']
+        if not period_max_a == period_min_b:
+            raise InvalidSearchRange(
+                "Search ranges are not either non-contiguous, or not ordered "
+                "by increasing trial period")
+
+
+def validate_ranges(ranges, tsamp_max):
+    """ 
+    Check that the search ranges are valid. Raise an exception if not.
+
+    Parameters
+    ----------
+    ranges : list of dict
+        Search ranges read from the pipeline configuration file
+    tsamp_max : float
+        Maximum sampling interval of the TimeSeries to process
+
+    Raises
+    ------
+    InvalidSearchRange
+    """
+    for rg in ranges:
+        validate_range(rg, tsamp_max)
+    validate_ranges_contiguity(ranges)
+    
+
+def validate_pipeline_config(conf):
     """
     Validate pipeline configuration dictionary and raise an error if it is
-    incorrect.
+    incorrect. This function only checks the format of the config and 
+    the data types.
 
     Parameters
     ----------
@@ -115,15 +178,17 @@ def validate_config(conf):
         Validated configuration dictionary. Some data types may have been
         changed (e.g. into to float, or float to int when both are allowed
         for a config parameter).
+
+    Raises
+    ------
+    InvalidPipelineConfig
     """
-    valid = PIPELINE_CONFIG_SCHEMA.validate(conf)
-    # TODO
-    # Further checks to perform:
-    # * Ranges are contiguous
-    # * Candidate bins is not too large
-    # In general, leave the pipeline code raise errors, except when it takes too long to wait
-    # for the error to be raised (e.g. it is raised only at Candidate building stage)
-    return valid
+    try:
+        validated = PIPELINE_CONFIG_SCHEMA.validate(conf)
+    except Exception as ex:
+        # Suppress long exception chain caused by schema library
+        raise InvalidPipelineConfig(str(ex)) from None
+    return validated
 
 
 if __name__ == '__main__':
@@ -132,6 +197,9 @@ if __name__ == '__main__':
     with open('/home/vince/repositories/riptide/riptide/pipeline/config/example.yaml', 'r') as fobj:
         conf = yaml.safe_load(fobj)
 
-    print(
-        yaml.dump(validate_config(conf), indent=4)
-    )
+    #del conf['dmselect']
+    #del conf['ranges'][0]['ffa_search']['period_min']
+
+    validated = validate_pipeline_config(conf)
+
+    validate_ranges(validated['ranges'], 64e-6)
