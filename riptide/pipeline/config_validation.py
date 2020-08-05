@@ -16,7 +16,6 @@ def strictly_positive(x):
 VALID_FORMATS = ('presto', 'sigproc')
 
 
-# TODO: finish this
 SEARCH_RANGE_SCHEMA = Schema({
     'name': str,
 
@@ -25,23 +24,31 @@ SEARCH_RANGE_SCHEMA = Schema({
         'period_max': And(Use(float), strictly_positive, error="period_max must be a number > 0"),
         'bins_min': And(int, strictly_positive, error="bins_min must be an int > 0"),
         'bins_max': And(int, strictly_positive, error="bins_max must be an int > 0"),
-        Optional('fpmin'): int,
-        Optional('wtsp'): float,
-        Optional('ducy_max'): float,
+        Optional('fpmin'): And(int, strictly_positive, error="fpmin must be an int > 0"),
+        Optional('wtsp'): And(
+            Use(float), lambda x: x > 1, error="wtsp must be a number > 1"),
+        Optional('ducy_max'): And(
+            float, lambda x: 0 < x < 1, error='ducy_max must be strictly between 0 and 1'),
         },
 
     'find_peaks': {
-        Optional('smin'): float,
-        Optional('segwidth'): float,
-        Optional('nstd'): float,
-        Optional('minseg'): float,
-        Optional('polydeg'): float,
-        Optional('clrad'): float,
+        Optional('smin'): And(
+            Use(float), strictly_positive, error="smin must be a number > 0"),
+        Optional('segwidth'): And(
+            Use(float), strictly_positive, error="segwidth must be a number > 0"),
+        Optional('nstd'): And(
+            Use(float), strictly_positive, error="nstd must be a number > 0"),
+        Optional('minseg'): And(
+            int, strictly_positive, error="minseg must be an int > 0"),
+        Optional('polydeg'): And(
+            Use(float), strictly_positive, error="polydeg must be a number > 0"),
+        Optional('clrad'): Or(
+            And(Use(float), strictly_positive), None, error="clrad must be a number > 0"),
         },
 
     'candidates': {
-        'bins': int,
-        'subints': int
+        'bins': And(int, strictly_positive, error="candidates.bins must be an int > 0"),
+        'subints': And(int, strictly_positive, error="candidates.subints must be an int > 0"),
         },
 })
 
@@ -111,7 +118,7 @@ def validate_range(rg, tsamp_max):
     """ """
     # NOTE: In general, we leave the pipeline code to raise the exceptions,
     # except if it takes too long for it to detect them; for example, if the number of candidate
-    # bins is too large, we have to wait until the candidate building stage.
+    # bins is too large, we don't want to wait until the candidate building stage to realize this.
     period_min = rg['ffa_search']['period_min']
     period_max = rg['ffa_search']['period_max']
     bins_min = rg['ffa_search']['bins_min']
