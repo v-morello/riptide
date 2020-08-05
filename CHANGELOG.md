@@ -13,12 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ### Added
-- The `Periodogram` returned by `ffa_search` now has a `foldbins` member, which is the number of phase bins that were used when folding the data for a particular trial period. Using this information, the pipeline now returns  the *true* duty cycle of the candidates; it was previously returning only an estimate equal to `width / bins_avg` where `width` was the best pulse width in bins, and `bins_avg = (bins_min + bins_max) / 2`.
+- The `Periodogram` returned by `ffa_search` now has a `foldbins` member, which is the number of phase bins that were used when folding the data for a particular trial period. Using this information, the pipeline now returns the *true* duty cycle of the candidates; it was previously returning only an estimate equal to `width / bins_avg` where `width` was the best pulse width in bins, and `bins_avg = (bins_min + bins_max) / 2`.
 - `running_median()` function in C++, it is around 8x faster than its former python counterpart.
 - Tests for `running_median()`.
 - DM trial selection by the pipeline is now considerably faster
-- The pipeline now infers the observing min/max frequencies and the number of channels from the input data if possible. It is now possible (and recommended) to leave the fields `fmin`, `fmax`, and `nchans` blank in the pipeline configuration file. It is necessary to specify these values only when the dedispersed time series data format (e.g. SIGPROC) does not contain that information.
+- The pipeline now infers the observing min/max frequencies and the number of channels from the input data if possible. It is now recommended to leave the fields `fmin`, `fmax`, and `nchans` blank in the pipeline configuration file. It is necessary to specify these values only when the dedispersed time series data format (e.g. SIGPROC) does not contain that information.
 - In the pipeline configuration file, the minimum and maximum trial DM fields can also be left blank. If so, the minimum and/or maximum DMs of the search are determined by the DM trials available to process.
+- Added careful validation of the pipeline configuration file (using the `schema` library). The pipeline will raise an exception early in the processing if the configuration is invalid, with a helpful error message.
 
 
 ### Removed
