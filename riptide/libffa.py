@@ -191,7 +191,7 @@ def ffaprd(N, p, dt=1.0):
     return 1.0 / ffafreq(N, p, dt=dt)
 
 
-def get_snr(data, widths, stdnoise=1.0):
+def boxcar_snr(data, widths, stdnoise=1.0):
     """ 
     Compute the S/N ratio of pulse profile(s) for a range of 
     boxcar width trials.
@@ -212,6 +212,8 @@ def get_snr(data, widths, stdnoise=1.0):
         Output with the same shape as data, with an additional axis
         which represents trial pulse width index.
     """
+    widths = np.asarray(widths, dtype=np.uint64)
+
     # Number of bins is the length of the last axis
     b = data.shape[-1]
 

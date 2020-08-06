@@ -19,8 +19,8 @@ from .libffa import (
     ffafreq,
     ffaprd,
     generate_signal,
-    downsample
-    )
+    downsample,
+    boxcar_snr)
 
 from .peak_detection import find_peaks
 
@@ -39,6 +39,7 @@ __all__ = [
     'ffaprd',
     'generate_signal',
     'downsample',
+    'boxcar_snr',
     'find_peaks',
     'save_json',
     'load_json'
