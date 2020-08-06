@@ -8,6 +8,11 @@
 
 namespace riptide {
 
+// NOTE: this is available as std::add_const_t on C++14 enabled compilers
+// but we want to remain compatible with C++11 standard for now
+template<class T>
+using add_const_t = typename std::add_const<T>::type;
+
 /* Wraps a pointer that stores a contiguous two-dimensional array */
 template <typename T>
 class BlockTemplate {
@@ -37,9 +42,9 @@ public:
         return BlockTemplate(rowptr(h), rows - h, cols);
         }
     
-    BlockTemplate<std::add_const_t<T>> as_const() const
+    BlockTemplate<add_const_t<T>> as_const() const
         {
-        return BlockTemplate<std::add_const_t<T>>(data, rows, cols);
+        return BlockTemplate<add_const_t<T>>(data, rows, cols);
         }
 
 }; // class BlockTemplate
