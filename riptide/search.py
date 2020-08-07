@@ -64,7 +64,7 @@ def ffa_search(tseries, period_min=1.0, period_max=30.0, fpmin=8, bins_min=240, 
     ts : TimeSeries
         The de-reddened and normalised time series that was actually searched
     pgram : Periodogram
-        The output of the search, which contains among other thigs a 2D array 
+        The output of the search, which contains among other things a 2D array 
         representing S/N as a function of trial period and trial width.
     """
     ### Prepare data: deredden then normalise IN THAT ORDER

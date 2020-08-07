@@ -145,7 +145,8 @@ def load_json(fname):
 
 def save_json(fname, obj, **kwargs):
     """
-    Save riptide object (or list/dict/composition thereof) to file.
+    Save riptide object (or list/dict/composition thereof) to a JSON file. Any keyword arguments are 
+    passed to json.dumps().
     """
     with open(fname, 'w') as f:
         f.write(to_json(obj, **kwargs))

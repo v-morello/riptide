@@ -7,7 +7,25 @@ from .metadata import Metadata
 
 
 class Periodogram(object):
-    """ Stores the raw output of the FFA search of a time series. """
+    """ 
+    Stores the raw output of the FFA search of a time series. 
+
+    Attributes
+    ----------
+    widths : ndarray
+        Sequence of pulse width trials, in number of phase bins
+
+    periods : ndarray
+        Sequence of trial periods in seconds
+
+    foldbins : ndarray
+        Sequence with the same length as `periods`, containing the exact number of phase bins with
+        which the data were folded for each particular trial period.
+
+    snrs : ndarray
+        Two dimensional array with shape (num_periods, num_widths) containing the S/N as a function
+        of trial pulse width and period.
+    """
     def __init__(self, widths, periods, foldbins, snrs, metadata=None):
         self.widths = widths
         self.periods = periods
@@ -17,10 +35,12 @@ class Periodogram(object):
 
     @property
     def freqs(self):
+        """ Sequence of trial frequencies in Hz, in **decreasing** order """
         return 1.0 / self.periods
 
     @property
     def tobs(self):
+        """ Length in seconds of the TimeSeries that was searched """
         return self.metadata['tobs']
 
     def to_dict(self):
@@ -37,6 +57,15 @@ class Periodogram(object):
         return cls(items['widths'], items['periods'], items['foldbins'], items['snrs'], metadata=items['metadata'])
 
     def plot(self, iwidth=None):
+        """
+        Make a S/N versus trial period plot in the current matplotlib figure.
+
+        Parameters
+        ----------
+        iwidth : int or None, optional
+            Display only the data for this specific pulse width trial index. 
+            If None, for each trial period, plot the highest S/N across all trial pulse widths.
+        """
         if iwidth is None:
             snr = self.snrs.max(axis=1)
         else:
@@ -59,6 +88,10 @@ class Periodogram(object):
         plt.tight_layout()
 
     def display(self, iwidth=None, figsize=(20,5), dpi=100):
+        """
+        Display a plot S/N versus trial period. Creates a matplotlib figure, calls `plot()` and 
+        `pyplot.show()`.
+        """
         plt.figure(figsize=figsize, dpi=dpi)
         self.plot(iwidth=iwidth)
         plt.show()

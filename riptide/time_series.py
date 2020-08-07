@@ -14,24 +14,30 @@ from .timing import timing
 
 
 class TimeSeries(object):
-    """ Container for time series data to be searched with the FFA. """
-    def __init__(self, data, tsamp, metadata=None, copy=False):
-        """ Create a new TimeSeries object, a container passed to the FFA search
-        code. In most cases, classmethods should be used instead.
+    """ 
+    Container for time series data to be searched with the FFA.
+    **Use classmethods to create a new TimeSeries object.**
 
-        Parameters
-        ----------
-        data : array-like
-            Time series data to search.
-        tsamp : float
-            Sampling time of data in seconds.
-        metadata : Metadata or dict, optional
-            Optional Metadata object / dict describing the observation from which
-            the data originate
-        copy : bool, optional
-            If set to True, the resulting time series will hold a new copy of data,
-            otherwise it only holds a reference to it
-        """
+    Parameters
+    ----------
+    data : array_like
+        Time series data to search.
+    tsamp : float
+        Sampling time of data in seconds.
+    metadata : Metadata or dict, optional
+        Optional Metadata object / dict describing the observation from which
+        the data originate
+    copy : bool, optional
+        If set to True, the resulting time series will hold a new copy of data,
+        otherwise it only holds a reference to it
+
+    See Also
+    --------
+    TimeSeries.from_presto_inf : Load dedispersed data produced by PRESTO
+    TimeSeries.from_sigproc : Load dedispersed data produced by SIGPROC
+    TimeSeries.generate : Generate a noisy time series containing a fake pulsar signal
+    """
+    def __init__(self, data, tsamp, metadata=None, copy=False):
         if copy:
             self._data = np.asarray(data, dtype=np.float32).copy()
         else:
@@ -103,10 +109,10 @@ class TimeSeries(object):
             If set to True, perform the operation in-place, otherwise, a new
             TimeSeries object is returned
 
-        Returns:
-        --------
-        out: TimeSeries or None
-            The de-redended TimeSeries, if 'inplace' was set to False
+        Returns
+        -------
+        out : TimeSeries or None
+            The de-reddened TimeSeries, if 'inplace' was set to False
         """
         width_samples = int(round(width / self.tsamp))
         rmed = fast_running_median(self.data, width_samples, minpts)
@@ -163,7 +169,8 @@ class TimeSeries(object):
 
     @classmethod
     def generate(cls, length, tsamp, period, phi0=0.5, ducy=0.02, amplitude=10.0, stdnoise=1.0):
-        """ Generate a time series containing a periodic signal with a von Mises
+        """ 
+        Generate a time series containing a periodic signal with a von Mises
         pulse profile, and some background white noise (optional).
 
         Parameters
@@ -186,7 +193,6 @@ class TimeSeries(object):
             employed to measure S/N (here: von Mises with given duty cycle). 
             riptide employs boxcar filters in the search, which results in a slight
             S/N loss. See the reference paper for details. 
-
             A further degradation will be observed on bright signals, because
             they bias the estimation of the mean and standard deviation of the 
             noise in a blind search.
@@ -247,8 +253,8 @@ class TimeSeries(object):
         dtype : numpy data type, optional
             Data type of the file
 
-        Returns:
-        --------
+        Returns
+        -------
         out: TimeSeries
             TimeSeries object.
         """
