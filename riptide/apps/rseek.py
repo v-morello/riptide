@@ -4,7 +4,7 @@ import argparse
 import numpy as np
 import pandas
 
-from riptide import TimeSeries, ffa_search, find_peaks
+from riptide import __version__, TimeSeries, ffa_search, find_peaks
 from riptide.clustering import cluster1d
 
 
@@ -75,6 +75,9 @@ def get_parser():
         "fname", type=str, 
         help="Input file name"
     )
+    parser.add_argument(
+        '--version', action='version', version=__version__
+        )
     return parser
 
 
