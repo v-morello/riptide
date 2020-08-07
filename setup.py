@@ -120,7 +120,7 @@ install_requires = [
 
 
 setup_requires = [
-    'pybind11>=2.5.0',
+    'pybind11>=2.5.0'
 ]
 
 

@@ -28,8 +28,10 @@ help: ## Print this help message
 clean: ## Remove all python cache and build files
 	find . -type f -name "*.pyc" -delete
 	find . -type d -name "__pycache__" -delete
+	rm -rf .eggs/
 	rm -rf build/
 	rm -rf dist/
+	rm -rf tmp/
 	rm -f .coverage
 
 tests: ## Run the unit tests and print a coverage report
