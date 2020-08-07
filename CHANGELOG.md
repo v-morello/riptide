@@ -5,7 +5,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## 0.2.0 - UNRELEASED
+## 0.2.0 - 2020-08-10
+
+**This release contains significant improvements and additions but breaks compatibility with** `v0.1.x`.
 
 ### Changed
 - The `ffa_search()` function now only returns two values: the de-reddened `TimeSeries` that was actually searched, and a `Periodogram` object. The `ProcessingPlan` class has been removed.
@@ -22,8 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The pipeline now infers the observing min/max frequencies and the number of channels from the input data if possible. It is now recommended to leave the fields `fmin`, `fmax`, and `nchans` blank in the pipeline configuration file. It is necessary to specify these values only when the dedispersed time series data format (e.g. SIGPROC) does not contain that information.
 - In the pipeline configuration file, the minimum and maximum trial DM fields can also be left blank. If so, the minimum and/or maximum DMs of the search are determined by the DM trials available to process.
 - Added careful validation of the pipeline configuration file (using the `schema` library). The pipeline will raise an exception early in the processing if the configuration is invalid, with a helpful error message.
-
-
+- Can now run the unit test suite from python code or IPython by calling `riptide.test()`
 
 ### Removed
 - Removed `ProcessingPlan` class. It used to be passed to the old C function that was computing the periodogram. Its job is now directly performed by the new C++ function `periodogram()`.
