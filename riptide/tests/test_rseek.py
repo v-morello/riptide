@@ -4,7 +4,7 @@ import tempfile
 import numpy as np
 from pytest import raises
 from riptide.apps.rseek import get_parser, run_program
-from presto_generation import generate_data_presto
+from .presto_generation import generate_data_presto
 
 
 SIGNAL_PERIOD = 1.0

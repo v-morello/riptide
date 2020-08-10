@@ -5,6 +5,7 @@ concurrency = multiprocessing
 include =
     riptide/*
 omit =
+    riptide/tests/*
     riptide/_version.py
 
 [report]

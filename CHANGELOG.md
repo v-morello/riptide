@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The `ffa_search()` function now only returns two values: the de-reddened `TimeSeries` that was actually searched, and a `Periodogram` object. The `ProcessingPlan` class has been removed.
 - Clean rewrite of all kernels in C++. Python bindings for said kernels are now generated with `pybind11` which requires a lot less boilerplate code. Kernel functions can imported in python from the `riptide.libcpp` submodule.
 - The python function `get_snr()` has been renamed `boxcar_snr()`
+- Moved unit tests to `riptide/tests` so they can be packaged with the rest of the module
 
 
 ### Added

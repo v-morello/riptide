@@ -27,7 +27,7 @@ from .peak_detection import find_peaks
 ### Serialization
 from .serialization import save_json, load_json
 
-from .run_tests import test
+from .tests import test
 
 __all__ = [
     'TimeSeries',

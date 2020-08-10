@@ -9,7 +9,7 @@ import numpy as np
 from riptide import TimeSeries, load_json
 from riptide.pipeline.pipeline import get_parser, run_program
 from riptide.pipeline.config_validation import InvalidPipelineConfig, InvalidSearchRange
-from presto_generation import generate_data_presto
+from .presto_generation import generate_data_presto
 
 # NOTE 1:
 # pipeline uses multiprocessing, to get proper coverage stats we need:
