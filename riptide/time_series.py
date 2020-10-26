@@ -1,4 +1,5 @@
 import copy
+import warnings
 
 ##### Non-standard imports #####
 import numpy as np
@@ -292,7 +293,19 @@ class TimeSeries(object):
         # TODO: check that the number of samples read from the .inf file
         # matches what is actually in the .dat file, although the possibility of
         # 'data breaks' could make this difficult
-        return cls(inf.load_data(), tsamp=inf['tsamp'], metadata=metadata)
+        ts = cls(inf.load_data(), tsamp=inf['tsamp'], metadata=metadata)
+
+        em_band = ts.metadata['em_band']
+        if em_band in ('X-ray', 'Gamma'):
+            msg = (
+                f" You have loaded file {fname!r}, which contains data observed at"
+                f" a high-energy band {em_band!r}."
+                " riptide is NOT designed to process low photon count time series,"
+                " i.e. where the background noise statistics are non-Gaussian."
+                " Be VERY careful when interpreting any search outputs."
+            )
+            warnings.warn(msg, category=UserWarning)
+        return ts
 
     @classmethod
     @timing

@@ -2,7 +2,7 @@ import os
 import tempfile
 
 import numpy as np
-from pytest import raises
+from pytest import raises, warns
 from riptide import TimeSeries, save_json, load_json
 
 
@@ -13,14 +13,29 @@ FLOAT_ATOL = 1.0e-6
 # *** That's only what we test here ***
 # Anything else is handled by the Metadata class
 def test_presto():
-    fname = os.path.join(DATA_DIR, 'fake_presto.inf')
-    ts = TimeSeries.from_presto_inf(fname)
-    refdata = np.arange(16) # what is supposed to be in the data
+    def check_data(ts, refdata):
+        assert ts.nsamp == 16
+        assert ts.tsamp == 64e-6
+        assert ts.data.dtype == np.float32
+        assert np.allclose(ts.data, refdata)
 
-    assert ts.nsamp == 16
-    assert ts.tsamp == 64e-6
-    assert ts.data.dtype == np.float32
-    assert np.allclose(ts.data, refdata)
+    # The actual data expected to be in all test .dat files
+    refdata = np.arange(16)
+
+    fname = os.path.join(DATA_DIR, 'fake_presto_radio.inf')
+    ts = TimeSeries.from_presto_inf(fname)
+    check_data(ts, refdata)
+
+    fname = os.path.join(DATA_DIR, 'fake_presto_radio_breaks.inf')
+    ts = TimeSeries.from_presto_inf(fname)
+    check_data(ts, refdata)
+
+    # Calling TimeSeries.from_presto_inf() on X-ray and Gamma data should raise a warning
+    # about the noise stats being non-Gaussian
+    with warns(UserWarning):
+        fname = os.path.join(DATA_DIR, 'fake_presto_xray.inf')
+        ts = TimeSeries.from_presto_inf(fname)
+        check_data(ts, refdata)
 
 
 def test_sigproc():

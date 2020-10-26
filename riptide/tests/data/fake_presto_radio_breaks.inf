@@ -1,0 +1,25 @@
+ Data file name without suffix          =  fake_presto_radio_breaks
+ Telescope used                         =  Parkes
+ Instrument used                        =  Multibeam
+ Object being observed                  =  Pulsar
+ J2000 Right Ascension (hh:mm:ss.ssss)  =  00:00:01.0000
+ J2000 Declination     (dd:mm:ss.ssss)  =  -00:00:01.0000
+ Data observed by                       =  Kenji Oba
+ Epoch of observation (MJD)             =  59000.000000
+ Barycentered?           (1 yes, 0 no)  =  1
+ Number of bins in the time series      =  16
+ Width of each time series bin (sec)    =  6.4e-05
+ Any breaks in the data? (1 yes, 0 no)  =  1
+ On/Off bin pair #  1                   =  0          , 14
+ On/Off bin pair #  2                   =  15         , 15
+ Type of observation (EM band)          =  Radio
+ Beam diameter (arcsec)                 =  981
+ Dispersion measure (cm-3 pc)           =  42.42
+ Central freq of low channel (Mhz)      =  1182.1953125
+ Total bandwidth (Mhz)                  =  400
+ Number of channels                     =  1024
+ Channel bandwidth (Mhz)                =  0.390625
+ Data analyzed by                       =  Space Sheriff Gavan
+ Any additional notes:
+    Input filterbank samples have 2 bits.
+
