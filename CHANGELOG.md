@@ -5,10 +5,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## UNREALEASED
+## 0.2.1 - 2020-10-27
 
 ### Added
 - Limited support for X-ray and Gamma time series in PRESTO inf/dat format. `TimeSeries.from_presto_inf()` will now correctly read these. However, a warning will be issued when doing so, because `riptide` is currently designed to process data where the background noise is Gaussian. **Be aware that processing high-energy data may produce junk results.**
+
+### Fixed
+- Docstring of `TimeSeries.generate()` was missing the `period` parameter
 
 
 ## 0.2.0 - 2020-08-10

@@ -172,6 +172,8 @@ class TimeSeries(object):
             Length of the data in seconds.
         tsamp : float
             Sampling time in seconds.
+        period : float
+            Signal period in seconds
         phi0 : float, optional
             Initial pulse phase in number of periods
         ducy : float, optional
