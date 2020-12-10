@@ -145,7 +145,7 @@ void periodogram(
     std::unique_ptr<float[]> input_mem(new float[bufsize]);
     std::unique_ptr<float[]> ffabuf_mem(new float[bufsize]);
     std::unique_ptr<float[]> ffaout_mem(new float[bufsize]);
-    float* input = input_mem.get();
+    const float* input = input_mem.get();
     float* ffabuf = ffabuf_mem.get();
     float* ffaout = ffaout_mem.get();
 
@@ -157,7 +157,15 @@ void periodogram(
         const double period_max_samples = period_max / tau;
         const size_t n = downsampled_size(size, f); // current number of input samples
 
-        downsample(data, size, f, input);
+        // downsample() requires f > 1, but we still allow searching the data at their
+        // original resolution.
+        if (f == 1) {
+            input = data;
+        }            
+        else {
+            downsample(data, size, f, input_mem.get());
+            input = input_mem.get();
+        }
 
         // Min and max number of bins with which to FFA transform in order to
         // cover all trial periods between period_min and period_max.

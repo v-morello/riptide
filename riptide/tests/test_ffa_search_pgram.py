@@ -72,3 +72,25 @@ def test_ffa_search():
     with tempfile.NamedTemporaryFile(suffix='.png') as fobj:
         plt.savefig(fobj.name)
         plt.close(fig)
+
+
+def test_ffa_search_no_downsampling():
+    """
+    Having period_min = bins_min * tsamp used to raise an error in v0.2.1, where the code
+    complained about a downsampling factor not being > 1
+    """
+    length = 200.0
+    tsamp = 1e-3
+    period = 1.0
+    amplitude = 20.0
+    ts = TimeSeries.generate(length, tsamp, period, amplitude=amplitude)
+
+    bins_min = 800
+    bins_max = 1200
+    period_min = bins_min * tsamp
+    period_max = bins_max * tsamp
+    ffa_search(
+        ts, 
+        period_min=period_min, period_max=period_max, 
+        bins_min=bins_min, bins_max=bins_max
+    )
