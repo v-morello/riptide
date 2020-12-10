@@ -11,14 +11,14 @@
 namespace riptide {
 
 // Check that stdnoise > 0; throw std::invalid_argument if that is not the case
-bool check_stdnoise(float stdnoise)
+void check_stdnoise(float stdnoise)
     {
     if (!(stdnoise > 0))
         throw std::invalid_argument("stdnoise must be > 0");
     }
 
 // Check that all trial widths are > 0 and < bins; throw std::invalid_argument if that is not the case
-bool check_trial_widths(const size_t* widths, size_t num_widths, size_t bins)
+void check_trial_widths(const size_t* widths, size_t num_widths, size_t bins)
     {
     bool b = std::all_of(
         widths, 

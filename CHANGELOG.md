@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - It is now possible to specify period ranges so that the data are searched at their raw resolution (no downsampling). This corresponds to choosing period range parameters such that `period_min = bins_min x tsamp`. In this case, the code would previously raise an error saying that it could not downsample the data with a factor equal to 1, which was not the intended behaviour.
+- Fixed an issue where the C++ functions `check_trial_widths` and `check_stdnoise` would systematically throw an exception regardless of their input arguments. The issue was occurring with `gcc 8.3.0` on some systems, and appears to have been caused by said functions having a return type `bool` while they actually did not return anything. The functions have `void` return type now.
 
 
 ## 0.2.1 - 2020-10-27
