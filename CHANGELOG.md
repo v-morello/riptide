@@ -4,7 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 0.2.2 - UNRELEASED
+## 0.2.2 - 2021-07-24
+
+### Added
+- Added full documentation and readthedocs integration. The docs can be found [here](https://riptide-ffa.readthedocs.io).
+- Fixed typos in docstrings, extra docstrings for `Periodogram` class
+
+### Updated
+- Base Dockerfile on python:3.8, ensure all tests pass during the build
 
 ### Fixed
 - It is now possible to specify period ranges so that the data are searched at their raw resolution (no downsampling). This corresponds to choosing period range parameters such that `period_min = bins_min x tsamp`. In this case, the code would previously raise an error saying that it could not downsample the data with a factor equal to 1, which was not the intended behaviour.
