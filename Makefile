@@ -1,8 +1,8 @@
 .DEFAULT_GOAL := help
 PKG = riptide-ffa
 
-dist: ## Build source distribution
-	python setup.py sdist
+dist: ## Build source distribution, must have installed 'develop' extra dependencies
+	python -m build --sdist
 
 docker: ## Build riptide-ffa docker image
 	docker build --file docker/Dockerfile --tag ${PKG} .

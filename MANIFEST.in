@@ -1,21 +1,9 @@
-global-include *.py
 global-include *.hpp *.cpp
-global-include *.yaml *.yml
-global-include README.md
-
-# NOTE: shared library must be included, regardless of its OS-dependent extension
-# When the module is installed with 'pip install', it is built in a temporary 
-# directory and THEN copied to 'site-packages' 
-global-include *.so
-global-include *.dylib
-
 include riptide/tests/data/*.inf
 include riptide/tests/data/*.dat
 include riptide/tests/data/*.tim
-
-include Makefile
 include LICENSE
-
-prune .eggs
-prune .pytest_cache
-prune .vscode
+prune dist
+prune docker
+prune docs
+prune images

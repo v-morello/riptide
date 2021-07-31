@@ -1,8 +1,6 @@
 # NOTE: best to place this at the top in case we want to import
 # it in other files
-from ._version import get_versions
-__version__ = get_versions()['version']
-del get_versions
+from ._version import version as __version__
 
 ### Major classes
 from .time_series import TimeSeries

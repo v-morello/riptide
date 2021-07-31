@@ -4,7 +4,6 @@ branches:
   only:
     - master
     - dev
-    - testing
 
 env: MPLBACKEND=Agg
 
@@ -14,9 +13,15 @@ python:
   - "3.6"
   - "3.7"
   - "3.8"
+  - "3.9"
+
+before_install:
+  # Upgrade to pip>=20.3, which has a dependency resolver. Otherwise we might end up with a
+  # pre-installed obsolete version of numpy.
+  - pip install --upgrade pip
+  - pip install codecov
 
 install:
-  - pip install codecov
   - make install
 
 # Runs unit tests and generates coverage report
