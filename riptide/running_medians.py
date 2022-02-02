@@ -22,6 +22,9 @@ def running_median(x, width_samples):
 
     Notes
     -----
+    The C++ running median code internally pads both ends of the arrray with
+    the edge values.
+
     If the input array is not contiguous in memory, a temporary contiguous copy
     is made and passed to the C++ function (which only accepts C-contiguous
     arrays). Otherwise no performance hit is incurred.
@@ -46,7 +49,7 @@ def scrunch(data, factor):
 def fast_running_median(data, width_samples, min_points=101):
     """
     Compute an approximate running median of data over large window sizes. The
-    idea is to downsample the data (if necessary), calculate a running median
+    idea is to downsample the data (if necessary), call running_median() on it
     and linearly interpolate it back to the original resolution.
 
     Parameters

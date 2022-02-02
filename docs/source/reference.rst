@@ -52,3 +52,6 @@ Kernel Functions
 
 .. automodule:: riptide.libffa
    :members: ffa1, ffa2, ffafreq, ffaprd, boxcar_snr
+
+.. automodule:: riptide.running_medians
+   :members: running_median, fast_running_median
