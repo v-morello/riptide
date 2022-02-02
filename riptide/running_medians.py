@@ -39,8 +39,6 @@ def scrunch(data, factor):
     Reduce the resolution of data by adding consecutive elements together
     """
     factor = int(factor)
-    if factor <= 1:
-        return data
     N = (data.size // factor) * factor
     return data[:N].reshape(-1, factor).mean(axis=1)
 
@@ -48,8 +46,8 @@ def scrunch(data, factor):
 def fast_running_median(data, width_samples, min_points=101):
     """
     Compute an approximate running median of data over large window sizes. The
-    idea is to downsample the data, calculate a running median and linearly 
-    interpolate it back to the original resolution.
+    idea is to downsample the data (if necessary), calculate a running median
+    and linearly interpolate it back to the original resolution.
 
     Parameters
     ----------
@@ -63,8 +61,19 @@ def fast_running_median(data, width_samples, min_points=101):
         scrunched samples that must fit in the running median window.
         Lower values make the running median calculation less accurate but
         faster, due to allowing a higher scrunching factor.
+        NOTE: 'min_points' must be an odd number.
+
+    See Also
+    --------
+    running_median : an exact running median but slower for large window sizes
     """
+    if not (min_points % 2):
+        raise ValueError("min_points must be an odd number")
     scrunch_factor = int(max(1, width_samples / float(min_points)))
+
+    if (scrunch_factor == 1):
+        return running_median(data, width_samples)
+
     scrunched_data = scrunch(data, scrunch_factor)
     rmed_lores = running_median(scrunched_data, min_points)
     x_lores = np.arange(scrunched_data.size) * scrunch_factor + 0.5 * (scrunch_factor - 1)

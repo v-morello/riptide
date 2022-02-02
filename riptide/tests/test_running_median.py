@@ -1,7 +1,7 @@
 import numpy as np
 from pytest import raises
 
-from riptide import running_median
+from riptide import running_median, fast_running_median
 
 
 def running_median_naive(data, w):
@@ -49,3 +49,26 @@ def test_rmed_non_contiguous_data():
     for x in data.T:
         for w in widths:
             assert np.array_equal(running_median(x, w), running_median_naive(x, w))
+
+
+def test_fast_rmed_min_points_odd():
+    with raises(ValueError):  # min_points must be odd
+        fast_running_median(np.zeros(100), 3, min_points=10)
+
+
+def test_fast_rmed_noscrunch():
+    """
+    Test fast_running_median() with parameters such that no downsampling is
+    performed internally. In this case, the output should be identical to
+    running_median().
+    """
+    x = np.random.normal(size=100)
+    widths = [1, 3, 5, 7, 11, 25, 37]
+    wmax = max(widths)
+    min_points = wmax + (wmax % 2) + 1  # make sure result is odd and > wmax
+
+    for w in widths:
+        assert np.array_equal(
+            running_median(x, w),
+            fast_running_median(x, w, min_points=min_points)
+        )
