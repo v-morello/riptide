@@ -5,7 +5,7 @@ import warnings
 import numpy as np
 
 ##### Local imports #####
-from .running_median import fast_running_median
+from .running_medians import fast_running_median
 from .libffa import downsample, generate_signal
 from .reading import PrestoInf, SigprocHeader
 from .metadata import Metadata
