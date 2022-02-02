@@ -18,6 +18,17 @@
 namespace py = pybind11;
 
 
+template<typename T>
+void assert_c_contiguous(py::array_t<T> arr)
+{
+    const bool b = arr.flags() & py::detail::npy_api::NPY_ARRAY_C_CONTIGUOUS_;
+    if (!b)
+    {
+        throw std::invalid_argument("Input data must be contiguous in memory");
+    }
+}
+
+
 py::array_t<float> rollback(py::array_t<float> arr_x, size_t shift)
 {
     // Array proxies
@@ -181,6 +192,7 @@ std::tuple< py::array_t<double>, py::array_t<uint32_t>, py::array_t<float> > per
 
 py::array_t<float> running_median(py::array_t<float> arr_x, size_t width)
 {
+    assert_c_contiguous(arr_x);
     auto x = arr_x.unchecked<1>();
     const size_t size = x.size();
 
@@ -241,7 +253,9 @@ PYBIND11_MODULE(libcpp, m)
 
     m.def(
         "running_median", &running_median, py::arg("data"), py::arg("width"),
-        "Calculate the running median of a 1D array with a median window of 'width' elements."
+        "Calculate the running median of a 1D array with a median window of 'width' elements.\n"
+        "The data must be contiguous in memory, and width must be an odd number smaller than the input length.\n"
+        "Throws std::invalid argument if any of the above conditions are not met."
     );
 
 } // PYBIND11_MODULE
