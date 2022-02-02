@@ -1,7 +1,7 @@
 import numpy as np
 from pytest import raises
 
-from riptide.libcpp import running_median
+from riptide import running_median
 
 
 def running_median_naive(data, w):
@@ -37,3 +37,15 @@ def test_rmed():
     for w in widths:
         assert np.array_equal(running_median(x, w), running_median_naive(x, w))
 
+
+def test_rmed_non_contiguous_data():
+    # Test added after realizing that passing non-memory-contiguous array slices
+    # to running_median() returned incorrect results
+    # Thanks to Akshay Suresh for finding and reporting the problem
+    data = np.random.normal(size=300).reshape(100, 3).astype('float32')
+    widths = [1, 3, 5, 7, 11, 25, 37]
+
+    # Calculate running median of columns
+    for x in data.T:
+        for w in widths:
+            assert np.array_equal(running_median(x, w), running_median_naive(x, w))

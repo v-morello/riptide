@@ -10,6 +10,7 @@ from .candidate import Candidate
 
 ### Major functions
 from .search import ffa_search
+from .running_medians import running_median, fast_running_median
 
 from .libffa import (
     ffa1,
