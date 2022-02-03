@@ -31,10 +31,8 @@ void assert_c_contiguous(py::array_t<T> arr)
 
 py::array_t<float> rollback(py::array_t<float> arr_x, size_t shift)
 {
-    // Array proxies
     auto x = arr_x.unchecked<1>();
     const size_t size = x.size();
-
     auto arr_output = py::array_t<float, py::array::c_style>({size});
     riptide::rollback(x.data(0), size, shift, arr_output.mutable_data(0));
     return arr_output;
@@ -43,14 +41,14 @@ py::array_t<float> rollback(py::array_t<float> arr_x, size_t shift)
 
 py::array_t<float> fused_rollback_add(py::array_t<float> arr_x, py::array_t<float> arr_y, size_t shift)
 {
-    if (arr_x.size() != arr_x.size())
+    if (arr_x.size() != arr_y.size())
+    {
         throw std::invalid_argument("Arrays must have the same number of elements");
+    }
     
-    // Array proxies
     auto x = arr_x.unchecked<1>();
     auto y = arr_y.unchecked<1>();
     const size_t size = x.size();
-
     auto arr_output = py::array_t<float, py::array::c_style>({size});
     riptide::fused_rollback_add(x.data(0), y.data(0), size, shift, arr_output.mutable_data(0));
     return arr_output;
@@ -59,7 +57,6 @@ py::array_t<float> fused_rollback_add(py::array_t<float> arr_x, py::array_t<floa
 
 py::array_t<float> circular_prefix_sum(py::array_t<float> arr_x, size_t nsum)
 {
-    // Array proxies
     auto x = arr_x.unchecked<1>();
     const size_t size = x.size();
     auto arr_output = py::array_t<float, py::array::c_style>({nsum});
@@ -106,7 +103,6 @@ double benchmark_ffa2(size_t rows, size_t cols, size_t loops)
 
 py::array_t<float> snr1(py::array_t<float> arr_x, py::array_t<size_t> arr_widths, float stdnoise)
 {
-    // Array proxies
     auto x = arr_x.unchecked<1>();
     const size_t size = x.size();
 
@@ -125,7 +121,6 @@ py::array_t<float> snr1(py::array_t<float> arr_x, py::array_t<size_t> arr_widths
 
 py::array_t<float> snr2(py::array_t<float> arr_x, py::array_t<size_t> arr_widths, float stdnoise)
 {
-    // Array proxies
     auto x = arr_x.unchecked<2>();
     const size_t rows = x.shape(0);
     const size_t cols = x.shape(1);
