@@ -4,10 +4,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.4 - 2022-02-03
+
+This version fixes a bug where all the functions in the python bindings to the C++ code (exposed in `riptide.libcpp` on the Python side) assume that their input numpy arrays are contiguous in memory. In practice, passing a column slice of a two-dimensional `float32` array to `fast_running_median` was found to produce incorrect results: the rather than reading `data[:, col_index]`, the code read `data[0, col_index:col_index+num_cols]`. The issue would only trigger on the `float32` type, because otherwise an implicit copy (contiguous in memory) of the input was created.
+
+Thanks to Akshay Suresh for finding the bug and reporting it.
+
+### Fixed
+- All C++ functions in `python_bindings.cpp` now explicitly check that all input arrays are contiguous in memory, and throw `std::invalid_argument` otherwise (maps to `ValueError` in Python).
+- The size equality check of the input arrays for the `rollback` function in `python_bindings.cpp` is now correct
+
+### Added
+- `running_median` function that wraps its counterpart in the C++ library. It ensures that the array passed to it is contiguous in memory, and if not, makes a temporary contiguous copy before doing so.
+- Unit test that checks the correctness of `running_median` on non-contiguous data slices.
+- The `riptide` module now exposes the functions `running_median` and `fast_running_median`. Document how boundary conditions are handled in running median calculation. Added entries for both functions in the documentation, in Kernel Functions section.
+
+### Changed
+- Renamed the file `running_median.py` to `running_medians.py` to avoid name collisions.
+
 
 ## 0.2.3 - 2021-08-01
 
-## Updated
+### Updated
 - Packaging is now PEP 517/518 compliant
 - Using `setuptools-scm` instead of `versioneer` (which is not maintained anymore) for automatic versioning
 
