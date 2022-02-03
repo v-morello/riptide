@@ -24,13 +24,14 @@ void assert_c_contiguous(py::array_t<T> arr)
     const bool b = arr.flags() & py::detail::npy_api::NPY_ARRAY_C_CONTIGUOUS_;
     if (!b)
     {
-        throw std::invalid_argument("Input data must be contiguous in memory");
+        throw std::invalid_argument("Input numpy array must be contiguous in memory");
     }
 }
 
 
 py::array_t<float> rollback(py::array_t<float> arr_x, size_t shift)
 {
+    assert_c_contiguous(arr_x);
     auto x = arr_x.unchecked<1>();
     const size_t size = x.size();
     auto arr_output = py::array_t<float, py::array::c_style>({size});
@@ -45,6 +46,8 @@ py::array_t<float> fused_rollback_add(py::array_t<float> arr_x, py::array_t<floa
     {
         throw std::invalid_argument("Arrays must have the same number of elements");
     }
+    assert_c_contiguous(arr_x);
+    assert_c_contiguous(arr_y);
     
     auto x = arr_x.unchecked<1>();
     auto y = arr_y.unchecked<1>();
@@ -57,6 +60,7 @@ py::array_t<float> fused_rollback_add(py::array_t<float> arr_x, py::array_t<floa
 
 py::array_t<float> circular_prefix_sum(py::array_t<float> arr_x, size_t nsum)
 {
+    assert_c_contiguous(arr_x);
     auto x = arr_x.unchecked<1>();
     const size_t size = x.size();
     auto arr_output = py::array_t<float, py::array::c_style>({nsum});
@@ -67,6 +71,7 @@ py::array_t<float> circular_prefix_sum(py::array_t<float> arr_x, size_t nsum)
 
 py::array_t<float> ffa2(py::array_t<float> arr_input)
 {
+    assert_c_contiguous(arr_input);
     auto input = arr_input.unchecked<2>();
     const size_t rows = input.shape(0);
     const size_t cols = input.shape(1);
@@ -103,6 +108,8 @@ double benchmark_ffa2(size_t rows, size_t cols, size_t loops)
 
 py::array_t<float> snr1(py::array_t<float> arr_x, py::array_t<size_t> arr_widths, float stdnoise)
 {
+    assert_c_contiguous(arr_x);
+    assert_c_contiguous(arr_widths);
     auto x = arr_x.unchecked<1>();
     const size_t size = x.size();
 
@@ -121,6 +128,8 @@ py::array_t<float> snr1(py::array_t<float> arr_x, py::array_t<size_t> arr_widths
 
 py::array_t<float> snr2(py::array_t<float> arr_x, py::array_t<size_t> arr_widths, float stdnoise)
 {
+    assert_c_contiguous(arr_x);
+    assert_c_contiguous(arr_widths);
     auto x = arr_x.unchecked<2>();
     const size_t rows = x.shape(0);
     const size_t cols = x.shape(1);
@@ -141,6 +150,7 @@ py::array_t<float> snr2(py::array_t<float> arr_x, py::array_t<size_t> arr_widths
 
 py::array_t<float> downsample(py::array_t<float> arr_x, double f)
 {
+    assert_c_contiguous(arr_x);
     auto x = arr_x.unchecked<1>();
     const size_t size = x.size();
 
@@ -163,7 +173,9 @@ std::tuple< py::array_t<double>, py::array_t<uint32_t>, py::array_t<float> > per
     double period_max,
     size_t bins_min,
     size_t bins_max)
-    {
+{
+    assert_c_contiguous(arr_data);
+    assert_c_contiguous(arr_widths);
     auto data = arr_data.unchecked<1>();
     size_t size = data.size();
     auto widths = arr_widths.unchecked<1>();
@@ -182,7 +194,7 @@ std::tuple< py::array_t<double>, py::array_t<uint32_t>, py::array_t<float> > per
         );
 
     return std::make_tuple(periods, foldbins, snrs);
-    }
+}
 
 
 py::array_t<float> running_median(py::array_t<float> arr_x, size_t width)
