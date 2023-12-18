@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include <cstring> // memset()
 #include <chrono>
+#include <initializer_list>
 
 #include "kernels.hpp"
 #include "block.hpp"
@@ -16,6 +17,17 @@
 
 
 namespace py = pybind11;
+
+
+// Shorthand for allocating a new array to be returned as a numpy array to the
+// python caller. Also a sneaky workaround the fact that the constructor of
+// pybind11::array_t now expects an initializer list of ssize_t (signed),
+// rather than size_t (unsigned). This avoids a narrowing conversion error.
+// See: https://github.com/v-morello/riptide/issues/4
+template <typename T>
+py::array_t<T> new_cstyle_array(std::initializer_list<size_t> shape) {
+    return py::array_t<T, py::array::c_style>(shape);
+}
 
 
 template<typename T>
@@ -34,7 +46,7 @@ py::array_t<float> rollback(py::array_t<float> arr_x, size_t shift)
     assert_c_contiguous(arr_x);
     auto x = arr_x.unchecked<1>();
     const size_t size = x.size();
-    auto arr_output = py::array_t<float, py::array::c_style>({size});
+    auto arr_output = new_cstyle_array<float>({size});
     riptide::rollback(x.data(0), size, shift, arr_output.mutable_data(0));
     return arr_output;
 }
@@ -52,7 +64,7 @@ py::array_t<float> fused_rollback_add(py::array_t<float> arr_x, py::array_t<floa
     auto x = arr_x.unchecked<1>();
     auto y = arr_y.unchecked<1>();
     const size_t size = x.size();
-    auto arr_output = py::array_t<float, py::array::c_style>({size});
+    auto arr_output = new_cstyle_array<float>({size});
     riptide::fused_rollback_add(x.data(0), y.data(0), size, shift, arr_output.mutable_data(0));
     return arr_output;
 }
@@ -63,7 +75,7 @@ py::array_t<float> circular_prefix_sum(py::array_t<float> arr_x, size_t nsum)
     assert_c_contiguous(arr_x);
     auto x = arr_x.unchecked<1>();
     const size_t size = x.size();
-    auto arr_output = py::array_t<float, py::array::c_style>({nsum});
+    auto arr_output = new_cstyle_array<float>({size});
     riptide::circular_prefix_sum(x.data(0), size, nsum, arr_output.mutable_data(0));
     return arr_output;
 }
@@ -77,7 +89,7 @@ py::array_t<float> ffa2(py::array_t<float> arr_input)
     const size_t cols = input.shape(1);
 
     std::unique_ptr<float[]> temp(new float[rows * cols]);
-    auto output = py::array_t<float, py::array::c_style>({rows, cols});
+    auto output = new_cstyle_array<float>({rows, cols});
 
     riptide::transform(input.data(0, 0), rows, cols, temp.get(), output.mutable_data(0, 0));
     return output;
@@ -119,7 +131,7 @@ py::array_t<float> snr1(py::array_t<float> arr_x, py::array_t<size_t> arr_widths
     riptide::check_stdnoise(stdnoise);
     riptide::check_trial_widths(widths.data(0), num_widths, size); 
 
-    auto arr_output = py::array_t<float, py::array::c_style>({num_widths});
+    auto arr_output = new_cstyle_array<float>({num_widths});
 
     riptide::snr1(x.data(0), size, widths.data(0), num_widths, stdnoise, arr_output.mutable_data(0));
     return arr_output;
@@ -140,7 +152,7 @@ py::array_t<float> snr2(py::array_t<float> arr_x, py::array_t<size_t> arr_widths
     riptide::check_stdnoise(stdnoise);
     riptide::check_trial_widths(widths.data(0), num_widths, cols); 
 
-    auto arr_output = py::array_t<float, py::array::c_style>({rows, num_widths});
+    auto arr_output = new_cstyle_array<float>({rows, num_widths});
     auto block = riptide::ConstBlock(x.data(0, 0), rows, cols);
 
     riptide::snr2(block, widths.data(0), num_widths, stdnoise, arr_output.mutable_data(0, 0));
@@ -158,7 +170,7 @@ py::array_t<float> downsample(py::array_t<float> arr_x, double f)
 
     // Allocate output array
     const size_t outsize = riptide::downsampled_size(size, f);
-    auto output = py::array_t<float, py::array::c_style>({outsize});
+    auto output = new_cstyle_array<float>({outsize});
 
     riptide::downsample(x.data(0), size, f, output.mutable_data(0));
     return output;
@@ -183,9 +195,9 @@ std::tuple< py::array_t<double>, py::array_t<uint32_t>, py::array_t<float> > per
 
     size_t length = riptide::periodogram_length(size, tsamp, period_min, period_max, bins_min, bins_max);
 
-    auto periods = py::array_t<double, py::array::c_style>({length});
-    auto foldbins = py::array_t<uint32_t, py::array::c_style>({length});
-    auto snrs = py::array_t<float, py::array::c_style>({length, num_widths});
+    auto periods = new_cstyle_array<double>({length});
+    auto foldbins = new_cstyle_array<uint32_t>({length});
+    auto snrs = new_cstyle_array<float>({length, num_widths});
 
     riptide::periodogram(
         data.data(0), size, tsamp, widths.data(0), num_widths, 
@@ -203,7 +215,7 @@ py::array_t<float> running_median(py::array_t<float> arr_x, size_t width)
     auto x = arr_x.unchecked<1>();
     const size_t size = x.size();
 
-    auto output = py::array_t<float, py::array::c_style>({size});
+    auto output = new_cstyle_array<float>({size});
 
     riptide::running_median<float>(x.data(0), size, width, output.mutable_data(0));
     return output;
