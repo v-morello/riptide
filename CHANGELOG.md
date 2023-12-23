@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.5 - 2023-12-23
+
+This version fixes an installation error on recent OSX versions, and a segmentation fault that triggers in some edge cases.
+
+Thanks to Francesco Coti Zelati for [reporting the original issue](https://github.com/v-morello/riptide/issues/4) that led to both fixes.
+
+### Fixed
+
+- Fixed a serious bug where some intermediate output arrays were unexpectedly allocated with a size one element smaller than expected, causing segmentation faults. This was found to be a side effect of the compilation flag `-freciprocal-math`. See issue [#4](https://github.com/v-morello/riptide/issues/4) for a detailed explanation. The set of compilation flags for the C++ extensions has been reviewed and adjusted.
+- The C++ extensions can now be built with the C++17 standard enabled without throwing any errors or warnings. Recent `clang` versions (the default compiler on OSX) would throw a number of narrowing conversion errors, which would in turn make the installation of riptide fail with a cryptic error message. 
+
+
 ## 0.2.4 - 2022-02-03
 
 This version fixes a bug where all the functions in the python bindings to the C++ code (exposed in `riptide.libcpp` on the Python side) assume that their input numpy arrays are contiguous in memory. In practice, passing a column slice of a two-dimensional `float32` array to `fast_running_median` was found to produce incorrect results: the rather than reading `data[:, col_index]`, the code read `data[0, col_index:col_index+num_cols]`. The issue would only trigger on the `float32` type, because otherwise an implicit copy (contiguous in memory) of the input was created.
