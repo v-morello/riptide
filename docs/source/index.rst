@@ -5,8 +5,7 @@ riptide: Finding pulsars with the Fast Folding Algorithm (FFA)
    :target: https://arxiv.org/abs/2004.03701
    :alt: arXiv
   
-.. image:: https://travis-ci.com/v-morello/riptide.svg?branch=master
-   :target: https://travis-ci.com/v-morello/riptide
+.. image:: https://github.com/v-morello/riptide/actions/workflows/CI.yml/badge.svg?branch=master
    :alt: Build status
   
 .. image:: https://codecov.io/gh/v-morello/riptide/branch/master/graph/badge.svg
