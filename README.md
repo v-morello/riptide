@@ -1,4 +1,4 @@
-[![arXiv](http://img.shields.io/badge/astro.ph-2004.03701-B31B1B.svg)](https://arxiv.org/abs/2004.03701)   ![License](https://img.shields.io/badge/License-MIT-green.svg)   ![Python versions](https://img.shields.io/pypi/pyversions/riptide-ffa.svg)   [![Build Status](https://travis-ci.com/v-morello/riptide.svg?branch=master)](https://travis-ci.com/v-morello/riptide)   [![codecov](https://codecov.io/gh/v-morello/riptide/branch/master/graph/badge.svg)](https://codecov.io/gh/v-morello/riptide)
+[![arXiv](http://img.shields.io/badge/astro.ph-2004.03701-B31B1B.svg)](https://arxiv.org/abs/2004.03701)   ![License](https://img.shields.io/badge/License-MIT-green.svg)   ![Python versions](https://img.shields.io/pypi/pyversions/riptide-ffa.svg)  ![CI status](https://github.com/v-morello/riptide/actions/workflows/CI.yml/badge.svg?branch=master)   [![codecov](https://codecov.io/gh/v-morello/riptide/branch/master/graph/badge.svg)](https://codecov.io/gh/v-morello/riptide)
 
 # riptide
 
