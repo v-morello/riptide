@@ -4,13 +4,10 @@ PKG = riptide-ffa
 dist: ## Build source distribution, must have installed 'develop' extra dependencies
 	python -m build --sdist
 
-docker: ## Build riptide-ffa docker image
-	docker build --file docker/Dockerfile --tag ${PKG} .
-
 # NOTE: -e installs in "Development Mode"
 # See: https://packaging.python.org/tutorials/installing-packages/
-install: ## Install the package in development mode
-	pip install -e .
+install: ## Install the package in editable mode with dev dependencies
+	pip install -e .[dev]
 
 # NOTE: remove the .egg-info directory
 uninstall: ## Uninstall the package
@@ -37,4 +34,4 @@ clean: ## Remove all python cache and build files
 tests: ## Run the unit tests and print a coverage report
 	pytest --cov --verbose --cov-report term-missing riptide/tests
 
-.PHONY: dist docker install uninstall help clean upload upload_test tests
+.PHONY: dist install uninstall help clean tests

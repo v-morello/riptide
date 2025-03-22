@@ -1,11 +1,60 @@
 [build-system]
-requires = [
-    "setuptools>=42",
-    "wheel",
-    "setuptools_scm[toml]>=3.4",
-    "pybind11>=2.6.0",
-]
 build-backend = "setuptools.build_meta"
+requires = [
+  "setuptools>=42",
+  "wheel",
+  "setuptools_scm[toml]>=3.4",
+  "pybind11>=2.6.0",
+]
+
+[project]
+name = "riptide-ffa"
+authors = [{name = "Vincent Morello", email = "vmorello@gmail.com"}]
+description = "Pulsar searching with the Fast Folding Algorithm (FFA)"
+dynamic = ["version"]
+license = {file = "LICENSE"}
+maintainers = [{name = "Vincent Morello", email = "vmorello@gmail.com"}]
+readme = "README.md"
+requires-python = ">=3.6"
+
+classifiers = [
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: C",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: Unix",
+  "Operating System :: MacOS :: MacOS X",
+  "Topic :: Scientific/Engineering :: Astronomy",
+]
+
+dependencies = [
+  "astropy",
+  "pandas",
+  "schema",
+  "pyyaml",
+  "threadpoolctl",
+  "pytest",
+  "pytest-cov",
+  "matplotlib",
+  "numpy",
+]
+
+[project.optional-dependencies]
+dev = [
+  "build",
+  "twine",
+]
+
+[project.scripts]
+rffa = "riptide.pipeline.pipeline:main"
+rseek = "riptide.apps.rseek:main"
+
+[project.urls]
+homepage = "https://github.com/vmorello/riptide"
+documentation = "https://riptide-ffa.readthedocs.io"
 
 [tool.setuptools_scm]
 write_to = "riptide/_version.py"
