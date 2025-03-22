@@ -17,10 +17,10 @@ If using ``riptide`` contributes to a project that leads to a scientific publica
 
 The article covers the topic of the FFA's sensitivity in theory, here is a practical example on a faint source. Below is an L-band observation of [PSR J1932-3655](https://www.atnf.csiro.au/people/joh414/ppdata/1932-3655.html) from the [SUPERB survey](https://arxiv.org/abs/1706.04459), significantly offset from the true position of the source. The first plot was obtained by folding the observation using the known ephemeris of the pulsar with [PSRCHIVE](http://psrchive.sourceforge.net/). This is one of the faintest known pulsar instances identifiable in the survey.
 
-![psrchive_plot](images/J1932-3655_psrchive_small.png "PSRCHIVE direct ephemeris folding")  
+![psrchive_plot](docs/source/images/J1932-3655_psrchive_small.png "PSRCHIVE direct ephemeris folding")  
 
 And below is a blind detection of the pulsar, running `riptide` on the same observation:  
-![riptide_plot](images/J1932-3655_blind_detection.png "riptide blind detection")
+![riptide_plot](docs/source/images/J1932-3655_blind_detection.png "riptide blind detection")
 
 
 ## Documentation
