@@ -2,11 +2,8 @@
 branch = True
 parallel = True
 concurrency = multiprocessing
-include =
-    riptide/*
 omit =
-    riptide/tests/*
-    riptide/_version.py
+    src/riptide/_version.py
 
 [report]
 exclude_lines =

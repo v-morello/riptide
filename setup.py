@@ -11,12 +11,12 @@ from pybind11.setup_helpers import Pybind11Extension, build_ext
 # end of these arrays).
 # The flags below provide the same speedups as -ffast-math, without the risks.
 SAFE_FAST_MATH_FLAGS = [
-    '-fassociative-math',
-    '-fno-math-errno',
-    '-ffinite-math-only',
-    '-fno-rounding-math',
-    '-fno-signed-zeros',
-    '-fno-trapping-math',
+    "-fassociative-math",
+    "-fno-math-errno",
+    "-ffinite-math-only",
+    "-fno-rounding-math",
+    "-fno-signed-zeros",
+    "-fno-trapping-math",
 ]
 
 # The main interface is through Pybind11Extension.
@@ -29,9 +29,9 @@ SAFE_FAST_MATH_FLAGS = [
 #   reproducible builds (https://github.com/pybind/python_example/pull/53)
 ext_modules = [
     Pybind11Extension(
-        'riptide.libcpp',
-        sorted(['riptide/cpp/python_bindings.cpp']),
-        extra_compile_args=['-O3', '-march=native'] + SAFE_FAST_MATH_FLAGS
+        "riptide.libcpp",
+        sorted(["src/riptide/cpp/python_bindings.cpp"]),
+        extra_compile_args=["-O3", "-march=native"] + SAFE_FAST_MATH_FLAGS,
     ),
 ]
 
