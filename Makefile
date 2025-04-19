@@ -32,6 +32,6 @@ clean: ## Remove all python cache and build files
 	rm -f .coverage
 
 tests: ## Run the unit tests and print a coverage report
-	pytest --cov --verbose --cov-report term-missing riptide/tests
+	pytest --cov --verbose --cov-report term-missing tests
 
 .PHONY: dist install uninstall help clean tests
