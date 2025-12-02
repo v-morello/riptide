@@ -232,7 +232,17 @@ def plot_subints(X, T):
     T : float
         Integration time in seconds
     """
-    __, nbins = X.shape
+    __, nbins = X.shape 
+    # Peak-to-Peak normalization
+    mins = X.min(axis=1).reshape(-1, 1)
+    maxs = X.max(axis=1).reshape(-1, 1)
+    ranges = maxs - mins
+    
+    # Avoid division by zero (flat subints)
+    ranges[ranges == 0] = 1
+
+    # Normalize each subint row to [0, 1]
+    X = (X - mins) / ranges
 
     X = np.hstack((X, X[:, : nbins // 2]))
     __, nbins_ext = X.shape
