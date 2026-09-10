@@ -28,13 +28,17 @@ Variance of background Gaussian noise after downsampling a time series with 'num
 */
 double downsampled_variance(size_t num_samples, double f)
     {
-    const double k = floor(f);
-    const double r = f - k;
+    const double k = round(f);
+    const double r = std::abs(f - k);
     const double x = downsampled_size(num_samples, f) * r;
     if (x > 1)
         return f - 1.0 / 3.0;
+    // This is the case where the downsampling factor is close to an integer,
+    // meaning that the extremely small "tail" of the downsampling window
+    // collects a fraction of a sample on its right/left edge that progressively
+    // increases/decreases from 0 to x / x to 0.
     else
-        return pow(k-1, 2) + 2.0/3.0 * pow(x, 2) - x + 1.0;
+        return k - x + 2.0 / 3.0 * x * x;
     }
 
 
