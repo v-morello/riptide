@@ -44,4 +44,10 @@ help: ## Print this help message
 test: ## Run the unit tests and print a coverage report
 	pytest --cov=src/ --cov-report=term-missing
 
-.PHONY: check-sdist docs install lint help test
+ci: ## Run all checks for continuous integration
+	$(MAKE) docs
+	$(MAKE) lint
+	$(MAKE) test
+	$(MAKE) check-sdist
+
+.PHONY: check-sdist docs install lint help test ci
