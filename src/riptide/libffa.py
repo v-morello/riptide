@@ -214,7 +214,6 @@ def boxcar_snr(data, widths, stdnoise=1.0):
 
     # Input to C++ function must be 2D
     cppinput = data.reshape(-1, b).astype(np.float32)
-    cppinput.shape[0]
     snr = libcpp.snr2(cppinput, widths, stdnoise)
     shape = list(data.shape[:-1]) + [widths.size]
     return snr.reshape(shape)
