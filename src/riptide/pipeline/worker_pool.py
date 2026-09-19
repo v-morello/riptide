@@ -37,15 +37,8 @@ class WorkerPool:
 
     def process_fname_list(self, fnames):
         """Process a list of filenames in parallel."""
-        pool = multiprocessing.Pool(processes=self.processes)
-        # results is a list of lists of Detections
-        results = pool.map(self.process_fname, fnames)
-        # NOTE: don't forget to close the pool to free up RAM
-        # NOTE: and don't forget to join, otherwise the coverage module
-        # does not properly report coverage for sub-processes spawned by
-        # the pool
-        pool.close()
-        pool.join()
+        with multiprocessing.Pool(processes=self.processes) as pool:
+            results = pool.map(self.process_fname, fnames)
         return [det for dlist in results for det in dlist]
 
     def process_fname(self, fname):

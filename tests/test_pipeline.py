@@ -12,28 +12,6 @@ from riptide.pipeline.pipeline import get_parser, run_program
 
 from .presto_generation import generate_data_presto
 
-# NOTE 1:
-# pipeline uses multiprocessing, to get proper coverage stats we need:
-# * A .coveragerc file with the following options:
-# [run]
-# branch = True
-# parallel = True
-# concurrency = multiprocessing
-# * Ensure that all instances of multiprocessing.Pool() have been closed and
-#   joined, as follows:
-# >> pool.close()
-# >> pool.join()
-
-# NOTE 2:
-# To print logging output in full, call pytest like this:
-# pytest --capture=no -o log_cli=True <FILES>
-
-# NOTE 3:
-# To get coverage stats, run this in the base riptide directory:
-# coverage run -m pytest && coverage combine && coverage report -m --omit
-# src/riptide/_version.py
-
-
 SIGNAL_PERIOD = 1.0
 DATA_TOBS = 128.0
 DATA_TSAMP = 256e-6

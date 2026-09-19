@@ -399,16 +399,10 @@ class Pipeline:
 
         ### Candidates and candidate plots
         log.info("Writing candidate files")
-        pool = multiprocessing.Pool(processes=self.config["processes"])
-        writer = CandidateWriter(outdir, plot=self.config["plot_candidates"])
-        arglist = [(rank, cand) for rank, cand in enumerate(self.candidates)]
-        pool.map(writer, arglist)
-
-        # NOTE: and don't forget to close/join, otherwise the coverage module
-        # does not properly report coverage for sub-processes spawned by
-        # the pool
-        pool.close()
-        pool.join()
+        with multiprocessing.Pool(processes=self.config["processes"]) as pool:
+            writer = CandidateWriter(outdir, plot=self.config["plot_candidates"])
+            arglist = [(rank, cand) for rank, cand in enumerate(self.candidates)]
+            pool.map(writer, arglist)
         log.info("Data products written")
 
     @timing
