@@ -1,9 +1,0 @@
-global-include *.hpp *.cpp
-include riptide/tests/data/*.inf
-include riptide/tests/data/*.dat
-include riptide/tests/data/*.tim
-include LICENSE
-prune dist
-prune docker
-prune docs
-prune images

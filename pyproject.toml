@@ -1,18 +1,18 @@
 [build-system]
-build-backend = "setuptools.build_meta"
 requires = [
-  "setuptools>=42",
-  "wheel",
-  "setuptools_scm[toml]>=3.4",
-  "pybind11>=2.6.0",
+  "setuptools>=77.0.3",
+  "setuptools-scm[toml]>=8.0",
+  "pybind11>=2.10",
 ]
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "riptide-ffa"
 authors = [{name = "Vincent Morello", email = "vmorello@gmail.com"}]
 description = "Pulsar searching with the Fast Folding Algorithm (FFA)"
 dynamic = ["version"]
-license = {file = "LICENSE"}
+license = "MIT"
+license-files = ["LICENSE"]
 maintainers = [{name = "Vincent Morello", email = "vmorello@gmail.com"}]
 readme = "README.md"
 requires-python = ">=3.9"
@@ -23,29 +23,28 @@ classifiers = [
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
-  "Programming Language :: C",
-  "License :: OSI Approved :: MIT License",
+  "Programming Language :: C++",
   "Operating System :: Unix",
   "Operating System :: MacOS :: MacOS X",
   "Topic :: Scientific/Engineering :: Astronomy",
 ]
 
 dependencies = [
-  "astropy",
-  "pandas",
-  "schema",
-  "pyyaml",
-  "threadpoolctl",
-  "pytest",
-  "pytest-cov",
-  "matplotlib",
-  "numpy",
+  "astropy>=5.0",
+  "matplotlib>=3.6",
+  "numpy>=1.23",
+  "pandas>=1.5",
+  "pyyaml>=6.0",
+  "schema>=0.7.5",
+  "threadpoolctl>=3.1",
 ]
 
 [project.optional-dependencies]
 dev = [
-  "build",
-  "twine",
+  "build>=1.0",
+  "pytest>=7.0",
+  "pytest-cov>=4.0",
+  "twine>=4.0",
 ]
 
 [project.scripts]
@@ -53,8 +52,14 @@ rffa = "riptide.pipeline.pipeline:main"
 rseek = "riptide.apps.rseek:main"
 
 [project.urls]
-homepage = "https://github.com/vmorello/riptide"
-documentation = "https://riptide-ffa.readthedocs.io"
+Homepage = "https://github.com/v-morello/riptide"
+Documentation = "https://riptide-ffa.readthedocs.io"
+Repository = "https://github.com/v-morello/riptide"
+Issues = "https://github.com/v-morello/riptide/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.setuptools_scm]
-write_to = "src/riptide/_version.py"
+version_file = "src/riptide/_version.py"
+write_to_source = true
