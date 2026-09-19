@@ -27,31 +27,16 @@ log = logging.getLogger("riptide.pipeline")
 DEFAULT_OUTDIR = os.getcwd()
 
 
-class CandidateWriter:
-    """
-    Write candidates with multiple processes.
-
-    This func-like object is used in conjunction with multiprocessing.Pool.
-    """
-
-    def __init__(self, outdir, plot=False):
-        self.outdir = os.path.realpath(outdir)
-        self.plot = plot
-
-    def __call__(self, arg):
-        """
-        Save one candidate and its optional plot.
-
-        Arg is a tuple (rank, candidate) with types (int, Candidate).
-        """
-        rank, cand = arg
-        fname = os.path.join(self.outdir, f"candidate_{rank:04d}.json")
-        log.debug(f"Saving to {fname}: {cand}")
-        save_json(fname, cand)
-        if self.plot:
-            fname = os.path.join(self.outdir, f"candidate_{rank:04d}.png")
-            log.debug(f"Saving plot to {fname}")
-            cand.savefig(fname)
+def write_candidate(outdir: str, plot: bool, arg: tuple[int, Candidate]):
+    """Save one candidate and its optional plot."""
+    rank, cand = arg
+    fname = os.path.join(outdir, f"candidate_{rank:04d}.json")
+    log.debug(f"Saving to {fname}: {cand}")
+    save_json(fname, cand)
+    if plot:
+        fname = os.path.join(outdir, f"candidate_{rank:04d}.png")
+        log.debug(f"Saving plot to {fname}")
+        cand.savefig(fname)
 
 
 class Pipeline:
@@ -400,9 +385,12 @@ class Pipeline:
         ### Candidates and candidate plots
         log.info("Writing candidate files")
         with multiprocessing.Pool(processes=self.config["processes"]) as pool:
-            writer = CandidateWriter(outdir, plot=self.config["plot_candidates"])
-            arglist = [(rank, cand) for rank, cand in enumerate(self.candidates)]
-            pool.map(writer, arglist)
+            writer = functools.partial(
+                write_candidate,
+                os.path.realpath(outdir),
+                self.config["plot_candidates"],
+            )
+            pool.map(writer, enumerate(self.candidates))
         log.info("Data products written")
 
     @timing
