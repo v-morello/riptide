@@ -28,6 +28,9 @@ jobs:
       - name: Test
         run: |
           make test
+      - name: Check source distribution
+        if: matrix.python-version == '3.12'
+        run: make check-sdist
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
         env:
