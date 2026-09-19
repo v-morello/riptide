@@ -1,4 +1,5 @@
 import argparse
+import functools
 import itertools
 import json
 import logging
@@ -438,11 +439,6 @@ class Pipeline:
 ###############################################################################
 
 
-def help_formatter(prog):
-    """Create the command-line help formatter."""
-    return argparse.ArgumentDefaultsHelpFormatter(prog, max_help_position=16)
-
-
 def get_parser():
     """Create the command-line argument parser."""
 
@@ -454,7 +450,9 @@ def get_parser():
         return path
 
     parser = argparse.ArgumentParser(
-        formatter_class=help_formatter,
+        formatter_class=functools.partial(
+            argparse.ArgumentDefaultsHelpFormatter, max_help_position=16
+        ),
         description=(
             "Search multiple DM trials with the riptide end-to-end FFA pipeline."
         ),

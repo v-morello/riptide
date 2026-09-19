@@ -1,4 +1,5 @@
 import argparse
+import functools
 import logging
 
 import numpy as np
@@ -10,15 +11,12 @@ from riptide.clustering import cluster1d
 log = logging.getLogger("riptide.rseek")
 
 
-def help_formatter(prog):
-    """Create the command-line help formatter."""
-    return argparse.ArgumentDefaultsHelpFormatter(prog, max_help_position=16)
-
-
 def get_parser():
     """Create the command-line argument parser."""
     parser = argparse.ArgumentParser(
-        formatter_class=help_formatter,
+        formatter_class=functools.partial(
+            argparse.ArgumentDefaultsHelpFormatter, max_help_position=16
+        ),
         description=(
             "FFA search a single time series and print a table of parameters "
             "of all significant peaks found."
