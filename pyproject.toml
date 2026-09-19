@@ -63,3 +63,18 @@ where = ["src"]
 [tool.setuptools_scm]
 version_file = "src/riptide/_version.py"
 write_to_source = true
+
+[tool.pytest]
+addopts = ["-vv"]
+
+[tool.coverage.run]
+branch = true
+parallel = true
+concurrency = ["multiprocessing"]
+omit = ["src/riptide/_version.py"]
+
+[tool.coverage.report]
+exclude_lines = [
+  "if __name__ == .__main__.:",
+  "def main",
+]
