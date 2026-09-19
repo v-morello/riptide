@@ -1,5 +1,4 @@
 import logging
-from collections import namedtuple
 
 import astropy.units as uu
 import matplotlib.pyplot as plt
@@ -8,7 +7,6 @@ from astropy.time import Time
 from matplotlib.gridspec import GridSpec
 
 log = logging.getLogger("riptide.candidate")
-TABLE_COLUMNS = 3
 
 
 class Candidate:
@@ -161,30 +159,6 @@ class Candidate:
         return str(self)
 
 
-TableEntryBase = namedtuple("TableEntry", ["name", "value", "formatter", "unit"])
-
-
-class TableEntry(TableEntryBase):
-    """Represent one row in a candidate summary table."""
-
-    def plot(self, X, y, **kwargs):
-        """
-        Plot the table entry at the given coordinates.
-
-        Parameters
-        ----------
-        X : list
-            list of X coordinates for each column
-        y : float
-            Y coordinate of the line.
-        """
-        assert len(X) == TABLE_COLUMNS
-        fmt = f"{{:{self.formatter}}}"
-        plt.text(X[0], y, self.name, **kwargs)
-        plt.text(X[1], y, fmt.format(self.value), ha="right", **kwargs)
-        plt.text(X[2], y, self.unit, **kwargs)
-
-
 def plot_table(params, tsmeta):
     """Plot candidate parameters as a table."""
     plt.axis("off")
@@ -197,32 +171,30 @@ def plot_table(params, tsmeta):
     # date/time standard
     obsdate = Time(tsmeta["mjd"], format="mjd", scale="utc", precision=0)
 
-    blank = TableEntry(name="", value="", formatter="s", unit="")
-
     entries = [
-        TableEntry(
-            name="Period", value=params["period"] * 1000.0, formatter=".6f", unit="ms"
-        ),
-        TableEntry(name="DM", value=params["dm"], formatter=".2f", unit="pc cm$^{-3}$"),
-        TableEntry(name="Width", value=params["width"], formatter="d", unit="bins"),
-        TableEntry(
-            name="Duty cycle", value=params["ducy"] * 100.0, formatter=".2f", unit="%"
-        ),
-        TableEntry(name="S/N", value=params["snr"], formatter=".1f", unit=""),
-        blank,
-        TableEntry(name="Source", value=tsmeta["source_name"], formatter="s", unit=""),
-        TableEntry(name="RA", value=ra_hms, formatter="s", unit=""),
-        TableEntry(name="Dec", value=dec_hms, formatter="s", unit=""),
-        TableEntry(name="MJD", value=obsdate.mjd, formatter=".6f", unit=""),
-        TableEntry(name="UTC", value=obsdate.iso, formatter="s", unit=""),
+        ("", "", "s", ""),
+        ("Period", params["period"] * 1000.0, ".6f", "ms"),
+        ("DM", params["dm"], ".2f", "pc cm$^{-3}$"),
+        ("Width", params["width"], "d", "bins"),
+        ("Duty cycle", params["ducy"] * 100.0, ".2f", "%"),
+        ("S/N", params["snr"], ".1f", ""),
+        ("Source", tsmeta["source_name"], "s", ""),
+        ("RA", ra_hms, "s", ""),
+        ("Dec", dec_hms, "s", ""),
+        ("MJD", obsdate.mjd, ".6f", ""),
+        ("UTC", obsdate.iso, "s", ""),
     ]
 
     y0 = 0.94  # Y coordinate of first line
     dy = 0.105  # line height
     X = [0.0, 0.80, 0.84]  # Coordinate of columns name, value, unit
 
-    for ii, entry in enumerate(entries):
-        entry.plot(X, y0 - ii * dy, family="monospace")
+    for ii, (name, value, formatter, unit) in enumerate(entries):
+        y = y0 - ii * dy
+        fmt = f"{{:{formatter}}}"
+        plt.text(X[0], y, name, family="monospace")
+        plt.text(X[1], y, fmt.format(value), ha="right", family="monospace")
+        plt.text(X[2], y, unit, family="monospace")
 
 
 def plot_dm_curve(dm, snr):
