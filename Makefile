@@ -1,5 +1,6 @@
 .DEFAULT_GOAL := help
 PKG = riptide-ffa
+DOCS_SPHINXOPTS = --fail-on-warning --nitpicky --keep-going
 
 check-sdist: ## Build and smoke-test the source distribution in a temporary virtualenv
 	@set -eu; \
@@ -24,8 +25,7 @@ check-sdist: ## Build and smoke-test the source distribution in a temporary virt
 	"$$tmpdir/venv/bin/rseek" --help >/dev/null
 
 docs: ## Build clean HTML documentation in docs/build/html
-	$(MAKE) -C docs clean
-	$(MAKE) -C docs html
+	$(MAKE) -C docs clean html SPHINXOPTS="$(DOCS_SPHINXOPTS)"
 
 install: ## Install the package in editable mode with dev dependencies
 	pip install -e .[dev]

@@ -9,6 +9,23 @@ TimeSeries
    :members:
 
 
+Metadata
+--------
+
+.. autoclass:: riptide.Metadata
+   :members:
+
+
+File readers
+------------
+
+.. autoclass:: riptide.reading.PrestoInf
+   :members:
+
+.. autoclass:: riptide.reading.SigprocHeader
+   :members:
+
+
 ffa_search
 ----------
 

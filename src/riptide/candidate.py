@@ -19,26 +19,17 @@ class Candidate:
         Dictionary with best-fit parameters of the signal:
         period, freq, dm, width, ducy, snr
 
-    tsmeta : Metadata
+    tsmeta : riptide.Metadata
         Metadata of the TimeSeries object (DM trial) in which the Candidate was
         found to have the highest S/N, and from which it was folded
 
-    peaks : pandas.DataFrame
+    peaks : ``pandas.DataFrame``
         A pandas DataFrame with the attributes of the periodogram peaks
         associated to the Candidate
 
     subints : ndarray
         A two-dimensional numpy array with shape (num_subints, num_bins)
         containing the folded sub-integrations
-
-    profile : ndarray
-        Folded profile as a one-dimensional numpy array, normalised such that
-        the background noise standard deviation is 1, and the mean of the
-        profile is zero
-
-    dm_curve : tuple
-        Tuple of numpy arrays (dm, snr) containing respectively the sequence
-        of DM trials, and corresponding best S/N value across all trial widths
     """
 
     def __init__(self, params, tsmeta, peaks, subints):
@@ -124,7 +115,7 @@ class Candidate:
 
         Returns
         -------
-        fig : matplotlib.Figure
+        fig : ``matplotlib.figure.Figure``
         """
         fig = plt.figure(figsize=figsize, dpi=dpi)
         plot_candidate(self)

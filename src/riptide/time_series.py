@@ -24,11 +24,11 @@ class TimeSeries:
 
     Parameters
     ----------
-    data : array_like
+    data : ``array_like``
         Time series data to search.
     tsamp : float
         Sampling time of data in seconds.
-    metadata : Metadata or dict, optional
+    metadata : ``riptide.Metadata`` or ``dict``, optional
         Optional Metadata object / dict describing the observation from which
         the data originate
     copy : bool, optional
@@ -206,9 +206,9 @@ class TimeSeries:
         amplitude : float, optional
             True amplitude of the signal as defined in the reference paper.
             The *expectation* of the S/N of the generated signal is
-                S/N_true = amplitude / stdnoise,
-            assuming that a matched filter with the exact shape of the pulse is
-            employed to measure S/N (here: von Mises with given duty cycle).
+            ``S/N_true = amplitude / stdnoise``, assuming that a matched filter
+            with the exact shape of the pulse is employed to measure S/N (here:
+            von Mises with given duty cycle).
             riptide employs boxcar filters in the search, which results in a slight
             S/N loss. See the reference paper for details.
             A further degradation will be observed on bright signals, because
@@ -220,8 +220,8 @@ class TimeSeries:
 
         Returns
         -------
-        tseries : ndarray (1D, float)
-            Output time series.
+        tseries : ndarray
+            One-dimensional float output time series.
         """
         nsamp = int(round(length / tsamp))
         period_samples = period / tsamp
@@ -250,7 +250,7 @@ class TimeSeries:
 
         Parameters
         ----------
-        array : array-like
+        array : ``array-like``
             The time series data.
         tsamp : float
             Sampling time of the data in seconds.
@@ -278,8 +278,8 @@ class TimeSeries:
             File name to load.
         tsamp : float
             Sampling time of the data in seconds.
-        dtype : numpy data type, optional
-            Data type of the file
+        dtype : ``numpy.dtype``, optional
+            NumPy data type of the file.
 
         Returns
         -------

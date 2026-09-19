@@ -43,8 +43,8 @@ def generate_signal(  # noqa: PLR0913, PLR0917
 
     Returns
     -------
-    tseries : ndarray (1D, float)
-        Output time series.
+    tseries : ndarray
+        One-dimensional float output time series.
     """
     # von mises parameter
     kappa = log(2.0) / (2.0 * sin(pi * ducy / 2.0) ** 2)
@@ -73,14 +73,15 @@ def ffa2(data):
 
     Parameters
     ----------
-    data : ndarray (2D)
+    data : ndarray
         Input time series data in two-dimensional form with shape (m, p),
         where m is the number of signal periods and p the number of phase bins.
 
     Returns
     -------
-    transform : ndarray (2D)
-        The FFA transform of 'data', as a float32 2D array of shape (m, p)
+    transform : ndarray
+        The FFA transform of 'data', as a float32 two-dimensional array of
+        shape (m, p).
 
     See Also
     --------
@@ -96,7 +97,7 @@ def ffa1(data, p):
 
     Parameters
     ----------
-    data : ndarray (1D)
+    data : ndarray
         Input time series data. If N is the total number of samples in the
         data, the last N % p samples are ignored, as they do not form a
         complete pulse period
@@ -105,8 +106,9 @@ def ffa1(data, p):
 
     Returns
     -------
-    transform : ndarray (2D)
-        The FFA transform of 'data', as a float32 2D array of shape (m, p),
+    transform : ndarray
+        The FFA transform of 'data', as a float32 two-dimensional array of shape
+        (m, p),
         where m is the number of complete pulse periods in the data
 
     See Also
@@ -196,8 +198,9 @@ def boxcar_snr(data, widths, stdnoise=1.0):
     data : ndarray
         Input profile(s). Can be of any shape, but the last axis
         must be pulse phase.
-    widths : ndarray, 1D
-        Trial pulse widths, expressed in number of phase bins.
+    widths : ndarray
+        One-dimensional array of trial pulse widths, expressed in number of
+        phase bins.
     stdnoise : float
         Standard deviation of the background noise in all profiles.
 
@@ -224,14 +227,14 @@ def downsample(data, factor):
 
     Parameters
     ----------
-    data : array_like
+    data : ``array_like``
         Time series data to downsample.
     factor : float
         Downsampling factor.
 
     Returns
     -------
-    out : ndarray, float32
-        Downsampled data.
+    out : ndarray
+        Downsampled float32 data.
     """
     return libcpp.downsample(data, factor)

@@ -113,7 +113,7 @@ def run_program(args):
 
     Returns
     -------
-    peaks : pandas.DataFrame
+    peaks : ``pandas.DataFrame``
         DataFrame with columns: 'period', 'freq', 'width', 'ducy', 'dm', 'snr'
     """
     logging.basicConfig(

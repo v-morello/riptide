@@ -62,7 +62,7 @@ class Metadata(dict):
 
         Parameters
         ----------
-        inf : PrestoInf or str
+        inf : riptide.reading.PrestoInf or str
             PrestoInf object or path to a PRESTO .inf file
         """
         # Interpret 'inf' as a file path if it is a string
@@ -84,7 +84,7 @@ class Metadata(dict):
 
         Parameters
         ----------
-        sh : SigprocHeader or str
+        sh : riptide.reading.SigprocHeader or str
             SigprocHeader object or path to a PRESTO .inf file
         """
         # Interpret 'sh' as a file path if it is a string
