@@ -1,14 +1,13 @@
-import numpy as np
-
 ### Local module imports
-import riptide.libcpp as libcpp
+from riptide import libcpp
+
 from .ffautils import generate_width_trials
 from .periodogram import Periodogram
 from .timing import timing
 
 
 @timing
-def ffa_search(
+def ffa_search(  # noqa: PLR0913, PLR0917
     tseries,
     period_min=1.0,
     period_max=30.0,

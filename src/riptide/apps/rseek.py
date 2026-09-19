@@ -1,25 +1,29 @@
-import logging
 import argparse
+import logging
 
 import numpy as np
 import pandas
 
-from riptide import __version__, TimeSeries, ffa_search, find_peaks
+from riptide import TimeSeries, __version__, ffa_search, find_peaks
 from riptide.clustering import cluster1d
 
-
 log = logging.getLogger("riptide.rseek")
-help_formatter = lambda prog: argparse.ArgumentDefaultsHelpFormatter(
-    prog, max_help_position=16
-)
+
+
+def help_formatter(prog):
+    """Create the command-line help formatter."""
+    return argparse.ArgumentDefaultsHelpFormatter(prog, max_help_position=16)
 
 
 def get_parser():
+    """Create the command-line argument parser."""
     parser = argparse.ArgumentParser(
         formatter_class=help_formatter,
         description=(
-            "FFA search a single time series and print a table of parameters of all significant peaks found."
-            " Peaks found with nearly identical periods at different trial pulse widths are grouped,"
+            "FFA search a single time series and print a table of parameters "
+            "of all significant peaks found."
+            " Peaks found with nearly identical periods at different trial "
+            "pulse widths are grouped,"
             " but no harmonic filtering is performed."
         ),
     )
@@ -65,7 +69,10 @@ def get_parser():
         "--rmed_width",
         type=float,
         default=4.0,
-        help="Width (in seconds) of the running median filter to subtract from the input data before processing",
+        help=(
+            "Width (in seconds) of the running median filter to subtract from "
+            "the input data before processing"
+        ),
     )
     parser.add_argument(
         "--rmed_minpts",
@@ -96,9 +103,10 @@ def get_parser():
 
 def run_program(args):
     """
-    Run the rseek program and return a pandas DataFrame with the detected peak
-    parameters, or None if no significant peaks were found. This is used to
-    check the results in unit tests.
+    Run rseek and return detected peak parameters.
+
+    Return a pandas DataFrame, or None if no significant peaks were found.
+    This is used to check the results in unit tests.
 
     Parameters
     ----------
@@ -115,14 +123,18 @@ def run_program(args):
         format="%(asctime)s %(filename)18s:%(lineno)-4s %(levelname)-8s %(message)s",
     )
 
-    LOADERS = {"sigproc": TimeSeries.from_sigproc, "presto": TimeSeries.from_presto_inf}
+    LOADERS = {
+        "sigproc": TimeSeries.from_sigproc,
+        "presto": TimeSeries.from_presto_inf,
+    }
     loader = LOADERS[args.format]
 
     # Search and find peaks
     ts = loader(args.fname)
 
     log.debug(
-        f"Searching period range [{args.Pmin}, {args.Pmax}] seconds with {args.bmin} to {args.bmax} phase bins"
+        f"Searching period range [{args.Pmin}, {args.Pmax}] seconds with "
+        f"{args.bmin} to {args.bmax} phase bins"
     )
     __, pgram = ffa_search(
         ts,
@@ -163,7 +175,7 @@ def run_program(args):
     formatters = {
         "period": "  {:.9f}".format,
         "freq": "  {:.9f}".format,
-        "ducy": lambda x: "  {:#.2f}%".format(100 * x),
+        "ducy": lambda x: f"  {100 * x:#.2f}%",
         "dm": "  {:.2f}".format,
         "snr": "  {:.1f}".format,
     }
@@ -177,9 +189,7 @@ def run_program(args):
 
 
 def main():
-    """
-    Console script entry point for 'rseek'
-    """
+    """Console script entry point for 'rseek'."""
     args = get_parser().parse_args()
     run_program(args)
 

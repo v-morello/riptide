@@ -3,8 +3,12 @@ from pytest import raises
 
 from riptide import boxcar_snr
 
+TWO_DIMENSIONS = 2
+THREE_DIMENSIONS = 3
+
 
 def test_errors():
+    """Test validation errors from boxcar_snr."""
     cols = 32
     data = np.zeros(cols, dtype="float32")
 
@@ -22,6 +26,7 @@ def test_errors():
 
 
 def test_output_dims():
+    """Test output dimensions for one-, two-, and three-dimensional input."""
     cols = 32
     widths = [1, 2, 3, 5]
 
@@ -35,18 +40,19 @@ def test_output_dims():
     rows = 4
     data = np.zeros((rows, cols), dtype="float32")
     snr = boxcar_snr(data, widths)
-    assert snr.ndim == 2
+    assert snr.ndim == TWO_DIMENSIONS
     assert snr.shape == (rows, len(widths))
 
     # 3D input
     layers = 3
     data = np.zeros((layers, rows, cols), dtype="float32")
     snr = boxcar_snr(data, widths)
-    assert snr.ndim == 3
+    assert snr.ndim == THREE_DIMENSIONS
     assert snr.shape == (layers, rows, len(widths))
 
 
 def test_phase_rotation_invariance():
+    """Test invariance to phase rotation."""
     rows = 4
     cols = 32
     widths = [1, 2, 5, 11, 18, 31]
@@ -60,6 +66,7 @@ def test_phase_rotation_invariance():
 
 
 def test_values():
+    """Test boxcar S/N values for simple pulse profiles."""
     n = 64
     widths = np.arange(1, n)
     data = np.zeros(n, dtype="float32")
@@ -73,6 +80,5 @@ def test_values():
         # h and b are the height and baseline value of a boxcar filter
         # with zero mean and unit square sum
         h = np.sqrt((n - w) / (n * w))
-        b = -w / (n - w) * h
         expected_best_snr = w * h
         assert np.allclose(snr.max(), expected_best_snr)

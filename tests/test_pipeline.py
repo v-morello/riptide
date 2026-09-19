@@ -1,15 +1,14 @@
-import os
 import glob
+import os
 import tempfile
 from copy import deepcopy
 
 import yaml
-import numpy as np
 from pytest import raises
+
 from riptide import load_json
-from riptide import TimeSeries
-from riptide.pipeline.pipeline import get_parser, run_program
 from riptide.pipeline.config_validation import InvalidPipelineConfig, InvalidSearchRange
+from riptide.pipeline.pipeline import get_parser, run_program
 
 from .presto_generation import generate_data_presto
 
@@ -20,7 +19,8 @@ from .presto_generation import generate_data_presto
 # branch = True
 # parallel = True
 # concurrency = multiprocessing
-# * Ensure that all instances of multiprocessing.Pool() have been closed and joined, as follows:
+# * Ensure that all instances of multiprocessing.Pool() have been closed and
+#   joined, as follows:
 # >> pool.close()
 # >> pool.join()
 
@@ -30,15 +30,21 @@ from .presto_generation import generate_data_presto
 
 # NOTE 3:
 # To get coverage stats, run this in the base riptide directory:
-# coverage run -m pytest && coverage combine && coverage report -m --omit src/riptide/_version.py
+# coverage run -m pytest && coverage combine && coverage report -m --omit
+# src/riptide/_version.py
 
 
 SIGNAL_PERIOD = 1.0
 DATA_TOBS = 128.0
 DATA_TSAMP = 256e-6
+PERIOD_TOLERANCE = 1.00e-4
+EXPECTED_DM = 10.0
+EXPECTED_WIDTH = 13
+SNR_TOLERANCE = 0.15
 
 
 def runner_presto_fakepsr(fname_conf, outdir):
+    """Run the pipeline against synthetic pulsar data."""
     # Write test data
     # NOTE: generate a signal bright enough to get harmonics and thus make sure
     # that the harmonic filter gets to run
@@ -76,16 +82,14 @@ def runner_presto_fakepsr(fname_conf, outdir):
     topcand = load_json(topcand_fname)
 
     # NOTE: these checks depend on the RNG seed and the pipeline config
-    assert abs(topcand.params["period"] - SIGNAL_PERIOD) < 1.00e-4
-    assert topcand.params["dm"] == 10.0
-    assert topcand.params["width"] == 13
-    assert abs(topcand.params["snr"] - 18.5) < 0.15
+    assert abs(topcand.params["period"] - SIGNAL_PERIOD) < PERIOD_TOLERANCE
+    assert topcand.params["dm"] == EXPECTED_DM
+    assert topcand.params["width"] == EXPECTED_WIDTH
+    assert abs(topcand.params["snr"] - 18.5) < SNR_TOLERANCE
 
 
 def runner_presto_purenoise(fname_conf, outdir):
-    """
-    Check that pipeline runs well even if no candidates are found
-    """
+    """Check that pipeline runs well even if no candidates are found."""
     dm = 0.0
     basename = f"purenoise_DM{dm:.3f}"
     generate_data_presto(
@@ -111,16 +115,19 @@ def runner_presto_purenoise(fname_conf, outdir):
 
 
 def load_yaml(fname):
-    with open(fname, "r") as fobj:
+    """Load YAML data from a file."""
+    with open(fname) as fobj:
         return yaml.safe_load(fobj)
 
 
 def save_yaml(items, fname):
+    """Save YAML data to a file."""
     with open(fname, "w") as fobj:
         return yaml.safe_dump(items, fobj)
 
 
 def test_pipeline_presto_fakepsr():
+    """Test the pipeline with synthetic pulsar data."""
     # NOTE: outdir is a full path (str)
     with tempfile.TemporaryDirectory() as outdir:
         fname_conf = os.path.join(os.path.dirname(__file__), "pipeline_config_A.yml")
@@ -132,6 +139,7 @@ def test_pipeline_presto_fakepsr():
 
 
 def test_pipeline_presto_purenoise():
+    """Test the pipeline when no candidates are found."""
     with tempfile.TemporaryDirectory() as outdir:
         fname_conf = os.path.join(os.path.dirname(__file__), "pipeline_config_A.yml")
         runner_presto_purenoise(fname_conf, outdir)
@@ -142,6 +150,7 @@ def test_pipeline_presto_purenoise():
 
 
 def test_config_validation():
+    """Test validation failures for invalid pipeline configurations."""
     fname_conf = os.path.join(os.path.dirname(__file__), "pipeline_config_A.yml")
     conf_correct = load_yaml(fname_conf)
 

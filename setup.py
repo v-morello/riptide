@@ -1,7 +1,6 @@
-from setuptools import setup
-
 # Available at setup time due to pyproject.toml
 from pybind11.setup_helpers import Pybind11Extension, build_ext
+from setuptools import setup
 
 # WARNING: Enabling -freciprocal-math (which is also enabled by
 # -funsafe-math-optimizations or -ffast-math) causes surprising inconsistencies

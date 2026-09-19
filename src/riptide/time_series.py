@@ -4,19 +4,23 @@ import warnings
 ##### Non-standard imports #####
 import numpy as np
 
+from .folding import fold
+from .libffa import downsample, generate_signal
+from .metadata import Metadata
+from .reading import PrestoInf, SigprocHeader
+
 ##### Local imports #####
 from .running_medians import fast_running_median
-from .libffa import downsample, generate_signal
-from .reading import PrestoInf, SigprocHeader
-from .metadata import Metadata
-from .folding import fold
 from .timing import timing
 
+EIGHT_BIT_SAMPLES = 8
 
-class TimeSeries(object):
+
+class TimeSeries:
     """
     Container for time series data to be searched with the FFA.
-    **Use classmethods to create a new TimeSeries object.**
+
+    **Use classmethods to create a new TimeSeries object.**.
 
     Parameters
     ----------
@@ -52,7 +56,7 @@ class TimeSeries(object):
 
     @property
     def data(self):
-        """numpy array holding the time series data, in float32 format."""
+        """Numpy array holding the time series data, in float32 format."""
         return self._data
 
     @property
@@ -61,12 +65,14 @@ class TimeSeries(object):
         return self._tsamp
 
     def copy(self):
-        """Returns a new copy of the TimeSeries"""
+        """Return a new copy of the TimeSeries."""
         return copy.deepcopy(self)
 
     def normalise(self, inplace=False):
-        """Normalise to zero mean and unit variance. if 'inplace' is False,
-        a new TimeSeries object with the normalized data is returned.
+        """Normalise to zero mean and unit variance.
+
+        If 'inplace' is False, return a new TimeSeries object with the
+        normalized data.
 
         Parameters
         ----------
@@ -94,10 +100,11 @@ class TimeSeries(object):
 
     @timing
     def deredden(self, width, minpts=101, inplace=False):
-        """Subtract from the data an aproximate running median. To save time,
-        this running median is computed on a downsampled copy of the data, then
-        upsampled back to the original resolution and finally subtracted from
-        the original data.
+        """Subtract an approximate running median from the data.
+
+        To save time, compute this running median on a downsampled copy of the
+        data, then upsample it back to the original resolution and subtract it
+        from the original data.
 
         Parameters
         ----------
@@ -124,8 +131,9 @@ class TimeSeries(object):
             return TimeSeries(self.data - rmed, self.tsamp, metadata=self.metadata)
 
     def downsample(self, factor, inplace=False):
-        """Downsample data by a real-valued factor, by grouping and adding
-        together consecutive samples (or fractions of samples).
+        """Downsample data by a real-valued factor.
+
+        Group and add together consecutive samples or fractions of samples.
 
         Parameters
         ----------
@@ -152,7 +160,7 @@ class TimeSeries(object):
 
     def fold(self, period, bins, subints=None):
         """
-        Fold TimeSeries at given period.
+        Fold a TimeSeries at a given period.
 
         Parameters
         ----------
@@ -174,12 +182,14 @@ class TimeSeries(object):
         return fold(self, period, bins, subints=subints)
 
     @classmethod
-    def generate(
+    def generate(  # noqa: PLR0913, PLR0917
         cls, length, tsamp, period, phi0=0.5, ducy=0.02, amplitude=10.0, stdnoise=1.0
     ):
         """
-        Generate a time series containing a periodic signal with a von Mises
-        pulse profile, and some background white noise (optional).
+        Generate a time series containing a periodic signal.
+
+        The signal has a von Mises pulse profile and optional background white
+        noise.
 
         Parameters
         ----------
@@ -257,9 +267,10 @@ class TimeSeries(object):
 
     @classmethod
     def from_binary(cls, fname, tsamp, dtype=np.float32):
-        """Create a new TimeSeries from a raw binary file, containing the
-        time series data without any header or footer. This will work as long
-        as the data can be loaded with numpy.fromfile().
+        """Create a TimeSeries from a raw binary file.
+
+        The file contains time series data without any header or footer. This
+        will work as long as the data can be loaded with numpy.fromfile().
 
         Parameters
         ----------
@@ -280,7 +291,9 @@ class TimeSeries(object):
 
     @classmethod
     def from_npy_file(cls, fname, tsamp):
-        """Create a new TimeSeries from a .npy file, written with numpy.save().
+        """Create a TimeSeries from a .npy file.
+
+        The file must have been written with numpy.save().
 
         Parameters
         ----------
@@ -300,8 +313,9 @@ class TimeSeries(object):
     @classmethod
     @timing
     def from_presto_inf(cls, fname):
-        """Create a new TimeSeries from a .inf file written by PRESTO. The
-        associated .dat file must be in the same directory.
+        """Create a TimeSeries from a PRESTO .inf file.
+
+        The associated .dat file must be in the same directory.
 
         Parameters
         ----------
@@ -329,14 +343,15 @@ class TimeSeries(object):
                 " i.e. where the background noise statistics are non-Gaussian."
                 " Be VERY careful when interpreting any search outputs."
             )
-            warnings.warn(msg, category=UserWarning)
+            warnings.warn(msg, stacklevel=2, category=UserWarning)
         return ts
 
     @classmethod
     @timing
-    def from_sigproc(cls, fname, extra_keys={}):
-        """Create a new TimeSeries from a file written by SIGPROC's dedisperse
-        routine.
+    def from_sigproc(cls, fname, extra_keys=None):
+        """Create a TimeSeries from a SIGPROC dedispersed file.
+
+        The file must have been written by SIGPROC's dedisperse routine.
 
         Parameters
         ----------
@@ -359,6 +374,8 @@ class TimeSeries(object):
         out : TimeSeries
             TimeSeries object.
         """
+        if extra_keys is None:
+            extra_keys = {}
         sig = SigprocHeader(fname, extra_keys=extra_keys)
 
         # This call checks if the file contains a dedispersed time series
@@ -369,7 +386,7 @@ class TimeSeries(object):
         # Load time series data
         with open(fname, "rb") as fobj:
             fobj.seek(sig.bytesize)
-            if metadata["nbits"] == 8:
+            if metadata["nbits"] == EIGHT_BIT_SAMPLES:
                 dtype = np.int8 if metadata["signed"] else np.uint8
                 # Don't forget to cast to float32 after reading !
                 data = np.fromfile(fobj, dtype=dtype).astype(np.float32)
@@ -385,7 +402,7 @@ class TimeSeries(object):
 
     @property
     def length(self):
-        """Length of the data in seconds"""
+        """Length of the data in seconds."""
         return self.nsamp * self.tsamp
 
     @property
@@ -394,20 +411,25 @@ class TimeSeries(object):
         return self.length
 
     def __str__(self):
+        """Return a human-readable representation."""
         name = type(self).__name__
-        out = "{name} {{nsamp = {x.nsamp:d}, tsamp = {x.tsamp:.4e}, tobs = {x.length:.3f}}}".format(
-            name=name, x=self
+        out = (
+            f"{name} {{nsamp = {self.nsamp:d}, tsamp = {self.tsamp:.4e}, "
+            f"tobs = {self.length:.3f}}}"
         )
         return out
 
     def __repr__(self):
+        """Return the developer representation."""
         return str(self)
 
     @classmethod
     def from_dict(cls, items):
+        """Create a TimeSeries from a dictionary."""
         return cls(
             items["data"], items["tsamp"], metadata=items["metadata"], copy=False
         )
 
     def to_dict(self):
+        """Return the TimeSeries as a dictionary."""
         return {"data": self.data, "tsamp": self.tsamp, "metadata": self.metadata}

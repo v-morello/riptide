@@ -7,15 +7,11 @@ import numpy as np
 from riptide.clustering import cluster1d
 from riptide.timing import timing
 
-
 log = logging.getLogger("riptide.peak_detection")
 
 
 class Peak(typing.NamedTuple):
-    """
-    A simple NamedTuple with the essential parameters of a peak found
-    in a Periodogram
-    """
+    """Store the essential parameters of a peak found in a Periodogram."""
 
     period: float
     freq: float
@@ -27,25 +23,24 @@ class Peak(typing.NamedTuple):
     dm: float
 
     def summary_dict(self):
-        """
-        Returns a minimal dictionary of attributes to be written as CSV
-        by the pipeline
-        """
+        """Return a minimal dictionary of peak attributes for CSV output."""
         attrs = ("period", "freq", "dm", "width", "ducy", "snr")
         return {a: getattr(self, a) for a in attrs}
 
 
 def segment_stats(f, s, T, segwidth=5.0):
     """
-    Cut a periodogram in consecutive, equal-sized segments with a
-    frequency span equal to segwidth / T, and return the centre frequencies,
-    median S/N and robust S/N standard deviation of all segments.
+    Compute statistics for consecutive periodogram segments.
+
+    Cut a periodogram in consecutive, equal-sized segments with a frequency
+    span equal to segwidth / T, and return the centre frequencies, median S/N
+    and robust S/N standard deviation of all segments.
 
     This information is then used to fit a sensible peak selection threshold
     as a function of frequency.
 
     Parameters
-    -----------
+    ----------
     f : ndarray
         Frequencies in Hz
     S : ndarray
@@ -87,8 +82,9 @@ def segment_stats(f, s, T, segwidth=5.0):
 
 def fit_threshold(fc, tc, polydeg=2):
     """
-    Fit a polynomial in log(f) to the selection threshold control points
-    (fc, tc)
+    Fit a polynomial in log(f) to selection threshold control points.
+
+    The control points are given by (fc, tc).
 
     Parameters
     ----------
@@ -109,12 +105,13 @@ def fit_threshold(fc, tc, polydeg=2):
     return np.poly1d(coeffs)
 
 
-def find_peaks_single(
+def find_peaks_single(  # noqa: PLR0913, PLR0917
     f, s, T, smin=6.0, segwidth=5.0, nstd=7.0, minseg=10, polydeg=2, clrad=0.1
 ):
     """
-    Find peaks in a single pulse width trial. Returns a list of array indices
-    that correspond to peak centres
+    Find peaks in a single pulse-width trial.
+
+    Return a list of array indices that correspond to peak centres.
     """
     peak_indices = []
 
@@ -146,23 +143,24 @@ def find_peaks_single(
 
 
 @timing
-def find_peaks(
+def find_peaks(  # noqa: PLR0913, PLR0917
     pgram, smin=6.0, segwidth=5.0, nstd=6.0, minseg=10, polydeg=2, clrad=0.1
 ):
     """
-    Identify significant peaks in a periodogram using a dynamically fitted
-    S/N selection threshold. The fitting involves the following procedure for
-    each pulse width trial separately:
+    Identify significant peaks in a periodogram.
 
-    1. Cut the frequency range covered by the periodogram in segments
-       of length 1 / T_obs
+    Use a dynamically fitted S/N selection threshold. The fitting involves the
+    following procedure for each pulse-width trial separately:
+
+    1. Cut the frequency range covered by the periodogram in segments of
+       length 1 / T_obs.
     2. Get the median S/N 'm' and robust S/N standard deviation 's' of each
        segment. The dynamic selection threshold for that segment should be
-       t = m + nstd x s
+       t = m + nstd x s.
     3. Fit a polynomial in log(f) to the control points (f_i, t_i) thus
-       obtained
+       obtained.
     4. Any point whose S/N exceeds both the dynamic threshold and the value
-       'smin' are considered significant
+       'smin' is considered significant.
     5. Cluster these points. Two points are in the same peak if their
        trial frequencies are within clrad / T_obs of each other. All such
        clusters constitute a Peak.

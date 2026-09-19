@@ -1,10 +1,11 @@
 import numpy as np
+
 import riptide.libcpp
 
 
 def running_median(x, width_samples):
     """
-    Computes the running median of data with the specified window size.
+    Compute the running median of data with the specified window size.
 
     Parameters
     ----------
@@ -38,9 +39,7 @@ def running_median(x, width_samples):
 
 
 def scrunch(data, factor):
-    """
-    Reduce the resolution of data by adding consecutive elements together
-    """
+    """Reduce the resolution of data by adding consecutive elements together."""
     factor = int(factor)
     N = (data.size // factor) * factor
     return data[:N].reshape(-1, factor).mean(axis=1)
@@ -48,9 +47,10 @@ def scrunch(data, factor):
 
 def fast_running_median(data, width_samples, min_points=101):
     """
-    Compute an approximate running median of data over large window sizes. The
-    idea is to downsample the data (if necessary), call running_median() on it
-    and linearly interpolate it back to the original resolution.
+    Compute an approximate running median over large window sizes.
+
+    Downsample the data if necessary, call running_median() on it, and linearly
+    interpolate it back to the original resolution.
 
     Parameters
     ----------

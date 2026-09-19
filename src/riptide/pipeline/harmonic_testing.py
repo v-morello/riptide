@@ -1,15 +1,17 @@
-import math
-from fractions import Fraction
 import logging
-
+from fractions import Fraction
 
 log = logging.getLogger("riptide.pipeline.harmonic_filter")
 
 
-def hdiag(F, H, tobs, fmin, fmax, denom_max=100):
+def hdiag(  # noqa: PLR0913, PLR0917
+    F, H, tobs, fmin, fmax, denom_max=100
+):
     """
-    Calculate a number of diagnostic values to evaluate whether two sets of
-    candidate parameters are harmonically related.
+    Calculate diagnostic values for two candidate parameter sets.
+
+    Use the values to evaluate whether the candidates are harmonically related.
+
 
     Parameters
     ----------
@@ -87,7 +89,7 @@ def hdiag(F, H, tobs, fmin, fmax, denom_max=100):
     }
 
 
-def htest(
+def htest(  # noqa: PLR0913, PLR0917
     F,
     H,
     tobs,
@@ -99,12 +101,12 @@ def htest(
     snr_distance_max=3.0,
 ):
     """
-    Test whether two sets of candidate parameters are harmonically related.
-    The code first finds the closest rational fraction p/q to the ratio
-    H.freq / F.freq and then tests whether H is the plausible p/q-th harmonic
-    of F. The method is *purposely* designed to under-flag rather than
-    over-flag, noting also that pipeline users can decide not to remove
-    harmonics from the final candidate list.
+    Test whether two candidate parameter sets are harmonically related.
+
+    Find the closest rational fraction p/q to H.freq / F.freq and test whether
+    H is the plausible p/q-th harmonic of F. The method is *purposely*
+    designed to under-flag rather than over-flag, noting also that pipeline
+    users can decide not to remove harmonics from the final candidate list.
 
     Parameters
     ----------

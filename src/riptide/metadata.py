@@ -1,12 +1,11 @@
+import json
 import os
 import pprint
-import json
 
 from astropy.coordinates import SkyCoord
-import astropy.units as uu
-from schema import Schema, And, Or, Optional
-from .reading import PrestoInf, SigprocHeader
+from schema import And, Optional, Or, Schema
 
+from .reading import PrestoInf, SigprocHeader
 
 SCHEMA_ITEMS = {
     Optional("source_name"): Or(str, None),
@@ -20,12 +19,16 @@ SCHEMA_ITEMS = {
 }
 
 SCHEMA = Schema(SCHEMA_ITEMS, ignore_extra_keys=True)
+EIGHT_BIT_NBITS = 8
+SUPPORTED_NBITS = {EIGHT_BIT_NBITS, 32}
 
 
 class Metadata(dict):
     """
-    A dict subclass that carries information about an observation across all
-    data products (TimeSeries, Periodogram, etc.)
+    Carry observation metadata across all data products.
+
+    Metadata is a dict subclass used by TimeSeries, Periodogram, and other
+    data products.
 
     The 'attrs' dictionary can only have keys of type str and json-serializable
     values (there are some exceptions, see below). There are also reserved keys
@@ -42,9 +45,11 @@ class Metadata(dict):
     None in the Metadata object.
     """
 
-    def __init__(self, items={}):
+    def __init__(self, items=None):
+        if items is None:
+            items = {}
         SCHEMA.validate(items)
-        super(Metadata, self).__init__(items)
+        super().__init__(items)
 
         for k in SCHEMA_ITEMS:
             if isinstance(k.schema, str):
@@ -53,7 +58,7 @@ class Metadata(dict):
     @classmethod
     def from_presto_inf(cls, inf):
         """
-        Create Metadata object from PRESTO .inf file or PrestoInf object
+        Create Metadata object from PRESTO .inf file or PrestoInf object.
 
         Parameters
         ----------
@@ -61,7 +66,7 @@ class Metadata(dict):
             PrestoInf object or path to a PRESTO .inf file
         """
         # Interpret 'inf' as a file path if it is a string
-        if type(inf) == str:
+        if type(inf) is str:
             inf = PrestoInf(inf)
 
         attrs = dict(inf)
@@ -71,10 +76,11 @@ class Metadata(dict):
         return cls(attrs)
 
     @classmethod
-    def from_sigproc(cls, sh, extra_keys={}):
+    def from_sigproc(cls, sh, extra_keys=None):
         """
-        Create Metadata object from SIGPROC dedispersed time series file,
-        or SigprocHeader object.
+        Create Metadata from a SIGPROC dedispersed time series file.
+
+        The input may also be a SigprocHeader object.
 
         Parameters
         ----------
@@ -82,24 +88,30 @@ class Metadata(dict):
             SigprocHeader object or path to a PRESTO .inf file
         """
         # Interpret 'sh' as a file path if it is a string
-        if type(sh) == str:
+        if extra_keys is None:
+            extra_keys = {}
+        if type(sh) is str:
             sh = SigprocHeader(sh, extra_keys=extra_keys)
 
         if sh["nchans"] > 1:
             raise ValueError(
-                f"File {sh.fname!r} contains multi-channel data (nchans = {sh['nchans']}), instead of a dedispersed time series"
+                f"File {sh.fname!r} contains multi-channel data "
+                f"(nchans = {sh['nchans']}), instead of a dedispersed time series"
             )
 
         # Make sure this is a 32-bit dedispersed time series
-        # We support either: 32-bit float data, or 8-bit data but only if signedness is specified in the header
+        # We support either 32-bit float data or 8-bit data with signedness
+        # specified in the header.
         nbits = sh["nbits"]
-        if not nbits in {8, 32}:
+        if nbits not in SUPPORTED_NBITS:
             raise ValueError(
-                f"Only 8-bit and 32-bit SIGPROC data are supported. File {sh.fname!r} contains {nbits}-bit data"
+                "Only 8-bit and 32-bit SIGPROC data are supported. "
+                f"File {sh.fname!r} contains {nbits}-bit data"
             )
-        if nbits == 8 and "signed" not in sh:
+        if nbits == EIGHT_BIT_NBITS and "signed" not in sh:
             raise ValueError(
-                f"SIGPROC Header says this is 8-bit data, but does not specify its signedness via the 'signed' key"
+                "SIGPROC Header says this is 8-bit data, but does not specify "
+                "its signedness via the 'signed' key"
             )
 
         attrs = dict(sh).copy()
@@ -112,14 +124,18 @@ class Metadata(dict):
         return cls(attrs)
 
     def to_dict(self):
+        """Return metadata as a dictionary."""
         return dict(self)
 
     @classmethod
     def from_dict(cls, items):
+        """Create Metadata from a dictionary."""
         return cls(items)
 
     def __str__(self):
-        return "Metadata %s" % pprint.pformat(dict(self))
+        """Return a human-readable representation."""
+        return f"Metadata {pprint.pformat(dict(self))}"
 
     def __repr__(self):
+        """Return the developer representation."""
         return str(self)

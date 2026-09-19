@@ -30,6 +30,9 @@ docs: ## Build clean HTML documentation in docs/build/html
 install: ## Install the package in editable mode with dev dependencies
 	pip install -e .[dev]
 
+lint: ## Run the linter
+	ruff check src tests
+
 # GLORIOUS hack to autogenerate Makefile help
 # This simply parses the double hashtags that follow each Makefile command
 # https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
@@ -41,4 +44,4 @@ help: ## Print this help message
 test: ## Run the unit tests and print a coverage report
 	pytest --cov=src/ --cov-report=term-missing
 
-.PHONY: check-sdist docs install help test
+.PHONY: check-sdist docs install lint help test

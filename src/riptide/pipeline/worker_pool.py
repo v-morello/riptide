@@ -3,12 +3,15 @@ import multiprocessing
 
 from riptide import TimeSeries, ffa_search, find_peaks
 
-
 log = logging.getLogger("riptide.worker_pool")
 
 
-class WorkerPool(object):
+class WorkerPool:
     """
+    Execute FFA searches in parallel.
+
+    Parameters
+    ----------
     deredden_params : dict
     range_confs : list of dicts
         List of dicts from the 'ranges' section of the YAML config file
@@ -18,7 +21,7 @@ class WorkerPool(object):
     processes : int
         Number of parallel processes
     fmt : str
-        TimeSeries file format
+        TimeSeries file format.
     """
 
     TIMESERIES_LOADERS = {
@@ -33,6 +36,7 @@ class WorkerPool(object):
         self.processes = int(processes)
 
     def process_fname_list(self, fnames):
+        """Process a list of filenames in parallel."""
         pool = multiprocessing.Pool(processes=self.processes)
         # results is a list of lists of Detections
         results = pool.map(self.process_fname, fnames)
@@ -45,10 +49,11 @@ class WorkerPool(object):
         return [det for dlist in results for det in dlist]
 
     def process_fname(self, fname):
+        """Process one filename and return its detected peaks."""
         allpeaks = []
         ts = self.loader(fname)
         dm = ts.metadata["dm"]
-        log.debug("Searching DM = {:.3f}".format(dm))
+        log.debug(f"Searching DM = {dm:.3f}")
 
         # Make pre-processing common to all ranges to save time
         ts = ts.deredden(

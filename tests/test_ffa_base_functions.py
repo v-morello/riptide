@@ -37,6 +37,7 @@ FFA_OUT_88 = np.array(
 
 
 def test_transforms():
+    """Test the one- and two-dimensional FFA transforms."""
     for shift in range(8):
         X = np.roll(FFA_IN_88, shift, axis=1)
         m, p = X.shape
@@ -76,6 +77,7 @@ def test_transforms():
 
 
 def test_ffafreq():
+    """Test FFA trial frequency and period calculations."""
     # NOTE: ffaprd() simply does 1.0 / ffafreq(), so we only need to properly
     # cover all ffafreq() corner cases
 

@@ -1,19 +1,19 @@
 import logging
 from collections import namedtuple
 
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.gridspec import GridSpec
 import astropy.units as uu
+import matplotlib.pyplot as plt
+import numpy as np
 from astropy.time import Time
-
+from matplotlib.gridspec import GridSpec
 
 log = logging.getLogger("riptide.candidate")
+TABLE_COLUMNS = 3
 
 
-class Candidate(object):
+class Candidate:
     """
-    Final data product of the riptide pipeline
+    Final data product of the riptide pipeline.
 
     Attributes
     ----------
@@ -50,7 +50,7 @@ class Candidate(object):
         self.subints = subints
 
     def to_dict(self):
-        """Convert to dictionary for serialization"""
+        """Convert to dictionary for serialization."""
         return {
             "params": self.params,
             "tsmeta": self.tsmeta,
@@ -60,12 +60,14 @@ class Candidate(object):
 
     @property
     def profile(self):
+        """Return the candidate's folded profile."""
         if self.subints.ndim == 1:
             return self.subints
         return self.subints.sum(axis=0)
 
     @property
     def dm_curve(self):
+        """Return the candidate's dispersion-measure curve."""
         # NOTE: copy() works around a bug in pandas 0.23.x and earlier
         # https://stackoverflow.com/questions/53985535/pandas-valueerror-buffer-source-array-is-read-only
         # TODO: consider requiring pandas 0.24+ in the future
@@ -75,8 +77,9 @@ class Candidate(object):
     @classmethod
     def from_pipeline_output(cls, ts, peak_cluster, bins, subints=1):
         """
-        Method used by the pipeline to produce a candidate from intermediate
-        data products.
+        Create a candidate from intermediate data products.
+
+        The method is used by the pipeline to produce a candidate.
 
         subints can be an int or None. None means pick the number of subints
         that fit inside the data.
@@ -89,8 +92,10 @@ class Candidate(object):
 
         if subints is not None and subints * P0 >= ts.length:
             msg = (
-                f"Period ({P0:.3f}) x requested subints ({subints:d}) exceeds time series length "
-                f"({ts.length:.3f}), setting subints = full periods that fit in the data"
+                f"Period ({P0:.3f}) x requested subints ({subints:d}) exceeds "
+                f"time series length "
+                f"({ts.length:.3f}), setting subints = full periods that fit "
+                "in the data"
             )
             log.debug(msg)
             subints = None
@@ -105,12 +110,12 @@ class Candidate(object):
 
     @classmethod
     def from_dict(cls, items):
-        """De-serialize from dictionary"""
+        """De-serialize from dictionary."""
         return cls(items["params"], items["tsmeta"], items["peaks"], items["subints"])
 
     def plot(self, figsize=(18, 4.5), dpi=80):
         """
-        Create a plot of the candidate
+        Create a plot of the candidate.
 
         Parameters
         ----------
@@ -129,26 +134,30 @@ class Candidate(object):
 
     def show(self, **kwargs):
         """
-        Create a plot of the candidate and display it. Accepts the same keyword
-        arguments as plot().
+        Display the candidate plot.
+
+        Accept the same keyword arguments as plot().
         """
         self.plot(**kwargs)
         plt.show()
 
     def savefig(self, fname, **kwargs):
         """
-        Create a plot of the candidate and save it as PNG under the specified
-        file name. Accepts the same keyword arguments as plot().
+        Save the candidate plot as a PNG file.
+
+        Accept the same keyword arguments as plot().
         """
         fig = self.plot(**kwargs)
         fig.savefig(fname)
         plt.close(fig)
 
     def __str__(self):
+        """Return a human-readable representation."""
         name = type(self).__name__
         return f"{name}({self.params})"
 
     def __repr__(self):
+        """Return the developer representation."""
         return str(self)
 
 
@@ -156,22 +165,28 @@ TableEntryBase = namedtuple("TableEntry", ["name", "value", "formatter", "unit"]
 
 
 class TableEntry(TableEntryBase):
+    """Represent one row in a candidate summary table."""
+
     def plot(self, X, y, **kwargs):
         """
+        Plot the table entry at the given coordinates.
+
+        Parameters
+        ----------
         X : list
             list of X coordinates for each column
         y : float
-            Y coordinate of the line
+            Y coordinate of the line.
         """
-        assert len(X) == 3
-        fmt = "{{:{}}}".format(self.formatter)
+        assert len(X) == TABLE_COLUMNS
+        fmt = f"{{:{self.formatter}}}"
         plt.text(X[0], y, self.name, **kwargs)
         plt.text(X[1], y, fmt.format(self.value), ha="right", **kwargs)
         plt.text(X[2], y, self.unit, **kwargs)
 
 
 def plot_table(params, tsmeta):
-    """ """
+    """Plot candidate parameters as a table."""
     plt.axis("off")
     coord = tsmeta["skycoord"]
     ra_hms = coord.ra.to_string(unit=uu.hour, sep=":", precision=2, pad=True)
@@ -211,6 +226,7 @@ def plot_table(params, tsmeta):
 
 
 def plot_dm_curve(dm, snr):
+    """Plot the best S/N as a function of dispersion measure."""
     dm_min = dm.min()
     dm_max = dm.max()
     plt.plot(dm, snr, color="r", marker="o", markersize=3)
@@ -227,17 +243,21 @@ def plot_dm_curve(dm, snr):
 
 def plot_subints(X, T):
     """
+    Plot folded sub-integrations.
+
+    Parameters
+    ----------
     X : ndarray
         Sub-integrations array, shape = (nsubs, nbins)
     T : float
-        Integration time in seconds
+        Integration time in seconds.
     """
-    __, nbins = X.shape 
+    __, nbins = X.shape
     # Peak-to-Peak normalization
     mins = X.min(axis=1).reshape(-1, 1)
     maxs = X.max(axis=1).reshape(-1, 1)
     ranges = maxs - mins
-    
+
     # Avoid division by zero (flat subints)
     ranges[ranges == 0] = 1
 
@@ -261,9 +281,7 @@ def plot_subints(X, T):
 
 
 def plot_profile(P):
-    """
-    P : profile normalised to unit background noise variance
-    """
+    """P : profile normalised to unit background noise variance."""
     nbins = len(P)
     P = np.concatenate((P, P[: nbins // 2]))
     nbins_ext = len(P)
@@ -282,9 +300,7 @@ def plot_profile(P):
 
 
 def plot_candidate(cand):
-    """
-    Plot candidate on the current figure
-    """
+    """Plot candidate on the current figure."""
     # https://matplotlib.org/tutorials/intermediate/gridspec.html
     nrows, ncols = 2, 7
     gs = GridSpec(nrows, ncols, figure=plt.gcf())

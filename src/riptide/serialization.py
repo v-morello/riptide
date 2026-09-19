@@ -1,31 +1,34 @@
-import json
 import base64
 import importlib
+import json
 
+import astropy.units as uu
 import numpy as np
 import pandas
 from astropy.coordinates import SkyCoord
-import astropy.units as uu
 
 
 # NOTE: Using importlib avoids placing "import riptide" at the top of the file,
 # which solves circular import issues
 def get_riptide_version():
+    """Return the installed riptide version."""
     riptide = importlib.import_module("riptide")
-    return getattr(riptide, "__version__")
+    return riptide.__version__
 
 
 # NOTE: it is implicitly assumed that any JSON-serializable riptide class is in
 # the *base* riptide module
 def get_class(clsname):
+    """Return a class exported by the base riptide module."""
     riptide = importlib.import_module("riptide")
     return getattr(riptide, clsname)
 
 
 class JSONEncoder(json.JSONEncoder):
-    """ """
+    """Encode riptide and scientific Python objects as JSON."""
 
-    def default(self, obj):
+    def default(self, obj):  # noqa: PLR0911
+        """Encode an object not handled by the base JSON encoder."""
         # NOTE: this method is called only for types not supported by default
         # Since Metadata is a dict (supported by default), it *never* gets called
         # for Metadata objects
@@ -77,11 +80,12 @@ class JSONEncoder(json.JSONEncoder):
                 items["__version__"] = get_riptide_version()
             return items
 
-        return super(JSONEncoder, self).default(obj)
+        return super().default(obj)
 
 
 def object_hook(items):
-    if not "__type__" in items:
+    """Decode a serialized object represented as a dictionary."""
+    if "__type__" not in items:
         return items
 
     typename = items["__type__"]
@@ -118,17 +122,15 @@ def object_hook(items):
 
 
 def from_json(s):
-    """
-    Decode a JSON string encoding a riptide object (or list/dict/composition thereof)
-    """
+    """Decode a JSON string containing a riptide object or composition."""
     return json.loads(s, object_hook=object_hook)
 
 
 def to_json(obj, **kwargs):
     """
-    Custom JSON encoding function that also handles riptide objects
-    (or list/dict/composition thereof). Any keyword arguments
-    are passed to json.dumps().
+    Encode an object as JSON, including riptide objects or compositions.
+
+    Any keyword arguments are passed to json.dumps().
     """
     kwargs = dict(kwargs)
     kwargs["cls"] = JSONEncoder
@@ -137,17 +139,16 @@ def to_json(obj, **kwargs):
 
 
 def load_json(fname):
-    """
-    Load a JSON file containing a riptide object (or list/dict/composition thereof)
-    """
-    with open(fname, "r") as f:
+    """Load a JSON file containing a riptide object or composition."""
+    with open(fname) as f:
         return from_json(f.read())
 
 
 def save_json(fname, obj, **kwargs):
     """
-    Save riptide object (or list/dict/composition thereof) to a JSON file. Any keyword arguments are
-    passed to json.dumps().
+    Save a riptide object or composition to a JSON file.
+
+    Any keyword arguments are passed to json.dumps().
     """
     with open(fname, "w") as f:
         f.write(to_json(obj, **kwargs))

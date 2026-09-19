@@ -1,12 +1,14 @@
 # Test ffa_search() and Periodogram class
 import tempfile
 
-import numpy as np
 import matplotlib.pyplot as plt
-from riptide import TimeSeries, ffa_search, save_json, load_json
+import numpy as np
+
+from riptide import TimeSeries, ffa_search, load_json, save_json
 
 
 def test_ffa_search():
+    """Test FFA searching and periodogram serialization and plotting."""
     # NOTE: we chose a length long enough so that running the
     # 'periodogram pruning' function was actually necessary
     # (and thus the function gets properly covered by the tests)
@@ -77,8 +79,10 @@ def test_ffa_search():
 
 def test_ffa_search_no_downsampling():
     """
-    Having period_min = bins_min * tsamp used to raise an error in v0.2.1, where the code
-    complained about a downsampling factor not being > 1
+    Ensure searches work when no downsampling is needed.
+
+    Having period_min = bins_min * tsamp used to raise an error in v0.2.1,
+    where the code complained about a downsampling factor not being > 1.
     """
     length = 200.0
     tsamp = 1e-3

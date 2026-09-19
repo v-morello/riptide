@@ -3,20 +3,24 @@ import tempfile
 
 import numpy as np
 from pytest import raises, warns
-from riptide import TimeSeries, save_json, load_json
 
+from riptide import TimeSeries, load_json, save_json
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 FLOAT_ATOL = 1.0e-6
+EXPECTED_NSAMP = 16
+EXPECTED_TSAMP = 64e-6
 
 
 # NOTE: a TimeSeries has only two basic attributes: data and tsamp
 # *** That's only what we test here ***
 # Anything else is handled by the Metadata class
 def test_presto():
+    """Test loading TimeSeries objects from PRESTO files."""
+
     def check_data(ts, refdata):
-        assert ts.nsamp == 16
-        assert ts.tsamp == 64e-6
+        assert ts.nsamp == EXPECTED_NSAMP
+        assert ts.tsamp == EXPECTED_TSAMP
         assert ts.data.dtype == np.float32
         assert np.allclose(ts.data, refdata)
 
@@ -31,7 +35,8 @@ def test_presto():
     ts = TimeSeries.from_presto_inf(fname)
     check_data(ts, refdata)
 
-    # Calling TimeSeries.from_presto_inf() on X-ray and Gamma data should raise a warning
+    # Calling TimeSeries.from_presto_inf() on X-ray and Gamma data should
+    # raise a warning
     # about the noise stats being non-Gaussian
     with warns(UserWarning):
         fname = os.path.join(DATA_DIR, "fake_presto_xray.inf")
@@ -40,6 +45,7 @@ def test_presto():
 
 
 def test_sigproc():
+    """Test loading TimeSeries objects from SIGPROC files."""
     refdata = np.arange(16)  # what is supposed to be in the data
     filenames = [
         "fake_sigproc_float32.tim",
@@ -47,11 +53,11 @@ def test_sigproc():
         "fake_sigproc_int8.tim",
     ]
 
-    for fname in filenames:
-        fname = os.path.join(DATA_DIR, fname)
-        ts = TimeSeries.from_sigproc(fname)
-        assert ts.nsamp == 16
-        assert ts.tsamp == 64e-6
+    for filename in filenames:
+        path = os.path.join(DATA_DIR, filename)
+        ts = TimeSeries.from_sigproc(path)
+        assert ts.nsamp == EXPECTED_NSAMP
+        assert ts.tsamp == EXPECTED_TSAMP
         assert ts.data.dtype == np.float32
         assert np.allclose(ts.data, refdata)
 
@@ -63,6 +69,7 @@ def test_sigproc():
 
 
 def test_numpy_binary():
+    """Test loading TimeSeries objects from NumPy and binary files."""
     refdata = np.arange(16)
     tsamp = 64e-6
 
@@ -89,6 +96,7 @@ def test_numpy_binary():
 
 
 def test_generate():
+    """Test generating synthetic TimeSeries data."""
     length = 10.0  # s
     tsamp = 0.01  # s
     period = 1.0  # s
@@ -103,10 +111,12 @@ def test_generate():
     assert np.allclose(sum(ts.data**2) ** 0.5, amplitude, atol=FLOAT_ATOL)
 
 
-def test_methods():
+def test_methods():  # noqa: PLR0915
     """
-    NOTE: This tests that the code runs, but not the output data quality,
-    i.e. if dereddening removes low-frequency noise well
+    Test the main TimeSeries methods.
+
+    NOTE: This tests that the code runs, but not the output data quality, i.e.
+    if dereddening removes low-frequency noise well.
     """
     length = 10.0  # s
     tsamp = 1.0e-3  # s
@@ -171,7 +181,8 @@ def test_methods():
     assert X2.shape == (2, bins)
 
     # Fold with nsubs = number of periods that fit in data
-    # This is a special case where internally fold() has to avoid downsampling along the time axis
+    # This is a special case where internally fold() has to avoid downsampling
+    # along the time axis
     m = int(length / period)
     Xm = tsorig.fold(1.0, bins, subints=m)
 
@@ -185,26 +196,27 @@ def test_methods():
 
     # Too many requested subints
     with raises(ValueError):
-        Xerr = tsorig.fold(1.0, bins, subints=1000000)
+        tsorig.fold(1.0, bins, subints=1000000)
 
     # subints can't be < 1
     with raises(ValueError):
-        Xerr = tsorig.fold(1.0, bins, subints=0)
+        tsorig.fold(1.0, bins, subints=0)
 
     # Too many requested bins
     with raises(ValueError):
-        Xerr = tsorig.fold(1.0, 1000000, subints=None)
+        tsorig.fold(1.0, 1000000, subints=None)
 
     # Period too long
     with raises(ValueError):
-        Xerr = tsorig.fold(1.0e6, bins, subints=None)
+        tsorig.fold(1.0e6, bins, subints=None)
 
     # Period too short
     with raises(ValueError):
-        Xerr = tsorig.fold(1.0e-6, bins, subints=None)
+        tsorig.fold(1.0e-6, bins, subints=None)
 
 
 def test_serialization():
+    """Test TimeSeries JSON serialization."""
     length = 10.0  # s
     tsamp = 1.0e-3  # s
     period = 1.0  # s

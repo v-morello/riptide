@@ -1,38 +1,36 @@
-import logging
 import argparse
-import os
 import itertools
+import json
+import logging
 import multiprocessing
+import os
 import traceback
 from collections import defaultdict
 
-import yaml
-import json
 import numpy as np
 import pandas
-
 import threadpoolctl
+import yaml
 
-from riptide import __version__, ffa_search, find_peaks, Candidate
+from riptide import Candidate, __version__
 from riptide.clustering import cluster1d
-
 from riptide.pipeline.config_validation import validate_pipeline_config, validate_ranges
 from riptide.pipeline.dmiter import DMIterator
-from riptide.pipeline.worker_pool import WorkerPool
-from riptide.pipeline.peak_cluster import PeakCluster, clusters_to_dataframe
 from riptide.pipeline.harmonic_testing import htest
-
+from riptide.pipeline.peak_cluster import PeakCluster, clusters_to_dataframe
+from riptide.pipeline.worker_pool import WorkerPool
 from riptide.serialization import save_json
 from riptide.timing import timing
 
-
 log = logging.getLogger("riptide.pipeline")
+DEFAULT_OUTDIR = os.getcwd()
 
 
-class CandidateWriter(object):
+class CandidateWriter:
     """
-    func-like object to be used in conjunction with multiprocessing.Pool
-    to write candidates with multiple processes
+    Write candidates with multiple processes.
+
+    This func-like object is used in conjunction with multiprocessing.Pool.
     """
 
     def __init__(self, outdir, plot=False):
@@ -41,8 +39,9 @@ class CandidateWriter(object):
 
     def __call__(self, arg):
         """
-        arg is a tuple (rank, candidate) with types
-        (int, Candidate)
+        Save one candidate and its optional plot.
+
+        Arg is a tuple (rank, candidate) with types (int, Candidate).
         """
         rank, cand = arg
         fname = os.path.join(self.outdir, f"candidate_{rank:04d}.json")
@@ -54,7 +53,7 @@ class CandidateWriter(object):
             cand.savefig(fname)
 
 
-class Pipeline(object):
+class Pipeline:
     """
     Top-level class that runs a multiple DM trial search.
 
@@ -77,7 +76,7 @@ class Pipeline(object):
         self.candidates = []
 
     def wmin(self):
-        """Minimum pulse width being searched for"""
+        """Minimum pulse width being searched for."""
         search_ranges = self.config["ranges"]
         min_widths = [
             kw["ffa_search"]["period_min"] / kw["ffa_search"]["bins_min"]
@@ -87,10 +86,10 @@ class Pipeline(object):
 
     def get_search_range(self, period):
         """
-        Get the search range parameters (from configuration file) that the
-        given candidate period falls into. This is used at Candidate building
-        stage to retrieve how many phase bins and subints should be used
-        when folding the data at this particular period.
+        Get the configured search range containing a candidate period.
+
+        This is used at candidate-building stage to retrieve how many phase
+        bins and subints should be used when folding the data.
 
         Parameters
         ----------
@@ -116,7 +115,8 @@ class Pipeline(object):
 
         if period < pmin_global:
             msg = (
-                f"Given period={period:.9f} is shorter than the minimum search period={pmin_global:.9f}."
+                f"Given period={period:.9f} is shorter than the minimum "
+                f"search period={pmin_global:.9f}."
                 " This will not affect the processing but it should NOT be happening."
             )
             log.warning(msg)
@@ -136,12 +136,12 @@ class Pipeline(object):
     @timing
     def prepare(self, files):
         """
-        Inspect input files and select a minimal set to process
+        Inspect input files and select a minimal set to process.
 
         files: list
         """
         log.info("Preparing pipeline")
-        log.debug("Input files: {}".format(len(files)))
+        log.debug(f"Input files: {len(files)}")
         conf = self.config
 
         # The DM iterator is in charge of:
@@ -162,7 +162,8 @@ class Pipeline(object):
 
         tsamp_max = self.dmiter.tsamp_max()
         log.info(
-            f"Max sampling time = {tsamp_max:.6e} s, checking pipeline config parameter values"
+            f"Max sampling time = {tsamp_max:.6e} s, checking pipeline "
+            "config parameter values"
         )
         validate_ranges(conf["ranges"], tsamp_max)
 
@@ -177,19 +178,18 @@ class Pipeline(object):
 
     @timing
     def search(self):
-        """
-        Search all selected files
-        """
+        """Search all selected files."""
         log.info("Running search")
         peaks = []
         for fnames in self.dmiter.iterate_filenames(chunksize=self.config["processes"]):
             peaks.extend(self.worker_pool.process_fname_list(fnames))
         self.peaks = sorted(peaks, key=lambda p: p.period)
-        log.info("Total peaks found: {}".format(len(peaks)))
+        log.info(f"Total peaks found: {len(peaks)}")
         log.info("Search complete")
 
     @timing
     def cluster_peaks(self):
+        """Cluster detected peaks by frequency."""
         if not self.peaks:
             log.info("No peaks found: skipping clustering")
             return
@@ -207,7 +207,7 @@ class Pipeline(object):
         cluster_ids = cluster1d(freqs, clrad, already_sorted=True)
 
         self.clusters = [
-            PeakCluster((self.peaks[ii] for ii in ids)) for ids in cluster_ids
+            PeakCluster(self.peaks[ii] for ii in ids) for ids in cluster_ids
         ]
 
         log.info(f"Total clusters found: {len(self.clusters)}")
@@ -215,6 +215,7 @@ class Pipeline(object):
 
     @timing
     def flag_harmonics(self):
+        """Flag clusters that are harmonics of stronger candidates."""
         if not self.clusters:
             log.info("No clusters found: skipping harmonic flagging")
             return
@@ -251,6 +252,7 @@ class Pipeline(object):
 
     @timing
     def apply_candidate_filters(self):
+        """Apply configured filters to the detected clusters."""
         log.info("Applying candidate filters")
         params = self.config["candidate_filters"]
 
@@ -275,7 +277,8 @@ class Pipeline(object):
         # Harmonic removal
         if params["remove_harmonics"]:
             log.warning(
-                "Harmonic removal is enabled, clusters flagged as harmonics will NOT be output as candidates"
+                "Harmonic removal is enabled, clusters flagged as harmonics "
+                "will NOT be output as candidates"
             )
             clusters_filtered = list(
                 filter(lambda c: not c.is_harmonic, clusters_filtered)
@@ -288,7 +291,8 @@ class Pipeline(object):
                 nleft = len(clusters_filtered)
                 nexcess = nleft - nmax
                 log.warning(
-                    f"Number of clusters remaining ({nleft}) exceeds the maximum specified number of candidates ({nmax}). "
+                    f"Number of clusters remaining ({nleft}) exceeds the maximum "
+                    f"specified number of candidates ({nmax}). "
                     f"The faintest {nexcess} will not be saved as candidates"
                 )
             clusters_filtered = sorted(
@@ -298,11 +302,13 @@ class Pipeline(object):
 
         self.clusters_filtered = clusters_filtered
         log.info(
-            f"Candidate filters applied. Clusters remaining: {len(self.clusters_filtered)}"
+            "Candidate filters applied. Clusters remaining: "
+            f"{len(self.clusters_filtered)}"
         )
 
     @timing
     def build_candidates(self):
+        """Build candidate data products from filtered clusters."""
         log.info("Building candidates")
         clusters_decreasing_snr = sorted(
             self.clusters_filtered, key=lambda c: c.centre.snr, reverse=True
@@ -319,7 +325,8 @@ class Pipeline(object):
             grouped_clusters[cl.centre.dm].append(cl)
 
         log.debug(
-            f"{len(clusters_decreasing_snr)} candidates to build from {len(grouped_clusters)} TimeSeries"
+            f"{len(clusters_decreasing_snr)} candidates to build from "
+            f"{len(grouped_clusters)} TimeSeries"
         )
 
         for dm, clusters in grouped_clusters.items():
@@ -356,8 +363,8 @@ class Pipeline(object):
         log.info("Done building candidates")
 
     @timing
-    def save_products(self, outdir=os.getcwd()):
-        """ """
+    def save_products(self, outdir=DEFAULT_OUTDIR):
+        """Save candidate, peak, and cluster data products."""
         log.info("Building products")
 
         if not self.peaks:
@@ -370,7 +377,7 @@ class Pipeline(object):
         )
         df_peaks_fname = os.path.join(outdir, "peaks.csv")
         df_peaks.to_csv(df_peaks_fname, sep=",", index=False, float_format="%.9f")
-        log.info("Saved Peak data to {!r}".format(df_peaks_fname))
+        log.info(f"Saved Peak data to {df_peaks_fname!r}")
 
         ### CSV of cluster data
         if self.clusters:
@@ -379,7 +386,7 @@ class Pipeline(object):
             df_clusters.to_csv(
                 df_clusters_fname, sep=",", index=False, float_format="%.9f"
             )
-            log.info("Saved Cluster data to {!r}".format(df_peaks_fname))
+            log.info(f"Saved Cluster data to {df_peaks_fname!r}")
 
         ### CSV of basic candidate parameters
         if self.candidates:
@@ -405,6 +412,7 @@ class Pipeline(object):
 
     @timing
     def process(self, files, outdir):
+        """Run the complete pipeline for the given input files."""
         self.prepare(files)
         self.search()
         self.cluster_peaks()
@@ -419,32 +427,37 @@ class Pipeline(object):
 
     @classmethod
     def from_yaml_config(cls, fname):
-        log.debug("Creating pipeline from config file: {}".format(fname))
-        with open(fname, "r") as fobj:
+        """Create a pipeline from a YAML configuration file."""
+        log.debug(f"Creating pipeline from config file: {fname}")
+        with open(fname) as fobj:
             conf = yaml.safe_load(fobj)
-        log.debug("Pipeline configuration: {}".format(json.dumps(conf, indent=4)))
+        log.debug(f"Pipeline configuration: {json.dumps(conf, indent=4)}")
         return cls(conf)
 
 
 ###############################################################################
 
 
-help_formatter = lambda prog: argparse.ArgumentDefaultsHelpFormatter(
-    prog, max_help_position=16
-)
+def help_formatter(prog):
+    """Create the command-line help formatter."""
+    return argparse.ArgumentDefaultsHelpFormatter(prog, max_help_position=16)
 
 
 def get_parser():
+    """Create the command-line argument parser."""
+
     def outdir(path):
-        """Function that checks the outdir argument"""
+        """Check the output directory argument."""
         if not os.path.isdir(path):
-            msg = "Specified output directory {!r} does not exist".format(path)
+            msg = f"Specified output directory {path!r} does not exist"
             raise argparse.ArgumentTypeError(msg)
         return path
 
     parser = argparse.ArgumentParser(
         formatter_class=help_formatter,
-        description=f"Search multiple DM trials with the riptide end-to-end FFA pipeline.",
+        description=(
+            "Search multiple DM trials with the riptide end-to-end FFA pipeline."
+        ),
     )
     parser.add_argument(
         "-c",
@@ -477,20 +490,27 @@ def get_parser():
     parser.add_argument(
         "--log-timings",
         action="store_true",
-        help="If this flag is specified, log the execution times of all major functions",
+        help=(
+            "If this flag is specified, log the execution times of all major functions"
+        ),
     )
     parser.add_argument("--version", action="version", version=__version__)
     parser.add_argument(
-        "files", type=str, nargs="+", help="Input file(s) of the right format"
+        "files",
+        type=str,
+        nargs="+",
+        help="Input file(s) of the right format",
     )
     return parser
 
 
 def run_program(args):
+    """Run the pipeline command with parsed arguments."""
     ### Select non-interactive backend
     # matplotlib.use('Agg') would not work here, due to importing order
-    # the console_scripts entry point design means that 'riptide' is always imported first,
-    # importing everything else in riptide's __init__.py, which ends up setting the backend
+    # the console_scripts entry point design means that 'riptide' is always
+    # imported first, importing everything else in riptide's __init__.py,
+    # which ends up setting the backend
     # before the first line of this script is reached
     # Another alternative is to call the pipeline command with the MPLBACKEND=Agg prefix
 
@@ -499,7 +519,7 @@ def run_program(args):
     # NOTE 2: Need to do this in run_program() and not main(), because run_program()
     # is called rom the unit test suite and requires a backend switch as well
     # (otherwise we get a crash on Travis OSX virtual machine)
-    import matplotlib.pyplot as plt
+    import matplotlib.pyplot as plt  # noqa: PLC0415
 
     plt.switch_backend("Agg")
 
@@ -529,6 +549,7 @@ def run_program(args):
 
 # NOTE: main() is the entry point of the console script
 def main():
+    """Run the pipeline command-line entry point."""
     # NOTE (IMPORTANT): Force all numpy libraries to use a single thread/CPU
     # Each DM trial is assigned to a different process, and for optimal
     # performance, each process should be limited to 1 CPU

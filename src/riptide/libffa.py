@@ -1,20 +1,19 @@
 ### Standard library imports
-import os
-import ctypes
 
 ### Non-standard imports
 import numpy as np
-import numpy.ctypeslib as npct
-from numpy import log, sin, cos, exp, pi
+from numpy import cos, exp, log, pi, sin
 
 ### Local imports
-from .ffautils import generate_width_trials
-import riptide.libcpp as libcpp
+from riptide import libcpp
 
 
-def generate_signal(nsamp, period, phi0=0.5, ducy=0.02, amplitude=10.0, stdnoise=1.0):
-    """Generate a time series containing a periodic signal with a von Mises
-    pulse profile. This function is useful for test purposes.
+def generate_signal(  # noqa: PLR0913, PLR0917
+    nsamp, period, phi0=0.5, ducy=0.02, amplitude=10.0, stdnoise=1.0
+):
+    """Generate a time series with a von Mises pulse profile.
+
+    This function is useful for test purposes.
 
     Parameters
     ----------
@@ -70,7 +69,7 @@ def generate_signal(nsamp, period, phi0=0.5, ducy=0.02, amplitude=10.0, stdnoise
 
 def ffa2(data):
     """
-    Compute the FFA transform of a two-dimensional input
+    Compute the FFA transform of two-dimensional input data.
 
     Parameters
     ----------
@@ -93,8 +92,7 @@ def ffa2(data):
 
 def ffa1(data, p):
     """
-    Compute the FFA transform of a one-dimensional input (time series)
-    at base period p
+    Compute the FFA transform of a one-dimensional time series at base period p.
 
     Parameters
     ----------
@@ -128,8 +126,7 @@ def ffa1(data, p):
 
 def ffafreq(N, p, dt=1.0):
     """
-    Returns the trial frequencies that correspond to every folded profile
-    in the FFA output.
+    Return trial frequencies for each folded profile in the FFA output.
 
     Parameters
     ----------
@@ -171,8 +168,7 @@ def ffafreq(N, p, dt=1.0):
 
 def ffaprd(N, p, dt=1.0):
     """
-    Returns the trial periods that correspond to every folded profile
-    in the FFA output.
+    Return trial periods for each folded profile in the FFA output.
 
     Parameters
     ----------
@@ -193,8 +189,7 @@ def ffaprd(N, p, dt=1.0):
 
 def boxcar_snr(data, widths, stdnoise=1.0):
     """
-    Compute the S/N ratio of pulse profile(s) for a range of
-    boxcar width trials.
+    Compute S/N ratios for pulse profiles and boxcar width trials.
 
     Parameters
     ----------
@@ -219,7 +214,7 @@ def boxcar_snr(data, widths, stdnoise=1.0):
 
     # Input to C++ function must be 2D
     cppinput = data.reshape(-1, b).astype(np.float32)
-    m = cppinput.shape[0]
+    cppinput.shape[0]
     snr = libcpp.snr2(cppinput, widths, stdnoise)
     shape = list(data.shape[:-1]) + [widths.size]
     return snr.reshape(shape)

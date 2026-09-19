@@ -1,12 +1,11 @@
 ##### Non-standard imports #####
-import numpy as np
 import matplotlib.pyplot as plt
 
 ##### Local imports #####
 from .metadata import Metadata
 
 
-class Periodogram(object):
+class Periodogram:
     """
     Stores the raw output of the FFA search of a time series.
 
@@ -19,12 +18,13 @@ class Periodogram(object):
         Sequence of trial periods in seconds
 
     foldbins : ndarray
-        Sequence with the same length as `periods`, containing the exact number of phase bins with
-        which the data were folded for each particular trial period.
+        Sequence with the same length as `periods`, containing the exact
+        number of phase bins with which the data were folded for each
+        particular trial period.
 
     snrs : ndarray
-        Two dimensional array with shape (num_periods, num_widths) containing the S/N as a function
-        of trial pulse width and period.
+        Two dimensional array with shape (num_periods, num_widths) containing
+        the S/N as a function of trial pulse width and period.
     """
 
     def __init__(self, widths, periods, foldbins, snrs, metadata=None):
@@ -36,15 +36,16 @@ class Periodogram(object):
 
     @property
     def freqs(self):
-        """Sequence of trial frequencies in Hz, in **decreasing** order"""
+        """Sequence of trial frequencies in Hz, in **decreasing** order."""
         return 1.0 / self.periods
 
     @property
     def tobs(self):
-        """Length in seconds of the TimeSeries that was searched"""
+        """Length in seconds of the TimeSeries that was searched."""
         return self.metadata["tobs"]
 
     def to_dict(self):
+        """Return the periodogram as a dictionary."""
         return {
             "widths": self.widths,
             "periods": self.periods,
@@ -55,6 +56,7 @@ class Periodogram(object):
 
     @classmethod
     def from_dict(cls, items):
+        """Create a periodogram from a dictionary."""
         return cls(
             items["widths"],
             items["periods"],
@@ -71,7 +73,8 @@ class Periodogram(object):
         ----------
         iwidth : int or None, optional
             Display only the data for this specific pulse width trial index.
-            If None, for each trial period, plot the highest S/N across all trial pulse widths.
+            If None, for each trial period, plot the highest S/N across all
+            trial pulse widths.
         """
         if iwidth is None:
             snr = self.snrs.max(axis=1)
@@ -87,7 +90,7 @@ class Periodogram(object):
             plt.title("Best S/N at any trial width", fontsize=18)
         else:
             width_bins = self.widths[iwidth]
-            plt.title("S/N at trial width = %d" % width_bins, fontsize=18)
+            plt.title(f"S/N at trial width = {width_bins}", fontsize=18)
 
         plt.xticks(fontsize=14)
         plt.yticks(fontsize=14)
@@ -96,8 +99,9 @@ class Periodogram(object):
 
     def display(self, iwidth=None, figsize=(20, 5), dpi=100):
         """
-        Display a plot S/N versus trial period. Creates a matplotlib figure, calls `plot()` and
-        `pyplot.show()`.
+        Display a plot of S/N versus trial period.
+
+        Create a matplotlib figure, call `plot()`, and call `pyplot.show()`.
         """
         plt.figure(figsize=figsize, dpi=dpi)
         self.plot(iwidth=iwidth)

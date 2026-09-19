@@ -1,8 +1,6 @@
 import os
 import tempfile
 
-import numpy as np
-from riptide import TimeSeries
 from riptide.apps.rseek import get_parser, run_program
 
 from .presto_generation import generate_data_presto
@@ -11,6 +9,8 @@ SIGNAL_PERIOD = 1.0
 SIGNAL_FREQ = 1.0 / SIGNAL_PERIOD
 DATA_TOBS = 128.0
 DATA_TSAMP = 256e-6
+EXPECTED_WIDTH = 13
+SNR_TOLERANCE = 0.15
 
 PARSER = get_parser()
 EXPECTED_COLUMNS = {"period", "freq", "width", "ducy", "dm", "snr"}
@@ -20,9 +20,7 @@ DEFAULT_OPTIONS = dict(
 
 
 def dict2args(d):
-    """
-    Convert dictionary of options to command line argument list
-    """
+    """Convert dictionary of options to command line argument list."""
     args = []
     for k, v in d.items():
         args.append(f"--{k}")
@@ -31,6 +29,7 @@ def dict2args(d):
 
 
 def test_rseek_fakepsr():
+    """Test rseek output for synthetic pulsar data."""
     with tempfile.TemporaryDirectory() as outdir:
         generate_data_presto(
             outdir,
@@ -57,12 +56,13 @@ def test_rseek_fakepsr():
     # NOTE: these checks depend on the RNG seed and the program options
     topcand = df.iloc[0]
     assert abs(topcand.freq - SIGNAL_FREQ) < 0.1 / DATA_TOBS
-    assert abs(topcand.snr - 18.5) < 0.15
+    assert abs(topcand.snr - 18.5) < SNR_TOLERANCE
     assert topcand.dm == 0
-    assert topcand.width == 13
+    assert topcand.width == EXPECTED_WIDTH
 
 
 def test_rseek_purenoise():
+    """Test rseek output when no candidates are found."""
     with tempfile.TemporaryDirectory() as outdir:
         generate_data_presto(
             outdir,

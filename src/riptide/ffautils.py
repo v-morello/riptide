@@ -2,6 +2,7 @@ import numpy as np
 
 
 def generate_width_trials(nbins, ducy_max=0.20, wtsp=1.5):
+    """Generate pulse-width trials for a profile with the given bin count."""
     widths = []
     w = 1
     wmax = int(max(1, ducy_max * nbins))

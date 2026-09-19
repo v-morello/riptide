@@ -10,8 +10,6 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-import os
-import sys
 
 
 # -- Project information -----------------------------------------------------
@@ -26,7 +24,8 @@ author = "Vincent Morello"
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-# NOTE: sphinx.ext.autosectionlabel makes it easy to reference other sections in the docs
+# NOTE: sphinx.ext.autosectionlabel makes it easy to reference other
+# sections in the docs
 # See: https://stackoverflow.com/a/54843636
 extensions = [
     "sphinx.ext.autodoc",

@@ -3,9 +3,10 @@ import numpy as np
 
 def cluster1d(x, r, already_sorted=False):
     """
-    Find clusters in one dimensional data using a simple friends of friends
-    algorithm. Two points are in the same cluster if they are within no more
-    than a distance 'r' from each other
+    Find clusters in one-dimensional data.
+
+    Use a simple friends-of-friends algorithm. Two points are in the same
+    cluster if they are within no more than a distance 'r' from each other.
 
     Parameters
     ----------

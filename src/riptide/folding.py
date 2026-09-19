@@ -4,6 +4,7 @@ from riptide.libffa import downsample
 
 
 def downsample_vertical(X, factor):
+    """Downsample the rows of an array by a real-valued factor."""
     m, __ = X.shape
 
     if not factor > 1:
@@ -20,7 +21,7 @@ def downsample_vertical(X, factor):
 
 def fold(ts, period, bins, subints=None):
     """
-    Fold TimeSeries at given period
+    Fold TimeSeries at given period.
 
     Parameters
     ----------
@@ -62,7 +63,8 @@ def fold(ts, period, bins, subints=None):
         full_periods = ts.length / period
         if subints > full_periods:
             raise ValueError(
-                f"subints ({subints}) exceeds the number of signal periods that fit in the data ({full_periods})"
+                f"subints ({subints}) exceeds the number of signal periods "
+                f"that fit in the data ({full_periods})"
             )
 
     factor = tbin / ts.tsamp

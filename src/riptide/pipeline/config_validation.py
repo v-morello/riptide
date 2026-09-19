@@ -1,15 +1,16 @@
-from schema import Schema, Use, Optional, And, Or
+from schema import And, Optional, Or, Schema, Use
 
 
 class InvalidSearchRange(Exception):
-    pass
+    """Raised when a search range is invalid."""
 
 
 class InvalidPipelineConfig(Exception):
-    pass
+    """Raised when the pipeline configuration is invalid."""
 
 
 def strictly_positive(x):
+    """Return whether a value is strictly positive."""
     return x > 0
 
 
@@ -173,10 +174,16 @@ PIPELINE_CONFIG_SCHEMA = Schema(
 
 
 def validate_range(rg, tsamp_max):
-    """ """
+    """
+    Validate one search range against the maximum sampling interval.
+
+    The checks ensure that the requested search and candidate resolutions are
+    supported by the input data.
+    """
     # NOTE: In general, we leave the pipeline code to raise the exceptions,
-    # except if it takes too long for it to detect them; for example, if the number of candidate
-    # bins is too large, we don't want to wait until the candidate building stage to realize this.
+    # except if it takes too long for it to detect them; for example, if the
+    # number of candidate bins is too large, we do not want to wait until the
+    # candidate-building stage to realize this.
     period_min = rg["ffa_search"]["period_min"]
     period_max = rg["ffa_search"]["period_max"]
     bins_min = rg["ffa_search"]["bins_min"]
@@ -184,28 +191,34 @@ def validate_range(rg, tsamp_max):
 
     if bins_min * tsamp_max > period_min:
         raise InvalidSearchRange(
-            f"Search range {period_min:.3e} to {period_max:.3e} seconds: requested phase "
-            "resolution is too high w.r.t. coarsest input time series "
-            f"(tsamp = {tsamp_max:.3e} seconds). Use smaller bins_min or larger period_min."
+            f"Search range {period_min:.3e} to {period_max:.3e} seconds: "
+            "requested phase resolution is too high w.r.t. coarsest input "
+            "time series "
+            f"(tsamp = {tsamp_max:.3e} seconds). Use smaller bins_min or "
+            "larger period_min."
         )
 
     if cand_bins * tsamp_max > period_min:
         raise InvalidSearchRange(
             f"Search range {period_min:.3e} to {period_max:.3e} seconds: "
-            f"cannot fold candidates with such high resolution ({cand_bins:d} bins). "
-            f"The coarsest input time series ({tsamp_max:.3e} seconds) does not allow it"
+            f"cannot fold candidates with such high resolution ({cand_bins:d} "
+            "bins). "
+            f"The coarsest input time series ({tsamp_max:.3e} seconds) does "
+            "not allow it"
         )
 
 
 def validate_ranges_contiguity(ranges):
-    """ """
+    """Validate that consecutive search ranges meet without gaps."""
     for a, b in zip(ranges[:-1], ranges[1:]):
         period_max_a = a["ffa_search"]["period_max"]
         period_min_b = b["ffa_search"]["period_min"]
         if not period_max_a == period_min_b:
             raise InvalidSearchRange(
-                "Search ranges are not either non-contiguous, or not ordered by increasing trial "
-                f"period (period_max ({period_max_a:.6e}) != next period_min ({period_min_b:.6e})"
+                "Search ranges are either non-contiguous or not ordered by "
+                "increasing trial period "
+                f"(period_max ({period_max_a:.6e}) != next period_min "
+                f"({period_min_b:.6e})"
             )
 
 
@@ -231,9 +244,10 @@ def validate_ranges(ranges, tsamp_max):
 
 def validate_pipeline_config(conf):
     """
-    Validate pipeline configuration dictionary and raise an error if it is
-    incorrect. This function only checks the format of the config and
-    the data types.
+    Validate a pipeline configuration dictionary.
+
+    Raise an error if it is incorrect. This function only checks the format of
+    the config and the data types.
 
     Parameters
     ----------

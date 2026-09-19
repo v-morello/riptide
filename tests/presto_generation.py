@@ -1,7 +1,8 @@
 import os
-import numpy as np
-from riptide import TimeSeries
 
+import numpy as np
+
+from riptide import TimeSeries
 
 INF_TEMPLATE = """
  Data file name without suffix          =  {basename:s}
@@ -29,7 +30,7 @@ INF_TEMPLATE = """
 """
 
 
-def generate_data_presto(
+def generate_data_presto(  # noqa: PLR0913, PLR0917
     outdir,
     basename,
     tobs=128.0,
@@ -40,8 +41,9 @@ def generate_data_presto(
     ducy=0.05,
 ):
     """
-    Generate some time series data with a fake signal, and save it in PRESTO
-    inf/dat format in the specified output directory.
+    Generate fake-signal time series data and save it in PRESTO inf/dat format.
+
+    Save the files in the specified output directory.
 
     Parameters
     ----------

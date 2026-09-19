@@ -3,7 +3,7 @@ import pandas
 
 class PeakCluster(list):
     """
-    Basic list subclass to store a cluster of Peak objects
+    Basic list subclass to store a cluster of Peak objects.
 
     Parameters
     ----------
@@ -24,35 +24,38 @@ class PeakCluster(list):
     """
 
     def __init__(self, peaks, rank=None, parent_fundamental=None, hfrac=None):
-        super(PeakCluster, self).__init__(peaks)
+        super().__init__(peaks)
         self.rank = rank
         self.parent_fundamental = parent_fundamental
         self.hfrac = hfrac
 
     @property
     def is_harmonic(self):
+        """Return whether this cluster is flagged as a harmonic."""
         return self.parent_fundamental is not None
 
     @property
     def centre(self):
+        """Return the highest-S/N peak in the cluster."""
         return max(self, key=lambda peak: peak.snr)
 
     def summary_dataframe(self):
         """
-        Returns a pandas.DataFrame with the parameters of the member Peak
-        objects, where the columns are the keys of the dictionary returned
-        by the Peak.summary_dict() method
+        Return a DataFrame containing the parameters of member Peaks.
+
+        The columns are the keys of the dictionary returned by the
+        Peak.summary_dict() method.
         """
         return pandas.DataFrame.from_dict([peak.summary_dict() for peak in self])
 
     def summary_dict(self):
-        """ """
+        """Return a dictionary summarizing the cluster."""
         return {
             **self.centre.summary_dict(),
             "npeaks": len(self),
-            # NOTE: we set some default values when there is no fundamental, instead of None
-            # This is to work around a limitation of pandas.DataFrame where columns with missing
-            # values MUST be of type float, and we want type 'int' for these
+            # NOTE: use defaults instead of None when there is no fundamental.
+            # This works around a pandas.DataFrame limitation where columns
+            # with missing values MUST be of type float, while these must be int.
             "rank": self.rank,
             "hfrac_num": self.hfrac.numerator if self.is_harmonic else 0,
             "hfrac_denom": self.hfrac.denominator if self.is_harmonic else 0,
@@ -62,18 +65,21 @@ class PeakCluster(list):
         }
 
     def __str__(self):
+        """Return a human-readable representation."""
         name = type(self).__name__
         return f"{name}(size={len(self)}, centre={self.centre})"
 
     def __repr__(self):
+        """Return the developer representation."""
         return str(self)
 
 
 def clusters_to_dataframe(clusters):
     """
-    Convert list of PeakCluster objects to a pandas DataFrame with a summary of
-    their attributes, including harmonic parameters. The output is sorted by
-    decreasing snr.
+    Convert PeakCluster objects to a DataFrame.
+
+    Include a summary of their attributes and harmonic parameters, sorted by
+    decreasing S/N.
     """
     clusters = sorted(clusters, key=lambda c: c.centre.snr, reverse=True)
     df = pandas.DataFrame.from_dict([cl.summary_dict() for cl in clusters])

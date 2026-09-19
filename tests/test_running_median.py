@@ -1,10 +1,11 @@
 import numpy as np
 from pytest import raises
 
-from riptide import running_median, fast_running_median
+from riptide import fast_running_median, running_median
 
 
 def running_median_naive(data, w):
+    """Compute a reference running median using NumPy."""
     h = w // 2
 
     # The C++ running median implicitly pads both ends of the arrray with
@@ -18,6 +19,7 @@ def running_median_naive(data, w):
 
 
 def test_rmed_exceptions():
+    """Test validation errors from the exact running median."""
     data = np.arange(10, dtype="float32")
 
     with raises(ValueError):  # width must be odd
@@ -31,6 +33,7 @@ def test_rmed_exceptions():
 
 
 def test_rmed():
+    """Compare the exact running median with the reference implementation."""
     x = np.random.normal(size=100).astype("float32")
     widths = [1, 3, 5, 7, 11, 25, 37]
 
@@ -39,6 +42,7 @@ def test_rmed():
 
 
 def test_rmed_non_contiguous_data():
+    """Test the exact running median on non-contiguous arrays."""
     # Test added after realizing that passing non-memory-contiguous array slices
     # to running_median() returned incorrect results
     # Thanks to Akshay Suresh for finding and reporting the problem
@@ -52,15 +56,16 @@ def test_rmed_non_contiguous_data():
 
 
 def test_fast_rmed_min_points_odd():
+    """Test validation of the approximate median window size."""
     with raises(ValueError):  # min_points must be odd
         fast_running_median(np.zeros(100), 3, min_points=10)
 
 
 def test_fast_rmed_noscrunch():
     """
-    Test fast_running_median() with parameters such that no downsampling is
-    performed internally. In this case, the output should be identical to
-    running_median().
+    Test the approximate median without internal downsampling.
+
+    In this case, the output should be identical to running_median().
     """
     x = np.random.normal(size=100)
     widths = [1, 3, 5, 7, 11, 25, 37]

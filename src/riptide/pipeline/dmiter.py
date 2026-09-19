@@ -1,23 +1,29 @@
 import logging
-import numpy as np
-from numpy import sin, radians
-from riptide import TimeSeries, Metadata
 
+import numpy as np
+from numpy import radians, sin
+
+from riptide import Metadata
 
 log = logging.getLogger("riptide.pipeline.dmiter")
 
 
-# This is the standard "rounded value" of the dispersion constant in use by pulsar astronomers
+# This is the standard "rounded value" of the dispersion constant in use by
+# pulsar astronomers
 # (page 129 of Manchester and Taylor 1977)
 KDM = 1.0 / 2.41e-4
 
 
-def select_dms(trial_dms, dm_start, dm_end, fmin, fmax, nchans, wmin):
+def select_dms(  # noqa: PLR0913, PLR0917
+    trial_dms, dm_start, dm_end, fmin, fmax, nchans, wmin
+):
     """
-    Trial DMs are selected such that the amount of pulse broadening caused by
-    DM error is no greater than max(tsmear, wmin) where tsmear is the amount
-    of pulse broadening caused by intra-channel smearing, and wmin the minimum
-    pulse width being searched for.
+    Select trial DMs with bounded pulse broadening.
+
+    The amount of pulse broadening caused by DM error is no greater than
+    max(tsmear, wmin), where tsmear is the amount of pulse broadening caused by
+    intra-channel smearing, and wmin is the minimum pulse width being searched
+    for.
 
     Parameters
     ----------
@@ -74,7 +80,8 @@ def select_dms(trial_dms, dm_start, dm_end, fmin, fmax, nchans, wmin):
             log.warning(
                 f"The step from trial DM {trial_dms[icur]:.4f} should not exceed "
                 f"{2 * radii[icur]:.4f}, "
-                f"but the next available trial DM lies farther, at {trial_dms[inext]:.4f}"
+                "but the next available trial DM lies farther, at "
+                f"{trial_dms[inext]:.4f}"
             )
         selected.append(trial_dms[inext])
         icur = inext
@@ -83,8 +90,9 @@ def select_dms(trial_dms, dm_start, dm_end, fmin, fmax, nchans, wmin):
 
 def get_band_params(meta, fmt="presto"):
     """
-    Returns (fmin, fmax, nchans) given a metadata dictionary loaded from
-    a specific file format.
+    Return band parameters from metadata loaded from a specific file format.
+
+    Return them as (fmin, fmax, nchans).
     """
     if fmt == "presto":
         fbot = meta["fbot"]
@@ -103,9 +111,10 @@ def get_band_params(meta, fmt="presto"):
 
 def infer_band_params(metadata_list, fmt="presto"):
     """
-    Read observing band parameters of all given Metadata objects, and check
-    that they are all the same (otherwise, raise RuntimeError).
-    Returns a tuple (fmin, fmax, nchans).
+    Infer common observing band parameters from metadata.
+
+    Check that the parameters of all given Metadata objects are the same;
+    otherwise, raise RuntimeError. Return a tuple (fmin, fmax, nchans).
     """
     if not metadata_list:
         raise ValueError(
@@ -115,16 +124,18 @@ def infer_band_params(metadata_list, fmt="presto"):
     params = [get_band_params(md, fmt=fmt) for md in metadata_list]
     if not all([params[0] == p for p in params]):
         raise RuntimeError(
-            "Observing band parameters are NOT identical across all dedispersed time series"
+            "Observing band parameters are NOT identical across all "
+            "dedispersed time series"
         )
     return params[0]
 
 
 def get_galactic_coordnates(metadata_list):
     """
-    Read galactic coordinates of all given Metadata objects, and check that
-    they are all the same (otherwise, raise RuntimeError).
-    Returns a float tuple (gl_deg, gb_deg).
+    Infer common galactic coordinates from metadata.
+
+    Check that the coordinates of all given Metadata objects are the same;
+    otherwise, raise RuntimeError. Return a float tuple (gl_deg, gb_deg).
     """
 
     def galc(md):
@@ -139,12 +150,14 @@ def get_galactic_coordnates(metadata_list):
     return ref
 
 
-class DMIterator(object):
+class DMIterator:
     """
-    Iterate through the minimum subset of DM trials to achieve DM space coverage.
-    Observing band parameters (fmin, fmax, nchans) are inferred from the
-    input files if possible, in which case any values passed as arguments are
-    ignored. If the input files do not contain this information (example:
+    Iterate through the minimum subset of DM trials for coverage.
+
+    Achieve DM space coverage while inferring observing band parameters from
+    the input files if possible.
+    Inferred values override manually passed arguments. If the input files do
+    not contain this information (example:
     SIGPROC dedispersed data), then fmin, fmax and nchans must all be specified,
     otherwise a ValueError is raised.
 
@@ -177,7 +190,7 @@ class DMIterator(object):
     }
 
     # TODO: actually implement dmsinb_max
-    def __init__(
+    def __init__(  # noqa: PLR0913, PLR0917
         self,
         filenames,
         dm_start,
@@ -226,7 +239,8 @@ class DMIterator(object):
             )
             log.info(
                 "Inferred observing band parameters from input files: "
-                f"fmin = {self.fmin:.3f}, fmax = {self.fmax:.3f}, nchans = {self.nchans:d}. "
+                f"fmin = {self.fmin:.3f}, fmax = {self.fmax:.3f}, "
+                f"nchans = {self.nchans:d}. "
                 "Any manually specified values of fmin/fmax/nchans will be ignored."
             )
         except (ValueError, RuntimeError) as err:
@@ -235,7 +249,9 @@ class DMIterator(object):
             )
             log.info("Using manually specified band parameters instead")
             if any([param is None for param in (fmin, fmax, nchans)]):
-                raise ValueError("You MUST specify: fmin, fmax, nchans")
+                raise ValueError(  # noqa: B904
+                    "You MUST specify: fmin, fmax, nchans"
+                )
             else:
                 (self.fmin, self.fmax, self.nchans) = (fmin, fmax, nchans)
                 log.info(
@@ -265,9 +281,7 @@ class DMIterator(object):
         )
 
     def iterate_filenames(self, chunksize=1):
-        """
-        Iterate through selected DM trial filenames in chunks of given size
-        """
+        """Iterate through selected DM trial filenames in chunks of given size."""
         chunk = []
         for dm in self.selected_dms:
             fname = self.metadata_dict[dm]["fname"]
@@ -279,10 +293,13 @@ class DMIterator(object):
             yield chunk
 
     def get_filename(self, dm):
+        """Return the filename corresponding to a dispersion measure."""
         return self.metadata_dict[dm]["fname"]
 
     def tobs_median(self):
+        """Return the median observation duration."""
         return np.median([md["tobs"] for md in self.metadata_list])
 
     def tsamp_max(self):
+        """Return the maximum sampling interval."""
         return max([md["tsamp"] for md in self.metadata_list])

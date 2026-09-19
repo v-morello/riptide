@@ -1,38 +1,39 @@
 # NOTE: best to place this at the top in case we want to import
 # it in other files
 from ._version import version as __version__
-
-### Major classes
-from .time_series import TimeSeries
-from .periodogram import Periodogram
-from .metadata import Metadata
 from .candidate import Candidate
+from .libffa import boxcar_snr, downsample, ffa1, ffa2, ffafreq, ffaprd, generate_signal
+from .metadata import Metadata
+from .peak_detection import find_peaks
+from .periodogram import Periodogram
+from .running_medians import fast_running_median, running_median
 
 ### Major functions
 from .search import ffa_search
-from .running_medians import running_median, fast_running_median
-
-from .libffa import ffa1, ffa2, ffafreq, ffaprd, generate_signal, downsample, boxcar_snr
-
-from .peak_detection import find_peaks
 
 ### Serialization
-from .serialization import save_json, load_json
+from .serialization import load_json, save_json
+
+### Major classes
+from .time_series import TimeSeries
 
 __all__ = [
-    "TimeSeries",
-    "Periodogram",
-    "Metadata",
     "Candidate",
-    "ffa_search",
+    "Metadata",
+    "Periodogram",
+    "TimeSeries",
+    "__version__",
+    "boxcar_snr",
+    "downsample",
+    "fast_running_median",
     "ffa1",
     "ffa2",
+    "ffa_search",
     "ffafreq",
     "ffaprd",
-    "generate_signal",
-    "downsample",
-    "boxcar_snr",
     "find_peaks",
-    "save_json",
+    "generate_signal",
     "load_json",
+    "running_median",
+    "save_json",
 ]

@@ -4,11 +4,11 @@
 import os
 import struct
 
+import astropy.units as uu
+
 ##### Non-standard imports #####
 import numpy as np
 from astropy.coordinates import SkyCoord
-import astropy.units as uu
-
 
 # SIGPROC keys and associated data types
 # Copied from Ewan Barr's sigpyproc
@@ -85,28 +85,28 @@ def read_attribute(fobj, keydb):
 
     atype = keydb.get(key, None)
     if atype is None:
-        errmsg = "Type of SIGPROC header attribute '{0:s}' is unknown, please specify it".format(
-            key
+        errmsg = (
+            f"Type of SIGPROC header attribute '{key:s}' is unknown, please specify it"
         )
         raise KeyError(errmsg)
 
-    if atype == str:
+    if atype is str:
         val = read_str(fobj)
-    elif atype == int:
+    elif atype is int:
         (val,) = struct.unpack("i", fobj.read(4))
-    elif atype == float:
+    elif atype is float:
         (val,) = struct.unpack("d", fobj.read(8))
-    elif atype == bool:
+    elif atype is bool:
         (val,) = struct.unpack("B", fobj.read(1))  # B = unsigned char
         val = bool(val)
     else:
-        errmsg = "Key '{0:s}' has unsupported type '{1:s}'".format(key, atype)
+        errmsg = f"Key '{key:s}' has unsupported type '{atype:s}'"
         raise ValueError(errmsg)
     return key, val
 
 
-def read_sigproc_header(fobj, extra_keys={}):
-    """Read SIGPROC header from an open file object
+def read_sigproc_header(fobj, extra_keys=None):
+    """Read a SIGPROC header from an open file object.
 
     Parameters
     ----------
@@ -123,6 +123,8 @@ def read_sigproc_header(fobj, extra_keys={}):
     bytesize : int
         Size of the header in bytes
     """
+    if extra_keys is None:
+        extra_keys = {}
     keydb = sigproc_keydb
 
     # Add any extra keys to header key database
@@ -133,8 +135,8 @@ def read_sigproc_header(fobj, extra_keys={}):
     # Read HEADER_START flag
     fobj.seek(0)
     flag = read_str(fobj)
-    errmsg = "File starts with '{0:s}' flag instead of the expected '{1:s}'".format(
-        flag, HEADER_START
+    errmsg = (
+        f"File starts with '{flag:s}' flag instead of the expected '{HEADER_START:s}'"
     )
     assert flag == HEADER_START, errmsg
 
@@ -150,8 +152,9 @@ def read_sigproc_header(fobj, extra_keys={}):
 
 
 def parse_float_coord(f):
-    """Parse coordinate in SIGPROC's own decimal floating point,
-    to either hours (RA) or degrees (Dec).
+    """Parse a SIGPROC decimal coordinate.
+
+    Convert it to either hours (RA) or degrees (Dec).
     """
     sign = np.sign(f)
     x = abs(f)
@@ -161,14 +164,18 @@ def parse_float_coord(f):
 
 
 class SigprocHeader(dict):
-    """dict-like object wrapping the information carried by the header of a
-    SIGPROC file."""
+    """Wrap information carried by a SIGPROC file header.
 
-    def __init__(self, fname, extra_keys={}):
+    This object behaves like a dictionary.
+    """
+
+    def __init__(self, fname, extra_keys=None):
+        if extra_keys is None:
+            extra_keys = {}
         self._fname = os.path.abspath(fname)
         with open(self.fname, "rb") as fobj:
             (attrs, self._bytesize) = read_sigproc_header(fobj, extra_keys)
-        super(SigprocHeader, self).__init__(attrs)
+        super().__init__(attrs)
 
     @property
     def fname(self):
@@ -182,16 +189,17 @@ class SigprocHeader(dict):
 
     @property
     def bytes_per_sample(self):
+        """Return the number of bytes in each sample."""
         return self["nchans"] * self["nbits"] // 8
 
     @property
     def nsamp(self):
-        """Number of samples in the data"""
+        """Number of samples in the data."""
         return (os.path.getsize(self.fname) - self.bytesize) // self.bytes_per_sample
 
     @property
     def tobs(self):
-        """Total length of the data in seconds"""
+        """Total length of the data in seconds."""
         return self.nsamp * self["tsamp"]
 
     @property
