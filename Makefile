@@ -23,6 +23,10 @@ check-sdist: ## Build and smoke-test the source distribution in a temporary virt
 	"$$tmpdir/venv/bin/rffa" --help >/dev/null; \
 	"$$tmpdir/venv/bin/rseek" --help >/dev/null
 
+docs: ## Build clean HTML documentation in docs/build/html
+	$(MAKE) -C docs clean
+	$(MAKE) -C docs html
+
 install: ## Install the package in editable mode with dev dependencies
 	pip install -e .[dev]
 
@@ -37,4 +41,4 @@ help: ## Print this help message
 test: ## Run the unit tests and print a coverage report
 	pytest --cov=src/ --cov-report=term-missing
 
-.PHONY: check-sdist install help test
+.PHONY: check-sdist docs install help test

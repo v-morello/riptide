@@ -40,6 +40,11 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+docs = [
+  "sphinx>=7.4,<8; python_version < '3.11'",
+  "sphinx>=8.2,<9; python_version >= '3.11'",
+  "sphinx-rtd-theme>=3,<4",
+]
 dev = [
   "build>=1.0",
   "pytest>=7.0",
