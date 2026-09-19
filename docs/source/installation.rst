@@ -16,9 +16,9 @@ Alternatively you can clone the repository and run ``make install``
    cd riptide/
    make install
 
-This simply runs ``pip install`` in `editable mode`_, which means you can freely edit the code. 
-It also installs any required dependencies with ``pip`` that are not present already. You can check
-that it all works by running the test suite in a Python or IPython console:
+This runs ``pip install`` in `editable mode`_, which means you can freely edit the code.
+It also installs the development and documentation dependencies. You can check that it all works
+by running the test suite in a Python or IPython console:
 
     >>> import riptide
     >>> riptide.test()

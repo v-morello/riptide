@@ -45,7 +45,7 @@ And then in the base directory of `riptide` run
 make install
 ```
 
-This simply runs ``pip install`` in [editable mode](https://pip.pypa.io/en/latest/reference/pip_install/#editable-installs), which means you can freely edit the code. It also installs any required dependencies with ``pip`` that are not present already. The installer also adds links to two command-line apps in your python environment using [console_scripts entry points](https://python-packaging.readthedocs.io/en/latest/command-line-scripts.html):  
+This runs ``pip install`` in [editable mode](https://pip.pypa.io/en/latest/reference/pip_install/#editable-installs), which means you can freely edit the code. It also installs the development and documentation dependencies. The installer adds links to two command-line apps in your python environment using [console_scripts entry points](https://python-packaging.readthedocs.io/en/latest/command-line-scripts.html):
 
 * `rffa`: The full end-to-end pipeline to search multiple DM trials, see below for details on how to use it.
 * `rseek`: A lightweight app to search a single time series and print significant candidates found, useful for quick data checks.
@@ -56,7 +56,6 @@ rffa -h
 rseek -h
 ```
 And you should see the full help of both applications.
-
 
 
 

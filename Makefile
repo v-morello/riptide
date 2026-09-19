@@ -27,8 +27,8 @@ check-sdist: ## Build and smoke-test the source distribution in a temporary virt
 docs: ## Build clean HTML documentation in docs/build/html
 	$(MAKE) -C docs clean html SPHINXOPTS="$(DOCS_SPHINXOPTS)"
 
-install: ## Install the package in editable mode with dev dependencies
-	pip install -e .[dev]
+install: ## Install the package in editable mode with dev and docs dependencies
+	pip install -e '.[dev,docs]'
 
 lint: ## Run the linter
 	ruff check src tests
