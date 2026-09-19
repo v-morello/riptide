@@ -3,8 +3,6 @@
 
 #include <algorithm>
 #include <stdexcept>
-#include <cstring> // memset()
-#include <chrono>
 #include <initializer_list>
 
 #include "kernels.hpp"
@@ -94,29 +92,6 @@ py::array_t<float> ffa2(py::array_t<float> arr_input)
     riptide::transform(input.data(0, 0), rows, cols, temp.get(), output.mutable_data(0, 0));
     return output;
 }
-
-/* Benchmark the ffa2() function. Returns the time per loop in seconds */
-double benchmark_ffa2(size_t rows, size_t cols, size_t loops)
-{
-    const size_t size = rows * cols;
-
-    // NOTE: performance slightly increases when all buffers are contiguous
-    // (better memory locality)
-    std::unique_ptr<float[]> buffer(new float[3 * size]);
-    float* input = buffer.get();
-    float* temp = input + size;
-    float* out = temp + size;
-    memset(input, 0, size * sizeof(float));
-
-    auto start = std::chrono::high_resolution_clock::now();
-
-    for (size_t i = 0; i < loops; ++i)
-        riptide::transform(input, rows, cols, temp, out);
-
-    auto end = std::chrono::high_resolution_clock::now();
-    return std::chrono::duration<double>(end - start).count() / loops;
-}
-
 
 py::array_t<float> snr1(py::array_t<float> arr_x, py::array_t<size_t> arr_widths, float stdnoise)
 {
@@ -242,11 +217,6 @@ PYBIND11_MODULE(libcpp, m)
     m.def(
         "ffa2", &ffa2, 
         "FFA transform a 2D input array"
-    );
-
-    m.def(
-        "benchmark_ffa2", &benchmark_ffa2, 
-        "Benchmark the ffa2() function. Returns the time per loop in seconds."
     );
 
     m.def(
