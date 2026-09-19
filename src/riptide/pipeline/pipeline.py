@@ -391,6 +391,9 @@ class Pipeline:
                 self.config["plot_candidates"],
             )
             pool.map(writer, enumerate(self.candidates))
+            # Necessary for accurate coverage reporting
+            pool.close()
+            pool.join()
         log.info("Data products written")
 
     @timing

@@ -39,6 +39,9 @@ class WorkerPool:
         """Process a list of filenames in parallel."""
         with multiprocessing.Pool(processes=self.processes) as pool:
             results = pool.map(self.process_fname, fnames)
+            # Necessary for accurate coverage reporting
+            pool.close()
+            pool.join()
         return [det for dlist in results for det in dlist]
 
     def process_fname(self, fname):
