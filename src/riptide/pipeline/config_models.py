@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Literal, Optional
 
 from pydantic import (
     BaseModel,
@@ -24,17 +24,17 @@ class DataConfig(ConfigModel):
     """Input data format and optional observing-band parameters."""
 
     format: Literal["presto", "sigproc"]
-    fmin: PositiveFloat | None = None
-    fmax: PositiveFloat | None = None
-    nchans: PositiveInt | None = None
+    fmin: Optional[PositiveFloat] = None
+    fmax: Optional[PositiveFloat] = None
+    nchans: Optional[PositiveInt] = None
 
 
 class DMSelectConfig(ConfigModel):
     """Dispersion-measure trial selection parameters."""
 
-    min: float | None = None
-    max: float | None = None
-    dmsinb_max: PositiveFloat | None = None
+    min: Optional[float] = None
+    max: Optional[float] = None
+    dmsinb_max: Optional[PositiveFloat] = None
 
 
 class DereddeningConfig(ConfigModel):
@@ -80,7 +80,7 @@ class CandidateConfig(ConfigModel):
     """Parameters for generated candidate files."""
 
     bins: PositiveInt
-    subints: PositiveInt | None = 32
+    subints: Optional[PositiveInt] = 32
 
 
 class SearchRangeConfig(ConfigModel):
@@ -110,10 +110,10 @@ class HarmonicFlaggingConfig(ConfigModel):
 class CandidateFiltersConfig(ConfigModel):
     """Filters applied before candidate files are produced."""
 
-    dm_min: float | None = None
-    snr_min: float | None = None
+    dm_min: Optional[float] = None
+    snr_min: Optional[float] = None
     remove_harmonics: bool = False
-    max_number: PositiveInt | None = None
+    max_number: Optional[PositiveInt] = None
 
 
 class PipelineConfig(ConfigModel):

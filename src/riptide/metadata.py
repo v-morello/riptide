@@ -4,6 +4,7 @@ import json
 import os
 import pprint
 from collections.abc import Mapping
+from typing import Optional
 
 from astropy.coordinates import SkyCoord
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -19,12 +20,12 @@ class _MetadataModel(BaseModel):
         extra="allow",
     )
 
-    source_name: str | None = None
-    skycoord: SkyCoord | None = None
-    dm: float | None = Field(default=None, ge=0)
-    mjd: float | None = Field(default=None, ge=0)
-    tobs: float | None = Field(default=None, gt=0)
-    fname: str | None = None
+    source_name: Optional[str] = None
+    skycoord: Optional[SkyCoord] = None
+    dm: Optional[float] = Field(default=None, ge=0)
+    mjd: Optional[float] = Field(default=None, ge=0)
+    tobs: Optional[float] = Field(default=None, gt=0)
+    fname: Optional[str] = None
 
     @model_validator(mode="before")
     @classmethod

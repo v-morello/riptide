@@ -83,6 +83,7 @@ ignore = [
     "D104",  # undocumented-public-package
     "D203",  # incorrect-blank-line-before-class
     "D213",  # multi-line-summary-second-line
+    "UP045", # Optional[] is required for Python 3.9 compatibility
 ]
 
 [tool.ruff.lint.pydocstyle]
