@@ -184,7 +184,6 @@ class DMIterator:
         "presto": Metadata.from_presto_inf,
     }
 
-    # TODO: actually implement dmsinb_max
     def __init__(  # noqa: PLR0913, PLR0917
         self,
         filenames,

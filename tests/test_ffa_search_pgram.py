@@ -51,7 +51,6 @@ def test_ffa_search():
     )
     assert id(tsdr) == id(ts)
 
-    ### Periodogram serialization ###
     with tempfile.NamedTemporaryFile(suffix=".json") as f:
         save_json(f.name, pgram)
         f.flush()
@@ -61,7 +60,6 @@ def test_ffa_search():
         assert np.allclose(pgram.widths, pgram_copy.widths)
         assert pgram.metadata == pgram_copy.metadata
 
-    ### Periodogram plotting ###
     plt.switch_backend("Agg")
     fig = plt.figure(figsize=(20, 5), dpi=100)
     pgram.plot()

@@ -1,15 +1,12 @@
 import copy
 import warnings
 
-##### Non-standard imports #####
 import numpy as np
 
 from .folding import fold
 from .libffa import downsample, generate_signal
 from .metadata import Metadata
 from .reading import PrestoInf, SigprocHeader
-
-##### Local imports #####
 from .running_medians import fast_running_median
 from .timing import timing
 

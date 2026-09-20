@@ -1,4 +1,3 @@
-### Local module imports
 from riptide import libcpp
 
 from .ffautils import generate_width_trials
@@ -78,7 +77,7 @@ def ffa_search(  # noqa: PLR0913, PLR0917
         The output of the search, which contains among other things a 2D array
         representing S/N as a function of trial period and trial width.
     """
-    ### Prepare data: deredden then normalise IN THAT ORDER
+    # Red-noise subtraction must happen before normalisation.
     if deredden:
         tseries = tseries.deredden(rmed_width, minpts=rmed_minpts)
     if not already_normalised:

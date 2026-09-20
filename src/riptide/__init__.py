@@ -7,14 +7,8 @@ from .metadata import Metadata
 from .peak_detection import find_peaks
 from .periodogram import Periodogram
 from .running_medians import fast_running_median, running_median
-
-### Major functions
 from .search import ffa_search
-
-### Serialization
 from .serialization import load_json, save_json
-
-### Major classes
 from .time_series import TimeSeries
 
 __all__ = [

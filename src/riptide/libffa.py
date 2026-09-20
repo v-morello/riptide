@@ -1,10 +1,6 @@
-### Standard library imports
-
-### Non-standard imports
 import numpy as np
 from numpy import cos, exp, log, pi, sin
 
-### Local imports
 from riptide import libcpp
 
 

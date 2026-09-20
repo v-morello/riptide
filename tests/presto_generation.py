@@ -54,7 +54,7 @@ def generate_data_presto(  # noqa: PLR0913, PLR0917
         will be saved.
     **kwargs: self-explanatory
     """
-    ### IMPORTANT: seed the RNG to get reproducible results ###
+    # Seed the RNG for reproducible results.
     np.random.seed(0)
 
     ts = TimeSeries.generate(

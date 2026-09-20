@@ -1,7 +1,5 @@
-##### Non-standard imports #####
 import matplotlib.pyplot as plt
 
-##### Local imports #####
 from .metadata import Metadata
 
 

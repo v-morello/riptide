@@ -81,7 +81,6 @@ def test_ffafreq():
     # NOTE: ffaprd() simply does 1.0 / ffafreq(), so we only need to properly
     # cover all ffafreq() corner cases
 
-    ### Correctness
     # See the paper for the formula: https://arxiv.org/abs/2004.03701
     m = 42
     p = 127
@@ -100,7 +99,6 @@ def test_ffafreq():
     # Special case where the FFA input data has only one signal period (m = 1)
     assert ffafreq(p, p, dt=dt)[0] == 1.0 / (p * dt)
 
-    ### Errors
     with raises(ValueError):
         ffafreq(0, p, dt=dt)  # N <= 0
 

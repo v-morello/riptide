@@ -129,7 +129,6 @@ def test_methods():  # noqa: PLR0915
     )
     ts = tsorig.copy()
 
-    ### Normalisation inplace / out of place ###
     tscopy = ts.copy()
     ts = ts.normalise()
     tscopy.normalise(inplace=True)
@@ -138,7 +137,6 @@ def test_methods():  # noqa: PLR0915
     assert np.allclose(ts.data.std(), 1.0, atol=FLOAT_ATOL)
     assert np.allclose(ts.data, tscopy.data, atol=FLOAT_ATOL)
 
-    ### Dereddening inplace / out of place ###
     tscopy = ts.copy()
     ts = ts.deredden(width=0.5, minpts=51)
     tscopy.deredden(width=0.5, minpts=51, inplace=True)
@@ -149,7 +147,6 @@ def test_methods():  # noqa: PLR0915
     tsconst._data += 42.42
     assert np.allclose(tsconst.deredden(0.5, minpts=51).data, 0.0, atol=FLOAT_ATOL)
 
-    ### Downsampling ##
     dsfactor = 10
     ts = tsorig.downsample(dsfactor)
     tscopy = tsorig.copy()
@@ -169,7 +166,6 @@ def test_methods():  # noqa: PLR0915
     with raises(ValueError):  # excessive
         ts = tsorig.downsample(tsorig.nsamp * 10)
 
-    ### Folding ###
     bins = 100
 
     # Fold with nsubs = None (default to number of periods that fit in data)

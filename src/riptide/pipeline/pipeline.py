@@ -357,7 +357,6 @@ class Pipeline:
         df_peaks.to_csv(df_peaks_fname, sep=",", index=False, float_format="%.9f")
         log.info(f"Saved Peak data to {df_peaks_fname!r}")
 
-        ### CSV of cluster data
         if self.clusters:
             df_clusters = clusters_to_dataframe(self.clusters)
             df_clusters_fname = os.path.join(outdir, "clusters.csv")
@@ -366,7 +365,6 @@ class Pipeline:
             )
             log.info(f"Saved Cluster data to {df_peaks_fname!r}")
 
-        ### CSV of basic candidate parameters
         if self.candidates:
             df_cands = pandas.DataFrame.from_dict(
                 [cand.params for cand in self.candidates]
@@ -374,7 +372,6 @@ class Pipeline:
             df_cands_fname = os.path.join(outdir, "candidates.csv")
             df_cands.to_csv(df_cands_fname, sep=",", index=False, float_format="%.9f")
 
-        ### Candidates and candidate plots
         log.info("Writing candidate files")
         with multiprocessing.Pool(processes=self.config.processes) as pool:
             writer = functools.partial(
@@ -411,9 +408,6 @@ class Pipeline:
             conf = yaml.safe_load(fobj)
         log.debug(f"Pipeline configuration: {json.dumps(conf, indent=4)}")
         return cls(conf)
-
-
-###############################################################################
 
 
 def get_parser():
@@ -481,7 +475,6 @@ def get_parser():
 
 def run_program(args):
     """Run the pipeline command with parsed arguments."""
-    ### Select non-interactive backend
     # matplotlib.use('Agg') would not work here, due to importing order
     # the console_scripts entry point design means that 'riptide' is always
     # imported first, importing everything else in riptide's __init__.py,

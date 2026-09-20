@@ -1,12 +1,9 @@
 """Read dedispersed time series from SIGPROC."""
 
-##### Standard imports #####
 import os
 import struct
 
 import astropy.units as uu
-
-##### Non-standard imports #####
 import numpy as np
 from astropy.coordinates import SkyCoord
 

@@ -41,14 +41,12 @@ def runner_presto_fakepsr(fname_conf, outdir):
             ducy=ducy,
         )
 
-    ### Run pipeline ###
     files = glob.glob(f"{outdir}/*.inf")
     cmdline_args = ["--config", fname_conf, "--outdir", outdir] + files
     parser = get_parser()
     args = parser.parse_args(cmdline_args)
     run_program(args)
 
-    ### Check output sanity ###
     topcand_fname = f"{outdir}/candidate_0000.json"
     assert os.path.isfile(topcand_fname)
 
@@ -75,14 +73,12 @@ def runner_presto_purenoise(fname_conf, outdir):
         amplitude=0.0,
     )
 
-    ### Run pipeline ###
     files = glob.glob(f"{outdir}/*.inf")
     cmdline_args = ["--config", fname_conf, "--outdir", outdir] + files
     parser = get_parser()
     args = parser.parse_args(cmdline_args)
     run_program(args)
 
-    ### Check output sanity ###
     assert not glob.glob(f"{outdir}/*.json")
     assert not glob.glob(f"{outdir}/*.png")
 
