@@ -1,26 +1,49 @@
+from __future__ import annotations
+
 import json
 import os
 import pprint
+from collections.abc import Mapping
 
 from astropy.coordinates import SkyCoord
-from schema import And, Optional, Or, Schema
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from .reading import PrestoInf, SigprocHeader
 
-SCHEMA_ITEMS = {
-    Optional("source_name"): Or(str, None),
-    Optional("skycoord"): Or(SkyCoord, None),
-    Optional("dm"): Or(And(float, lambda x: x >= 0), None),
-    Optional("mjd"): Or(And(float, lambda x: x >= 0), None),
-    Optional("tobs"): Or(And(float, lambda x: x > 0), None),
-    Optional("fname"): Or(str, None),
-    # Accept any extra keys of type string with JSON-serializable values
-    Optional(str): json.dumps,
-}
 
-SCHEMA = Schema(SCHEMA_ITEMS, ignore_extra_keys=True)
-EIGHT_BIT_NBITS = 8
-SUPPORTED_NBITS = {EIGHT_BIT_NBITS, 32}
+class _MetadataModel(BaseModel):
+    """Validate reserved metadata fields and JSON-compatible extras."""
+
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="allow",
+    )
+
+    source_name: str | None = None
+    skycoord: SkyCoord | None = None
+    dm: float | None = Field(default=None, ge=0)
+    mjd: float | None = Field(default=None, ge=0)
+    tobs: float | None = Field(default=None, gt=0)
+    fname: str | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def validate_extra_values(cls, values):
+        """Validate metadata mappings and arbitrary extra values."""
+        if not isinstance(values, Mapping):
+            raise ValueError("metadata must be a mapping")
+
+        for key, value in values.items():
+            if not isinstance(key, str):
+                raise ValueError("metadata keys must be strings")
+            if key not in cls.model_fields:
+                try:
+                    json.dumps(value)
+                except (TypeError, ValueError) as exc:
+                    raise ValueError(
+                        f"metadata value for extra key {key!r} is not JSON serializable"
+                    ) from exc
+        return values
 
 
 class Metadata(dict):
@@ -48,12 +71,8 @@ class Metadata(dict):
     def __init__(self, items=None):
         if items is None:
             items = {}
-        SCHEMA.validate(items)
-        super().__init__(items)
-
-        for k in SCHEMA_ITEMS:
-            if isinstance(k.schema, str):
-                self.setdefault(k.schema, None)
+        validated = _MetadataModel.model_validate(items)
+        super().__init__(validated.model_dump(mode="python"))
 
     @classmethod
     def from_presto_inf(cls, inf):
@@ -103,12 +122,12 @@ class Metadata(dict):
         # We support either 32-bit float data or 8-bit data with signedness
         # specified in the header.
         nbits = sh["nbits"]
-        if nbits not in SUPPORTED_NBITS:
+        if nbits not in {8, 32}:
             raise ValueError(
                 "Only 8-bit and 32-bit SIGPROC data are supported. "
                 f"File {sh.fname!r} contains {nbits}-bit data"
             )
-        if nbits == EIGHT_BIT_NBITS and "signed" not in sh:
+        if nbits == 8 and "signed" not in sh:  # noqa: PLR2004
             raise ValueError(
                 "SIGPROC Header says this is 8-bit data, but does not specify "
                 "its signedness via the 'signed' key"

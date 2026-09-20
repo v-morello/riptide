@@ -34,8 +34,8 @@ dependencies = [
   "matplotlib>=3.6",
   "numpy>=1.23",
   "pandas>=1.5",
+  "pydantic>=2,<3",
   "pyyaml>=6.0",
-  "schema>=0.7.5",
   "threadpoolctl>=3.1",
 ]
 

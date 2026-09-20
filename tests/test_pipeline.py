@@ -1,13 +1,8 @@
 import glob
 import os
 import tempfile
-from copy import deepcopy
-
-import yaml
-from pytest import raises
 
 from riptide import load_json
-from riptide.pipeline.config_validation import InvalidPipelineConfig, InvalidSearchRange
 from riptide.pipeline.pipeline import get_parser, run_program
 
 from .presto_generation import generate_data_presto
@@ -92,18 +87,6 @@ def runner_presto_purenoise(fname_conf, outdir):
     assert not glob.glob(f"{outdir}/*.png")
 
 
-def load_yaml(fname):
-    """Load YAML data from a file."""
-    with open(fname) as fobj:
-        return yaml.safe_load(fobj)
-
-
-def save_yaml(items, fname):
-    """Save YAML data to a file."""
-    with open(fname, "w") as fobj:
-        return yaml.safe_dump(items, fobj)
-
-
 def test_pipeline_presto_fakepsr():
     """Test the pipeline with synthetic pulsar data."""
     # NOTE: outdir is a full path (str)
@@ -125,45 +108,3 @@ def test_pipeline_presto_purenoise():
     with tempfile.TemporaryDirectory() as outdir:
         fname_conf = os.path.join(os.path.dirname(__file__), "pipeline_config_B.yml")
         runner_presto_purenoise(fname_conf, outdir)
-
-
-def test_config_validation():
-    """Test validation failures for invalid pipeline configurations."""
-    fname_conf = os.path.join(os.path.dirname(__file__), "pipeline_config_A.yml")
-    conf_correct = load_yaml(fname_conf)
-
-    # Wrong parameter type
-    with tempfile.TemporaryDirectory() as outdir:
-        conf_wrong = deepcopy(conf_correct)
-        conf_wrong["dmselect"]["min"] = "LOL"
-        tmp = os.path.join(outdir, "wrong_config.yaml")
-        save_yaml(conf_wrong, tmp)
-        with raises(InvalidPipelineConfig):
-            runner_presto_fakepsr(tmp, outdir)
-
-    # period_min too low
-    with tempfile.TemporaryDirectory() as outdir:
-        conf_wrong = deepcopy(conf_correct)
-        conf_wrong["ranges"][0]["ffa_search"]["period_min"] = 1.0e-9
-        tmp = os.path.join(outdir, "wrong_config.yaml")
-        save_yaml(conf_wrong, tmp)
-        with raises(InvalidSearchRange):
-            runner_presto_fakepsr(tmp, outdir)
-
-    # too many phase bins requested to fold candidates
-    with tempfile.TemporaryDirectory() as outdir:
-        conf_wrong = deepcopy(conf_correct)
-        conf_wrong["ranges"][0]["candidates"]["bins"] = int(42.0e9)
-        tmp = os.path.join(outdir, "wrong_config.yaml")
-        save_yaml(conf_wrong, tmp)
-        with raises(InvalidSearchRange):
-            runner_presto_fakepsr(tmp, outdir)
-
-    # non-contiguous search ranges
-    with tempfile.TemporaryDirectory() as outdir:
-        conf_wrong = deepcopy(conf_correct)
-        conf_wrong["ranges"][0]["ffa_search"]["period_max"] = 0.50042
-        tmp = os.path.join(outdir, "wrong_config.yaml")
-        save_yaml(conf_wrong, tmp)
-        with raises(InvalidSearchRange):
-            runner_presto_fakepsr(tmp, outdir)

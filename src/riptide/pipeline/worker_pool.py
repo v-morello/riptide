@@ -2,6 +2,7 @@ import logging
 import multiprocessing
 
 from riptide import TimeSeries, ffa_search, find_peaks
+from riptide.pipeline.config_models import DereddeningConfig, SearchRangeConfig
 
 log = logging.getLogger("riptide.worker_pool")
 
@@ -12,9 +13,9 @@ class WorkerPool:
 
     Parameters
     ----------
-    deredden_params : dict
-    range_confs : list of dicts
-        List of dicts from the 'ranges' section of the YAML config file
+    deredden_params : DereddeningConfig
+    range_confs : list of SearchRangeConfig
+        List of search ranges from the YAML config file
     loader : func
         Function that takes a file path as its only argument, and returns
         a TimeSeries object
@@ -29,7 +30,13 @@ class WorkerPool:
         "presto": TimeSeries.from_presto_inf,
     }
 
-    def __init__(self, deredden_params, range_confs, processes=1, fmt="presto"):
+    def __init__(
+        self,
+        deredden_params: DereddeningConfig,
+        range_confs: list[SearchRangeConfig],
+        processes=1,
+        fmt="presto",
+    ):
         self.deredden_params = deredden_params
         self.range_confs = range_confs
         self.loader = self.TIMESERIES_LOADERS[fmt]
@@ -53,16 +60,16 @@ class WorkerPool:
 
         # Make pre-processing common to all ranges to save time
         ts = ts.deredden(
-            self.deredden_params["rmed_width"],
-            minpts=self.deredden_params["rmed_minpts"],
+            self.deredden_params.rmed_width,
+            minpts=self.deredden_params.rmed_minpts,
         )
         ts = ts.normalise()
 
         for conf in self.range_confs:
-            kw_search = dict(conf["ffa_search"])
+            kw_search = conf.ffa_search.model_dump()
             kw_search.update({"deredden": False, "already_normalised": True})
             tsdr, pgram = ffa_search(ts, **kw_search)
-            peaks, polycos = find_peaks(pgram, **conf["find_peaks"])
+            peaks, polycos = find_peaks(pgram, **conf.find_peaks.model_dump())
             allpeaks.extend(peaks)
             del tsdr, pgram, peaks, polycos  # Free RAM ASAP
         log.debug(f"Done searching DM = {dm:.3f}, peaks found: {len(allpeaks)}")

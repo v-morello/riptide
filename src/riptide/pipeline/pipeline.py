@@ -15,7 +15,7 @@ import yaml
 
 from riptide import Candidate, __version__
 from riptide.clustering import cluster1d
-from riptide.pipeline.config_validation import validate_pipeline_config, validate_ranges
+from riptide.pipeline.config_models import PipelineConfig
 from riptide.pipeline.dmiter import DMIterator
 from riptide.pipeline.harmonic_testing import htest
 from riptide.pipeline.peak_cluster import PeakCluster, clusters_to_dataframe
@@ -45,15 +45,12 @@ class Pipeline:
 
     Parameters
     ----------
-    conf: dict
-        Configuration dictionary loaded from YAML file
+    config: dict or PipelineConfig
+        Configuration dictionary loaded from YAML file, or a validated model
     """
 
     def __init__(self, config):
-        # This only validates the format, not the actual parameter values.
-        # More checks are performed later when the parameters of the input
-        # time series are known
-        self.config = validate_pipeline_config(config)
+        self.config = PipelineConfig.model_validate(config)
         self.dmiter = None
         self.worker_pool = None
         self.peaks = []
@@ -63,10 +60,10 @@ class Pipeline:
 
     def wmin(self):
         """Minimum pulse width being searched for."""
-        search_ranges = self.config["ranges"]
+        search_ranges = self.config.ranges
         min_widths = [
-            kw["ffa_search"]["period_min"] / kw["ffa_search"]["bins_min"]
-            for kw in search_ranges
+            search_range.ffa_search.period_min / search_range.ffa_search.bins_min
+            for search_range in search_ranges
         ]
         return min(min_widths)
 
@@ -84,20 +81,15 @@ class Pipeline:
 
         Returns
         -------
-        range: dict
-            Parameters of the search range the given periods falls into
+        range: SearchRangeConfig
+            Parameters of the search range the given period falls into
         """
-        # TODO: The range parameters need to be validated on initialization
-        # We need to be sure that they form a partition of a wider range
-        # ie. do not overlap and leave no gaps in between
-        # The code below can return wrong results if the ranges do not connect
-        # perfectly with each other
         ranges = sorted(
-            self.config["ranges"], key=lambda r: r["ffa_search"]["period_max"]
+            self.config.ranges, key=lambda r: r.ffa_search.period_max
         )
 
-        pmin_global = min(rng["ffa_search"]["period_min"] for rng in ranges)
-        pmax_global = max(rng["ffa_search"]["period_max"] for rng in ranges)
+        pmin_global = min(rng.ffa_search.period_min for rng in ranges)
+        pmax_global = max(rng.ffa_search.period_max for rng in ranges)
 
         if period < pmin_global:
             msg = (
@@ -106,18 +98,18 @@ class Pipeline:
                 " This will not affect the processing but it should NOT be happening."
             )
             log.warning(msg)
-            return dict(ranges[0])
+            return ranges[0]
 
         # This can rightfully happen on occasion
         # We actually search slightly higher than pmax_global in practice
         if period >= pmax_global:
-            return dict(ranges[-1])
+            return ranges[-1]
 
         for rng in ranges:
-            pmin = rng["ffa_search"]["period_min"]
-            pmax = rng["ffa_search"]["period_max"]
+            pmin = rng.ffa_search.period_min
+            pmax = rng.ffa_search.period_max
             if pmin <= period < pmax:
-                return dict(rng)
+                return rng
 
     @timing
     def prepare(self, files):
@@ -136,14 +128,14 @@ class Pipeline:
         # - yielding them in chunks of size = number of parallel processes
         self.dmiter = DMIterator(
             files,
-            conf["dmselect"]["min"],
-            conf["dmselect"]["max"],
-            dmsinb_max=conf["dmselect"]["dmsinb_max"],
-            fmt=conf["data"]["format"],
+            conf.dmselect.min,
+            conf.dmselect.max,
+            dmsinb_max=conf.dmselect.dmsinb_max,
+            fmt=conf.data.format,
             wmin=self.wmin(),
-            fmin=conf["data"]["fmin"],
-            fmax=conf["data"]["fmax"],
-            nchans=conf["data"]["nchans"],
+            fmin=conf.data.fmin,
+            fmax=conf.data.fmax,
+            nchans=conf.data.nchans,
         )
 
         tsamp_max = self.dmiter.tsamp_max()
@@ -151,14 +143,14 @@ class Pipeline:
             f"Max sampling time = {tsamp_max:.6e} s, checking pipeline "
             "config parameter values"
         )
-        validate_ranges(conf["ranges"], tsamp_max)
+        conf.validate_for_input(tsamp_max)
 
         # NOTE: call dmiter.prepare() first. Before that, dmiter.tsloader is None
         self.worker_pool = WorkerPool(
-            conf["dereddening"],
-            conf["ranges"],
-            processes=conf["processes"],
-            fmt=conf["data"]["format"],
+            conf.dereddening,
+            conf.ranges,
+            processes=conf.processes,
+            fmt=conf.data.format,
         )
         log.info("Pipeline ready")
 
@@ -167,7 +159,7 @@ class Pipeline:
         """Search all selected files."""
         log.info("Running search")
         peaks = []
-        for fnames in self.dmiter.iterate_filenames(chunksize=self.config["processes"]):
+        for fnames in self.dmiter.iterate_filenames(chunksize=self.config.processes):
             peaks.extend(self.worker_pool.process_fname_list(fnames))
         self.peaks = sorted(peaks, key=lambda p: p.period)
         log.info(f"Total peaks found: {len(peaks)}")
@@ -183,7 +175,7 @@ class Pipeline:
         log.info("Clustering peaks")
         conf = self.config
         tmed = self.dmiter.tobs_median()
-        clrad = conf["clustering"]["radius"] / tmed
+        clrad = conf.clustering.radius / tmed
 
         log.debug(f"Median Tobs = {tmed:.2f} s")
         log.debug(f"Frequency clustering radius = {clrad:.3e} Hz")
@@ -210,7 +202,7 @@ class Pipeline:
         tobs = self.dmiter.tobs_median()
         fmin = self.dmiter.fmin
         fmax = self.dmiter.fmax
-        kwargs = self.config["harmonic_flagging"]
+        kwargs = self.config.harmonic_flagging.model_dump()
 
         clusters_decreasing_snr = sorted(
             self.clusters, key=lambda c: c.centre.snr, reverse=True
@@ -240,12 +232,12 @@ class Pipeline:
     def apply_candidate_filters(self):
         """Apply configured filters to the detected clusters."""
         log.info("Applying candidate filters")
-        params = self.config["candidate_filters"]
+        params = self.config.candidate_filters
 
         clusters_filtered = self.clusters
 
         # DM cut
-        dm_min = params["dm_min"]
+        dm_min = params.dm_min
         if dm_min is not None:
             log.warning(f"Applying DM threshold of {dm_min}")
             clusters_filtered = list(
@@ -253,7 +245,7 @@ class Pipeline:
             )
 
         # S/N cut
-        snr_min = params["snr_min"]
+        snr_min = params.snr_min
         if snr_min is not None:
             log.warning(f"Applying S/N threshold of {snr_min}")
             clusters_filtered = list(
@@ -261,7 +253,7 @@ class Pipeline:
             )
 
         # Harmonic removal
-        if params["remove_harmonics"]:
+        if params.remove_harmonics:
             log.warning(
                 "Harmonic removal is enabled, clusters flagged as harmonics "
                 "will NOT be output as candidates"
@@ -271,7 +263,7 @@ class Pipeline:
             )
 
         # Cap on number of candidates to build
-        nmax = params["max_number"]
+        nmax = params.max_number
         if nmax:
             if len(clusters_filtered) > nmax:
                 nleft = len(clusters_filtered)
@@ -319,8 +311,8 @@ class Pipeline:
             fname = self.dmiter.get_filename(dm)
             ts = self.worker_pool.loader(fname)
             ts = ts.deredden(
-                width=self.config["dereddening"]["rmed_width"],
-                minpts=self.config["dereddening"]["rmed_minpts"],
+                width=self.config.dereddening.rmed_width,
+                minpts=self.config.dereddening.rmed_minpts,
             )
             ts = ts.normalise()
 
@@ -330,8 +322,8 @@ class Pipeline:
                     cand = Candidate.from_pipeline_output(
                         ts,
                         cl,
-                        rng["candidates"]["bins"],
-                        subints=rng["candidates"]["subints"],
+                        rng.candidates.bins,
+                        subints=rng.candidates.subints,
                     )
                     self.candidates.append(cand)
 
@@ -384,11 +376,11 @@ class Pipeline:
 
         ### Candidates and candidate plots
         log.info("Writing candidate files")
-        with multiprocessing.Pool(processes=self.config["processes"]) as pool:
+        with multiprocessing.Pool(processes=self.config.processes) as pool:
             writer = functools.partial(
                 write_candidate,
                 os.path.realpath(outdir),
-                self.config["plot_candidates"],
+                self.config.plot_candidates,
             )
             pool.map(writer, enumerate(self.candidates))
             # Necessary for accurate coverage reporting

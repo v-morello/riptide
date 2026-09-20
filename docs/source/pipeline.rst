@@ -97,8 +97,9 @@ Configuring the riptide pipeline
 
 The ``rffa`` application is highly flexible and takes a YAML configuration file as
 an input. A `model configuration file`_, with detailed comments, can be found in the repository.
-This should be your starting point. Most parameters are mandatory. If the configuration file is 
-malformed, the ``rffa`` application will raise an Exception with a helpul error message. 
+This should be your starting point. Most sections are mandatory, while many individual
+parameters have documented defaults. The configuration is validated with Pydantic, and
+malformed values result in an error identifying the invalid field.
 
 .. _`model configuration file`: https://github.com/v-morello/riptide/blob/master/riptide/pipeline/config/example.yaml
 
