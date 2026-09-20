@@ -1,6 +1,8 @@
 import logging
 from fractions import Fraction
 
+from riptide.constants import DISPERSION_CONSTANT
+
 log = logging.getLogger("riptide.pipeline.harmonic_filter")
 
 
@@ -68,9 +70,8 @@ def hdiag(  # noqa: PLR0913, PLR0917
         fraction = 1 / fraction
 
     # Test DM difference
-    kdm = 4.15e3
     dm_absdiff = abs(F.dm - H.dm)
-    dm_delay_absdiff = dm_absdiff * kdm * abs(fmin**-2 - fmax**-2)
+    dm_delay_absdiff = dm_absdiff * DISPERSION_CONSTANT * abs(fmin**-2 - fmax**-2)
     dm_distance = dm_delay_absdiff / min(width(F), width(H))
 
     # Test S/N difference

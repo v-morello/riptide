@@ -4,14 +4,9 @@ import numpy as np
 from numpy import radians, sin
 
 from riptide import Metadata
+from riptide.constants import DISPERSION_CONSTANT
 
 log = logging.getLogger("riptide.pipeline.dmiter")
-
-
-# This is the standard "rounded value" of the dispersion constant in use by
-# pulsar astronomers
-# (page 129 of Manchester and Taylor 1977)
-KDM = 1.0 / 2.41e-4
 
 
 def select_dms(  # noqa: PLR0913, PLR0917
@@ -47,12 +42,12 @@ def select_dms(  # noqa: PLR0913, PLR0917
         raise ValueError(f"No trial DMs between {dm_start:.4f} and {dm_end:.4f}")
 
     # tdisp = kdisp * dm
-    kdisp = KDM * (fmin**-2 - fmax**-2)
+    kdisp = DISPERSION_CONSTANT * (fmin**-2 - fmax**-2)
     cw = (fmax - fmin) / nchans
     fmid = (fmax + fmin) / 2.0
 
     # tsmear = ksmear * dm
-    ksmear = KDM * ((fmid - cw / 2) ** -2 - (fmid + cw / 2) ** -2)
+    ksmear = DISPERSION_CONSTANT * ((fmid - cw / 2) ** -2 - (fmid + cw / 2) ** -2)
 
     # Coverage radius (in DM space) of every trial DM
     # Within this radius, the total smearing time is <= wmin
